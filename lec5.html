@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 5 — Language Systems & Grammars</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf8f4;
+  --text: #2a2520;
+  --text-secondary: #6b6259;
+  --accent: #c45d3e;
+  --accent-light: #f4e8e3;
+  --accent-dark: #a04530;
+  --green: #3a7d5c;
+  --green-light: #e4f0ea;
+  --blue: #3d6b8e;
+  --blue-light: #e3eef5;
+  --purple: #6b5b8a;
+  --purple-light: #ede8f4;
+  --yellow: #c49a2a;
+  --yellow-light: #faf3de;
+  --border: #e0dbd4;
+  --code-bg: #2d2a26;
+  --code-text: #f0ece6;
+  --card-shadow: 0 2px 12px rgba(42,37,32,0.06);
+  --serif: 'Source Serif 4', Georgia, serif;
+  --sans: 'DM Sans', -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; font-size: 17px; }
+
+body {
+  font-family: var(--serif);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.72;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── NAV ── */
+.nav {
+  position: fixed; top: 0; left: 0; width: 280px; height: 100vh;
+  background: #f3f0ea; border-right: 1px solid var(--border);
+  overflow-y: auto; z-index: 100; padding: 28px 0;
+  transition: transform .3s ease;
+}
+.nav-title {
+  font-family: var(--sans); font-weight: 700; font-size: .82rem;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--accent);
+  padding: 0 24px 16px; border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.nav a {
+  display: block; padding: 7px 24px; font-family: var(--sans);
+  font-size: .82rem; color: var(--text-secondary); text-decoration: none;
+  transition: all .15s; line-height: 1.45;
+}
+.nav a:hover, .nav a.active { color: var(--accent); background: var(--accent-light); }
+.nav a.section-head {
+  font-weight: 700; color: var(--text); margin-top: 14px;
+  font-size: .78rem; letter-spacing: .03em; text-transform: uppercase;
+}
+.nav a.section-head:hover { color: var(--accent); }
+
+.nav-toggle {
+  display: none; position: fixed; top: 14px; left: 14px; z-index: 200;
+  background: var(--accent); color: #fff; border: none; border-radius: 8px;
+  width: 42px; height: 42px; font-size: 1.3rem; cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,.15);
+}
+
+/* ── MAIN ── */
+.main { margin-left: 280px; max-width: 780px; padding: 48px 48px 120px; }
+
+/* ── TYPOGRAPHY ── */
+h1 {
+  font-family: var(--serif); font-weight: 700; font-size: 2.4rem;
+  line-height: 1.2; margin-bottom: 8px; color: var(--text);
+}
+.subtitle {
+  font-family: var(--sans); font-size: 1.05rem; color: var(--text-secondary);
+  margin-bottom: 40px; font-weight: 400;
+}
+h2 {
+  font-family: var(--serif); font-weight: 700; font-size: 1.65rem;
+  margin-top: 56px; margin-bottom: 18px; color: var(--text);
+  padding-top: 20px; border-top: 2px solid var(--border);
+}
+h3 {
+  font-family: var(--sans); font-weight: 700; font-size: 1.1rem;
+  margin-top: 36px; margin-bottom: 12px; color: var(--accent-dark);
+}
+h4 {
+  font-family: var(--sans); font-weight: 600; font-size: .95rem;
+  margin-top: 24px; margin-bottom: 8px; color: var(--text);
+}
+p { margin-bottom: 16px; }
+strong { font-weight: 600; }
+
+/* ── CALLOUTS ── */
+.callout {
+  padding: 20px 24px; border-radius: 10px; margin: 24px 0;
+  font-size: .95rem; line-height: 1.65;
+}
+.callout-title {
+  font-family: var(--sans); font-weight: 700; font-size: .82rem;
+  letter-spacing: .04em; text-transform: uppercase; margin-bottom: 8px;
+}
+.callout.big-picture { background: var(--blue-light); border-left: 4px solid var(--blue); }
+.callout.big-picture .callout-title { color: var(--blue); }
+.callout.definition { background: var(--purple-light); border-left: 4px solid var(--purple); }
+.callout.definition .callout-title { color: var(--purple); }
+.callout.key-insight { background: var(--yellow-light); border-left: 4px solid var(--yellow); }
+.callout.key-insight .callout-title { color: var(--yellow); }
+.callout.warning { background: #fce8e8; border-left: 4px solid #c44; }
+.callout.warning .callout-title { color: #c44; }
+.callout.example { background: var(--green-light); border-left: 4px solid var(--green); }
+.callout.example .callout-title { color: var(--green); }
+
+/* ── CODE ── */
+pre {
+  background: var(--code-bg); color: var(--code-text); padding: 20px 24px;
+  border-radius: 10px; overflow-x: auto; margin: 20px 0; font-size: .85rem;
+  line-height: 1.6; font-family: var(--mono);
+}
+code {
+  font-family: var(--mono); font-size: .88em; background: #ebe7e0;
+  padding: 2px 7px; border-radius: 4px; color: var(--accent-dark);
+}
+pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+.code-label {
+  font-family: var(--sans); font-size: .72rem; font-weight: 600;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+/* ── DIAGRAMS (ASCII/SVG containers) ── */
+.diagram-box {
+  background: #fff; border: 1.5px solid var(--border); border-radius: 12px;
+  padding: 28px; margin: 24px 0; text-align: center; overflow-x: auto;
+}
+.diagram-box pre {
+  background: none; color: var(--text); text-align: left; display: inline-block;
+  font-size: .82rem; line-height: 1.55; margin: 0; padding: 0;
+}
+.diagram-box .caption {
+  font-family: var(--sans); font-size: .78rem; color: var(--text-secondary);
+  margin-top: 12px; font-style: italic;
+}
+
+/* ── INTERACTIVE QUIZ ── */
+.quiz {
+  background: #fff; border: 1.5px solid var(--border); border-radius: 12px;
+  padding: 28px; margin: 28px 0; box-shadow: var(--card-shadow);
+}
+.quiz-label {
+  font-family: var(--sans); font-weight: 700; font-size: .75rem;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--accent);
+  margin-bottom: 12px;
+}
+.quiz-question { font-weight: 600; margin-bottom: 16px; font-size: 1.02rem; }
+.quiz-options { list-style: none; }
+.quiz-options li {
+  padding: 12px 18px; margin: 8px 0; border: 1.5px solid var(--border);
+  border-radius: 8px; cursor: pointer; font-family: var(--sans); font-size: .9rem;
+  transition: all .15s; user-select: none;
+}
+.quiz-options li:hover { border-color: var(--accent); background: var(--accent-light); }
+.quiz-options li.correct {
+  border-color: var(--green); background: var(--green-light); color: var(--green);
+  font-weight: 600; cursor: default;
+}
+.quiz-options li.wrong {
+  border-color: #c44; background: #fce8e8; color: #c44;
+  cursor: default;
+}
+.quiz-options li.disabled { pointer-events: none; opacity: .55; }
+.quiz-feedback {
+  margin-top: 14px; padding: 14px 18px; border-radius: 8px;
+  font-family: var(--sans); font-size: .88rem; line-height: 1.55;
+  display: none;
+}
+.quiz-feedback.show { display: block; }
+.quiz-feedback.correct-fb { background: var(--green-light); color: #2a5c42; }
+.quiz-feedback.wrong-fb { background: #fce8e8; color: #933; }
+
+/* ── EXPANDABLE ── */
+details {
+  background: #fff; border: 1.5px solid var(--border); border-radius: 10px;
+  margin: 20px 0; overflow: hidden;
+}
+summary {
+  padding: 16px 22px; font-family: var(--sans); font-weight: 600;
+  font-size: .92rem; cursor: pointer; user-select: none; list-style: none;
+  display: flex; align-items: center; gap: 10px;
+}
+summary::before { content: '▸'; transition: transform .2s; font-size: .85rem; }
+details[open] summary::before { transform: rotate(90deg); }
+summary::-webkit-details-marker { display: none; }
+.details-body { padding: 4px 22px 22px; }
+
+/* ── TABLE ── */
+.table-wrap { overflow-x: auto; margin: 20px 0; }
+table {
+  width: 100%; border-collapse: collapse; font-family: var(--sans);
+  font-size: .88rem;
+}
+th {
+  background: #f0ece6; padding: 12px 16px; text-align: left;
+  font-weight: 700; font-size: .78rem; letter-spacing: .03em;
+  text-transform: uppercase; border-bottom: 2px solid var(--border);
+}
+td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+tr:last-child td { border-bottom: none; }
+
+/* ── STEP INDICATOR ── */
+.steps { counter-reset: step; }
+.step {
+  position: relative; padding-left: 52px; margin-bottom: 28px;
+  counter-increment: step;
+}
+.step::before {
+  content: counter(step); position: absolute; left: 0; top: 2px;
+  width: 34px; height: 34px; border-radius: 50%; background: var(--accent);
+  color: #fff; font-family: var(--sans); font-weight: 700; font-size: .85rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.step-title {
+  font-family: var(--sans); font-weight: 700; font-size: 1rem;
+  margin-bottom: 6px;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .nav { transform: translateX(-100%); }
+  .nav.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,.12); }
+  .nav-toggle { display: flex; align-items: center; justify-content: center; }
+  .main { margin-left: 0; padding: 64px 22px 100px; }
+  h1 { font-size: 1.8rem; }
+  h2 { font-size: 1.35rem; }
+}
+</style>
+</head>
+<body>
+
+<button class="nav-toggle" onclick="document.querySelector('.nav').classList.toggle('open')">☰</button>
+
+<nav class="nav">
+  <div class="nav-title">Lecture 5 · Interactive Textbook</div>
+  <a href="#intro" class="section-head">Introduction</a>
+  <a href="#why-this-matters">Why This Matters</a>
+
+  <a href="#part1" class="section-head">Part 1 — Simplifying Grammars</a>
+  <a href="#grammar-review">Quick Grammar Review</a>
+  <a href="#railroad-diagrams">Railroad Diagrams</a>
+  <a href="#rr-as-parser">Diagrams as Parser Blueprints</a>
+  <a href="#quiz-rr">Check: Railroad Diagrams</a>
+
+  <a href="#part2" class="section-head">Part 2 — Regular vs Context-Free</a>
+  <a href="#rfc-to-regex">RFC → Regex → Shell Script</a>
+  <a href="#what-breaks">Where It Breaks Down</a>
+  <a href="#recursion-types">Three Types of Recursion</a>
+  <a href="#quiz-recursion">Check: Recursion</a>
+
+  <a href="#part3" class="section-head">Part 3 — ISO EBNF</a>
+  <a href="#iso-notation">The ISO EBNF Notation</a>
+  <a href="#self-describing">A Grammar That Describes Itself</a>
+  <a href="#quiz-ebnf">Check: ISO EBNF</a>
+
+  <a href="#part4" class="section-head">Part 4 — Trouble with Grammars</a>
+  <a href="#undefined-nonterminals">Undefined Non-Terminals</a>
+  <a href="#unreachable">Unreachable Non-Terminals</a>
+  <a href="#neverending">Never-ending Rules</a>
+  <a href="#constraints">Extra Constraints</a>
+  <a href="#ambiguity-prolog">Ambiguity & Prolog</a>
+  <a href="#quiz-trouble">Check: Grammar Troubles</a>
+
+  <a href="#part5" class="section-head">Part 5 — From Source to Running</a>
+  <a href="#compiler-pipeline">The Compiler Pipeline</a>
+  <a href="#frontend-backend">Frontend / Backend Split</a>
+  <a href="#interpreters">Interpreters</a>
+  <a href="#jit">JIT Compilation</a>
+  <a href="#dynamic-linking">Dynamic Linking</a>
+  <a href="#quiz-pipeline">Check: Compilation</a>
+
+  <a href="#part6" class="section-head">Part 6 — Types (Preview)</a>
+  <a href="#types-intro">What Are Types?</a>
+
+  <a href="#summary" class="section-head">Summary</a>
+</nav>
+
+<main class="main">
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- INTRODUCTION                                -->
+<!-- ═══════════════════════════════════════════ -->
+<h1 id="intro">Lecture 5: Grammars in Practice,<br>Compilers & Language Systems</h1>
+<p class="subtitle">How real grammars are written, simplified, and turned into working parsers — and how the code you write becomes a running program.</p>
+
+<div class="callout big-picture" id="why-this-matters">
+  <div class="callout-title">Why This Lecture Matters</div>
+  <p>In the previous lectures, you learned what grammars <em>are</em> — rules that describe which strings belong to a language. But knowing the rules is only the first step. In the real world, you need to:</p>
+  <p><strong>1)</strong> Write grammars that are easy to read and don't have thousands of redundant rules.<br>
+  <strong>2)</strong> Turn those grammars into <em>parsers</em> — programs that can check whether a piece of text follows the rules.<br>
+  <strong>3)</strong> Feed parsed programs through a pipeline (compiler or interpreter) to actually <em>run</em> them.</p>
+  <p>This lecture connects grammars (the theory) to compilers and interpreters (the practice). By the end, you'll understand the full journey from the text you type in a file all the way to a running process on your machine.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PART 1 — SIMPLIFYING GRAMMARS               -->
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="part1">Part 1 — Simplifying Complex Grammars</h2>
+
+<h3 id="grammar-review">Quick Grammar Review</h3>
+
+<p>Before we dive in, let's make sure we're on the same page about grammars. A <strong>grammar</strong> is a set of rules that tells you how to build valid strings in a language. Each rule has two sides:</p>
+
+<pre><code>non-terminal  →  sequence of terminals and non-terminals</code></pre>
+
+<div class="callout definition">
+  <div class="callout-title">Key Terms</div>
+  <p><strong>Terminal</strong> — A concrete symbol that actually appears in the final string. Think of it as a "leaf" that can't be expanded further. Examples: the character <code>(</code>, the keyword <code>define</code>, the digit <code>7</code>.</p>
+  <p><strong>Non-terminal</strong> — A placeholder that gets <em>replaced</em> by other things according to a rule. Think of it as a category. Examples: <code>&lt;expression&gt;</code>, <code>&lt;noun-phrase&gt;</code>, <code>S</code>.</p>
+  <p><strong>Start symbol</strong> — The special non-terminal you begin with. Every valid string in the language can be derived by starting here and applying rules until only terminals remain.</p>
+</div>
+
+<p>For example, here's the grammar for a <strong>Scheme variable definition</strong> (Scheme is a programming language in the Lisp family). Scheme uses angle brackets around non-terminals and leaves terminals alone:</p>
+
+<pre><code>&lt;var defn&gt;  →  ( define &lt;var&gt; &lt;expr&gt; )
+            |  ( define ( &lt;var&gt; &lt;var&gt;* ) &lt;body&gt; )
+            |  ( define ( &lt;var&gt; &lt;var&gt;* . &lt;var&gt; ) &lt;body&gt; )</code></pre>
+
+<p>This says a variable definition can take three forms. Notice the parentheses <code>(</code> and <code>)</code> here are <em>terminals</em> — they're actual characters in Scheme code, not grouping symbols for the grammar notation.</p>
+
+<p>The <code>*</code> after <code>&lt;var&gt;</code> means "zero or more of these." So the second form is: open paren, the word <code>define</code>, then an open paren, then <em>one</em> variable followed by <em>zero or more</em> additional variables, close paren, then a body, close paren.</p>
+
+<p>Now, look at that grammar. Do you see the repetition? All three alternatives start with <code>( define</code>. The second and third are very similar — the only difference is whether there's a dot followed by another variable. When grammars get big (hundreds or thousands of rules, like SQL), this kind of duplication makes them very hard to read. Can we do better?</p>
+
+<h3 id="railroad-diagrams">Railroad Diagrams (Syntax Charts)</h3>
+
+<div class="callout definition">
+  <div class="callout-title">Definition — Railroad Diagram</div>
+  <p>A <strong>railroad diagram</strong> (also called a <strong>syntax chart</strong>) is a flowchart-style picture that shows how to build a valid string. You start at the left and follow the arrows to the right. Each path through the diagram produces a valid string. If you reach the end, what you've produced is syntactically valid.</p>
+</div>
+
+<p>The idea is simple: instead of writing out every alternative as a separate text rule, draw a picture where shared beginnings are merged together, and branches show you where the options diverge.</p>
+
+<p>Here's how the Scheme variable definition looks as a railroad diagram:</p>
+
+<div class="diagram-box">
+<pre>
+                         ┌─── path 1 ──────────────────────────────┐
+                         │                                         │
+var defn ──→ ( ──→ define ──→ var ──→ expr ─────────────────────→ ) ──→ END
+                         │                                         │
+                         │  ┌─── path 2 ──────────────────────┐    │
+                         └──→ ( ──→ var ──┬──→ ) ──→ body ──→ ) ──→ END
+                                    ↑     │
+                                    └─────┘   (one or more vars)
+                                          │
+                                          └──→ . ──→ var ──→ ) ──→ body ──→ ) ──→ END
+                                               ↑─── path 3 ───┘
+</pre>
+<div class="caption">Railroad diagram for Scheme's &lt;var defn&gt;. The three paths correspond to the three grammar alternatives, but the shared <code>( define</code> prefix appears only once.</div>
+</div>
+
+<p>Notice what happened: the three separate rules that all started with <code>( define</code> now share a single beginning. The diagram branches only where the alternatives actually differ. This eliminates the duplication.</p>
+
+<div class="callout key-insight">
+  <div class="callout-title">Key Insight — Why Railroad Diagrams Help</div>
+  <p><strong>Reduced duplication:</strong> Shared prefixes are merged, so you don't repeat yourself.</p>
+  <p><strong>Visual clarity:</strong> You can immediately see all the paths through a grammar rule at a glance. Many real-world SQL reference manuals use railroad diagrams for exactly this reason — they color different parts to show what's standard SQL versus what's vendor-specific extensions.</p>
+  <p><strong>Blueprint for parsing:</strong> A railroad diagram is essentially a flowchart for a parser program. At each node, your program reads a token and decides which branch to take.</p>
+</div>
+
+<h3 id="rr-as-parser">Railroad Diagrams as Parser Blueprints</h3>
+
+<p>Here's the really powerful idea. When you look at a railroad diagram, you're not just looking at a grammar — you're looking at a <strong>blueprint for writing a parser</strong>.</p>
+
+<p>Think about it: a parser is a program that reads tokens one at a time and decides if they form a valid string. A railroad diagram tells you exactly how to do that:</p>
+
+<div class="steps">
+  <div class="step">
+    <div class="step-title">At each node, read the next token</div>
+    <p>If the diagram says the next thing should be <code>(</code>, read the next token from the input. If it's <code>(</code>, keep going. If it's anything else, output a syntax error.</p>
+  </div>
+  <div class="step">
+    <div class="step-title">At each branch point, look ahead</div>
+    <p>When the diagram splits into multiple paths, peek at the next token to decide which path to take. For example, after <code>( define</code>, if the next token is an identifier, go down the "path 1" branch. If it's another <code>(</code>, go down the "path 2/3" branch.</p>
+  </div>
+  <div class="step">
+    <div class="step-title">Loops become iteration</div>
+    <p>When the diagram has an arrow looping back, your parser uses a loop (like a <code>while</code> loop) to keep reading tokens until the loop condition ends.</p>
+  </div>
+  <div class="step">
+    <div class="step-title">Reaching the end means success</div>
+    <p>If you follow all the arrows and consume all the required tokens, the input is valid.</p>
+  </div>
+</div>
+
+<div class="callout warning">
+  <div class="callout-title">Problem — Ambiguous Branch Points</div>
+  <p>Sometimes a railroad diagram can have a branch point where two paths start with the <em>same</em> token. When that happens, looking at just the next token isn't enough to decide which way to go. This is a real problem for parser implementation.</p>
+  <p>For example, you could draw the Scheme grammar in a way where both path 2 and path 3 start with <code>(</code> followed by <code>var</code> — and you'd need to look further ahead to distinguish them. The smarter version of the diagram (the one we drew above) avoids this by sharing the common beginning and only branching where they actually differ.</p>
+  <p>Compiler courses (like CS 132) deal with exactly this problem: how to build parsers that can handle tricky decision points.</p>
+</div>
+
+<p>In essence, a railroad diagram is a <strong>state machine</strong>. Each point on the diagram is a "state." You start in state 0 (the leftmost point), and at each state, you read a token and transition to the next state. If you can reach the final state, the input is valid. This is the same idea you may have seen in CS 35L with finite automata — just with a different visual representation.</p>
+
+<!-- QUIZ: Railroad Diagrams -->
+<div class="quiz" id="quiz-rr">
+  <div class="quiz-label">Check Your Understanding</div>
+  <p class="quiz-question">What is the main advantage of railroad diagrams over writing out every grammar rule as text?</p>
+  <ul class="quiz-options" data-correct="1">
+    <li onclick="handleQuiz(this, 0)">They can express more languages than BNF can</li>
+    <li onclick="handleQuiz(this, 1)">They reduce duplication by merging shared prefixes and visually show all paths</li>
+    <li onclick="handleQuiz(this, 2)">They eliminate the need for non-terminal symbols entirely</li>
+    <li onclick="handleQuiz(this, 3)">They automatically generate parser code without any extra work</li>
+  </ul>
+  <div class="quiz-feedback">Railroad diagrams express exactly the same languages as BNF — they don't add expressive power. Their advantage is <strong>presentation</strong>: they merge shared structure so you see less duplication, and they visually lay out every valid path, making it easier to read complex grammars and to use them as blueprints for writing parsers.</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PART 2 — REGULAR vs CONTEXT-FREE            -->
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="part2">Part 2 — Regular Languages vs Context-Free Languages</h2>
+
+<p>Railroad diagrams lead to an important question: can we always turn a grammar into a simple state machine (or equivalently, a regular expression)? The answer is <em>sometimes yes, sometimes no</em> — and understanding when each is the case is one of the most important ideas in this lecture.</p>
+
+<h3 id="rfc-to-regex">From Grammar to Regular Expression: The RFC 5322 Example</h3>
+
+<p>Let's start with a grammar where things work out perfectly. This is from Internet RFC 5322, the standard that defines email message formats. Here's a simplified version of the grammar for a <strong>message ID</strong>:</p>
+
+<pre><code>msg-id         =  "&lt;" dot-atom-text "@" id-right "&gt;"
+id-right       =  dot-atom-text / no-fold-literal
+no-fold-literal = "[" *dtext "]"
+dot-atom-text  =  1*atext *("." 1*atext)
+
+atext          =  ALPHA / DIGIT / "!" / "#" / "$" / "%" / ...
+dtext          =  %d33-90 / %d94-126    ; printable ASCII, no [ ] \</code></pre>
+
+<p>Let's trace through this grammar carefully. The start symbol is <code>msg-id</code>. It refers to <code>dot-atom-text</code>, which refers to <code>atext</code>. And <code>atext</code> is just a list of specific characters — it doesn't refer to any other non-terminal. Similarly, <code>id-right</code> goes to either <code>dot-atom-text</code> or <code>no-fold-literal</code>, and those eventually bottom out in <code>atext</code> or <code>dtext</code>, which are just character classes.</p>
+
+<div class="callout key-insight">
+  <div class="callout-title">Key Observation</div>
+  <p>Notice what <em>doesn't</em> happen in this grammar: <strong>nothing refers back up</strong>. <code>msg-id</code> refers to <code>dot-atom-text</code>, and <code>dot-atom-text</code> refers to <code>atext</code>, and that's the end. You never have a message ID inside another message ID. The grammar always goes "downward" toward simpler and simpler things, never looping back up.</p>
+</div>
+
+<p>Because the grammar only goes downward, we can "flatten" it. We can replace every non-terminal with what it expands to, and we'll end up with a single railroad diagram that contains <em>only terminal symbols</em> — no non-terminals at all. And a railroad diagram with only terminals and no recursion is exactly what a <strong>regular expression</strong> is!</p>
+
+<h4>Building a Shell Script from the Grammar</h4>
+
+<p>Here's the really cool practical consequence. Since this grammar is equivalent to a regular expression, we can translate it directly into a shell script that validates email message IDs using <code>grep</code>:</p>
+
+<pre><code># Build up regular expressions bottom-up
+
+# atext: letters, digits, and certain special characters
+atext='[A-Za-z0-9!#$%&'"'"'*+/=?^_`{|}~-]'
+
+# dtext: printable ASCII chars except [ ] and \
+dtext='[!-Z^-~]'
+
+# dot-atom-text: one or more atext, then zero or more groups of (dot + atext)
+dot_atom_text="$atext+(\.$atext+)*"
+
+# msg-id: &lt; dot-atom-text @ id-right &gt;
+msg_id="&lt;$dot_atom_text@$dot_atom_text&gt;"
+
+# Use grep to find matching lines in a file
+grep "$msg_id" file</code></pre>
+
+<p>What we did was work <strong>bottom-up</strong>: first define the simplest pieces (<code>atext</code>, <code>dtext</code>), then combine them into larger pieces (<code>dot_atom_text</code>), and finally combine everything into the full pattern (<code>msg_id</code>). Each step is just string substitution — we're plugging regex pieces into each other.</p>
+
+<p>And that's it — we have a working parser for email message IDs! It's just a <code>grep</code> command. We started with a grammar, noticed it had no recursion, translated it to a regex, and put it in a shell script.</p>
+
+<h3 id="what-breaks">Where This Breaks Down: The XML Grammar</h3>
+
+<p>Now let's look at a grammar where this <em>doesn't</em> work. Here's a simplified version of XML 1.1:</p>
+
+<pre><code>element  ::=  EmptyElemTag  |  STag content ETag
+content  ::=  CharData? ((element | Reference) CharData?)*</code></pre>
+
+<p>Do you see the problem? Let's trace the references:</p>
+
+<div class="steps">
+  <div class="step">
+    <div class="step-title"><code>element</code> refers to <code>content</code></div>
+    <p>An element can contain content between its start tag and end tag.</p>
+  </div>
+  <div class="step">
+    <div class="step-title"><code>content</code> refers back to <code>element</code></div>
+    <p>Content can contain other elements inside it!</p>
+  </div>
+</div>
+
+<p>This is <strong>mutual recursion</strong>: <code>element → content → element → content → ...</code> It's like two functions calling each other. This means an XML element can contain other XML elements inside it, which can contain even more elements, nested as deep as you want. You can have a <code>&lt;div&gt;</code> inside a <code>&lt;div&gt;</code> inside a <code>&lt;div&gt;</code>, with no limit on depth.</p>
+
+<p>And <em>this</em> is something a regular expression fundamentally cannot handle. A regex (or a finite state machine) has a fixed amount of memory — it has a fixed number of states. But to correctly match nested structures, you need to <em>remember</em> how deep you are. You need to count: "I've seen 5 opening tags, so I need to see 5 closing tags." A finite state machine can't count to an arbitrary number.</p>
+
+<div class="callout definition">
+  <div class="callout-title">Definition — Regular Language</div>
+  <p>A <strong>regular language</strong> is one where you can validate any string by scanning left to right without needing to remember nested structures. You can always tell if a string is valid based on a fixed, finite amount of information about what you've seen so far. Regular expressions and finite state machines can recognize exactly this class of languages.</p>
+  <p><em>Examples:</em> email message IDs (RFC 5322), the Scheme variable definition grammar above.</p>
+</div>
+
+<div class="callout definition">
+  <div class="callout-title">Definition — Context-Free Language</div>
+  <p>A <strong>context-free language</strong> is one where the validity of a string can depend on nested patterns — matching things that are arbitrarily far apart. To parse these, you need something more powerful than a finite state machine. The theoretical answer is: a finite state machine plus a <strong>stack</strong> (which gives you unlimited memory for tracking nesting depth).</p>
+  <p><em>Examples:</em> XML, HTML, most programming languages (because of nested parentheses, nested if-statements, etc.).</p>
+</div>
+
+<h3 id="recursion-types">Three Types of Recursion in Grammars</h3>
+
+<p>So recursion is the key. But here's the subtle point: <strong>not all recursion makes a grammar context-free</strong>. Some kinds of recursion are just fancy ways of writing repetition, and repetition is something regular expressions can handle. Let's look at the three types:</p>
+
+<h4>1. Left Recursion</h4>
+
+<pre><code>S → S a
+S → a</code></pre>
+
+<p>Here, <code>S</code> refers to itself, but always at the <em>very beginning</em> (the left side) of the right-hand side. What does this generate?</p>
+<p>Start with <code>S</code>. Apply rule 2: we get <code>a</code>. Or apply rule 1 then rule 2: we get <code>aa</code>. Or apply rule 1 twice then rule 2: <code>aaa</code>. The pattern is: <strong>one or more <code>a</code>'s</strong>. That's just <code>a+</code> in regex — perfectly regular!</p>
+
+<div class="diagram-box">
+<pre>
+S ──→ a ──┬──→ END
+          │
+          └──→ a ──┘  (loop back)
+</pre>
+<div class="caption">Left recursion becomes a simple loop in a railroad diagram — equivalent to <code>a+</code>.</div>
+</div>
+
+<h4>2. Right Recursion</h4>
+
+<pre><code>S → a S
+S → a</code></pre>
+
+<p>Now <code>S</code> refers to itself at the <em>very end</em> (the right side). What does this generate? Exactly the same thing: <code>a</code>, <code>aa</code>, <code>aaa</code>, ... It's still <code>a+</code>. Also perfectly regular.</p>
+
+<h4>3. Middle Recursion (the trouble-maker)</h4>
+
+<pre><code>S → a S b
+S → a b</code></pre>
+
+<p>Now <code>S</code> refers to itself <em>in the middle</em> — there's stuff both before it (<code>a</code>) and after it (<code>b</code>). What does this generate?</p>
+
+<p>Apply rule 2: <code>ab</code>. Apply rule 1 then rule 2: <code>aabb</code>. Apply rule 1 twice then rule 2: <code>aaabbb</code>. The pattern is: <strong>n copies of <code>a</code> followed by n copies of <code>b</code></strong>, written as a<sup>n</sup>b<sup>n</sup> where n ≥ 1.</p>
+
+<p>This is <em>not</em> regular. To know if a string like <code>aaaabbbb</code> is valid, you have to count the <code>a</code>'s and then verify you see exactly the same number of <code>b</code>'s. A finite state machine can't do that counting for arbitrary n.</p>
+
+<div class="callout key-insight">
+  <div class="callout-title">The Rule of Thumb</div>
+  <p><strong>Left recursion</strong> (the recursive call is at the start of the rule) → can be converted to a loop → <strong>regular</strong>.</p>
+  <p><strong>Right recursion</strong> (the recursive call is at the end of the rule) → can be converted to a loop → <strong>regular</strong>.</p>
+  <p><strong>Middle recursion</strong> (the recursive call has stuff on both sides) → requires matching/counting → <strong>context-free, not regular</strong>.</p>
+  <p>This is exactly what's happening with XML: <code>element → STag content ETag</code> has <code>content</code> in the middle, between the start tag and the end tag. That's middle recursion, which is why XML is context-free and can't be parsed with regex.</p>
+</div>
+
+<p>The theoretical way to handle context-free languages is to take a finite state machine and attach a <strong>stack</strong> to it. Every time you see an opening tag, push it onto the stack. Every time you see a closing tag, pop from the stack and verify it matches. The stack gives you unlimited memory for tracking nesting depth. This is called a <strong>pushdown automaton</strong>, and it's what real parsers for programming languages are based on.</p>
+
+<!-- QUIZ: Recursion -->
+<div class="quiz" id="quiz-recursion">
+  <div class="quiz-label">Check Your Understanding</div>
+  <p class="quiz-question">Consider the grammar: <code>S → ( S )</code> and <code>S → x</code>. What kind of recursion is this, and is the language regular?</p>
+  <ul class="quiz-options" data-correct="2">
+    <li onclick="handleQuiz(this, 0)">Left recursion — regular</li>
+    <li onclick="handleQuiz(this, 1)">Right recursion — regular</li>
+    <li onclick="handleQuiz(this, 2)">Middle recursion — NOT regular (context-free)</li>
+    <li onclick="handleQuiz(this, 3)">No recursion — regular</li>
+  </ul>
+  <div class="quiz-feedback">The recursive reference <code>S</code> appears in the middle of the right-hand side, with <code>(</code> before it and <code>)</code> after it. This is middle recursion, generating strings like <code>x</code>, <code>(x)</code>, <code>((x))</code>, <code>(((x)))</code> — matched parentheses nested to arbitrary depth. You need to count opening parens and match them with closing parens, which a finite state machine can't do. This is a context-free language.</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PART 3 — ISO EBNF                           -->
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="part3">Part 3 — ISO EBNF: A Standard Notation for Grammars</h2>
+
+<p>As you've seen, every community seems to invent its own notation for grammars. The RFC people have one, the XML people have another, textbooks use yet another. This creates a mess. So the International Organization for Standardization (ISO) — the same organization that standardizes everything from Java to electrical plugs — created a standard grammar notation called <strong>ISO EBNF</strong> (Extended Backus-Naur Form).</p>
+
+<h3 id="iso-notation">The Notation</h3>
+
+<p>Here are the key elements of ISO EBNF, presented in order from <strong>highest precedence</strong> (binds tightest) to <strong>lowest precedence</strong> (binds loosest):</p>
+
+<div class="table-wrap">
+<table>
+  <tr><th>Syntax</th><th>Meaning</th><th>Example</th></tr>
+  <tr><td><code>"text"</code> or <code>'text'</code></td><td>Terminal symbol (literal text). Both quote styles work — a compromise between British and Continental European convention.</td><td><code>'define'</code>, <code>"("</code></td></tr>
+  <tr><td><code>[ ... ]</code></td><td>Optional (0 or 1 times)</td><td><code>[ '+' ]</code> means the + sign can appear or not</td></tr>
+  <tr><td><code>{ ... }</code></td><td>Repetition (0 or more times)</td><td><code>{ digit }</code> means zero or more digits</td></tr>
+  <tr><td><code>( ... )</code></td><td>Grouping (affects precedence)</td><td><code>( 'a' | 'b' )</code></td></tr>
+  <tr><td><code>(* ... *)</code></td><td>Comment (from Pascal tradition)</td><td><code>(* this is a comment *)</code></td></tr>
+  <tr><td><code>*</code></td><td>Repetition factor (integer * primary)</td><td><code>3 * 'a'</code> means <code>aaa</code></td></tr>
+  <tr><td><code>-</code></td><td>Exception / set difference: matches A but not B</td><td><code>letter - vowel</code></td></tr>
+  <tr><td><code>,</code></td><td>Concatenation (in most BNF you just put things next to each other, but ISO EBNF uses an explicit comma)</td><td><code>'a' , 'b'</code> means <code>ab</code></td></tr>
+  <tr><td><code>|</code></td><td>Alternation (or)</td><td><code>'a' | 'b'</code></td></tr>
+  <tr><td><code>=</code></td><td>Rule definition</td><td><code>digit = '0' | '1' | ... | '9' ;</code></td></tr>
+  <tr><td><code>;</code></td><td>Rule terminator</td><td>Every rule ends with a semicolon</td></tr>
+</table>
+</div>
+
+<p>One unusual thing: ISO EBNF allows <strong>spaces in identifiers</strong>. So <code>syntax rule</code> is a single non-terminal name, not two separate things.</p>
+
+<h4>The Exception Operator (-)</h4>
+
+<p>The <code>-</code> (exception) operator is unique and worth understanding. <code>A - B</code> means "anything that matches A, except things that also match B." It's a set difference.</p>
+
+<div class="callout example">
+  <div class="callout-title">Example — Identifiers in C</div>
+  <p>In C, an identifier is a letter or underscore followed by letters, digits, or underscores. But certain identifiers are <strong>reserved words</strong> (like <code>if</code>, <code>while</code>, <code>for</code>) and aren't valid as variable names. With the exception operator:</p>
+  <pre><code>identifier = letter, { letter | digit | '_' }
+           - 'if' - 'while' - 'for' - 'return' - ... ;</code></pre>
+  <p>This elegantly says "anything that looks like an identifier, minus the reserved keywords."</p>
+  <p><strong>Caveat:</strong> The language theorists are nervous about the exception operator because it can make grammars very hard to parse. For this reason, there's a restriction: the thing on the right side of <code>-</code> should be something simple enough to match with a regular expression.</p>
+</div>
+
+<h3 id="self-describing">A Grammar That Describes Itself</h3>
+
+<p>Here's where things get philosophical. We can write the grammar <em>for</em> ISO EBNF <em>in</em> ISO EBNF. That is, the rules that define what valid ISO EBNF looks like are themselves written in ISO EBNF:</p>
+
+<pre><code>syntax        = syntax rule , { syntax rule } ;
+
+syntax rule   = meta id , '=' , defns list , ';' ;
+
+defns list    = definition , { '|' , definition } ;
+
+definition    = term , { ',' , term } ;
+
+term          = factor , [ '-' , exception ] ;
+
+exception     = factor ;
+
+factor        = [ integer , '*' ] , primary ;
+
+primary       = '(' , defns list , ')'
+              | '[' , defns list , ']'
+              | '{' , defns list , '}'
+              | meta id
+              | terminal string ;</code></pre>
+
+<p>Look at the second rule: <code>syntax rule = meta id , '=' , defns list , ';' ;</code></p>
+
+<p>This rule <em>describes</em> what a syntax rule looks like — and <em>it is itself</em> a syntax rule. It has four parts: a meta id (<code>syntax rule</code>), an equals sign (<code>=</code>), a definitions list (<code>meta id , '=' , defns list , ';'</code>), and a semicolon (<code>;</code>). The rule perfectly describes its own structure!</p>
+
+<div class="callout key-insight">
+  <div class="callout-title">The Self-Reference Paradox</div>
+  <p>You might wonder: isn't defining something in terms of itself circular? If you need to already know ISO EBNF to read the grammar <em>for</em> ISO EBNF, haven't you explained nothing?</p>
+  <p>The ISO standards committee knew this. Their solution: the <em>official</em> definition of ISO EBNF is written in <strong>English</strong>, earlier in the document. The self-describing grammar is placed in an <strong>appendix</strong>, with a note saying: "If you understood the English explanation, this grammar should match it. If there's any conflict, trust the English." The grammar is a convenient formal summary for people who already understand the notation.</p>
+  <p>This pattern — using a language to describe itself — comes up repeatedly in computer science. It's like looking in a mirror. The formal grammar can be fed into a parser generator to automatically produce a parser for ISO EBNF, something you can't do with the English description.</p>
+</div>
+
+<p>Also notice: <code>defns list</code> contains <code>definition</code>, which contains <code>term</code>, which contains <code>factor</code>, which contains <code>primary</code>, and <code>primary</code> can contain <code>defns list</code> again (inside parentheses, brackets, or braces). This is middle recursion! ISO EBNF is itself a context-free language — you can nest groupings inside groupings inside groupings. So you couldn't parse ISO EBNF with just a regular expression.</p>
+
+<!-- QUIZ: ISO EBNF -->
+<div class="quiz" id="quiz-ebnf">
+  <div class="quiz-label">Check Your Understanding</div>
+  <p class="quiz-question">In ISO EBNF, what does <code>expression - identifier</code> mean?</p>
+  <ul class="quiz-options" data-correct="1">
+    <li onclick="handleQuiz(this, 0)">Subtract the value of identifier from expression</li>
+    <li onclick="handleQuiz(this, 1)">Anything that matches expression, except if it also matches identifier</li>
+    <li onclick="handleQuiz(this, 2)">A sequence: expression followed by identifier</li>
+    <li onclick="handleQuiz(this, 3)">expression OR identifier</li>
+  </ul>
+  <div class="quiz-feedback">The <code>-</code> operator in ISO EBNF means "exception" or "set difference." <code>A - B</code> matches anything in the set of strings described by A, as long as it's <em>not</em> also in the set described by B. So <code>expression - identifier</code> matches any expression that isn't a bare identifier — it must be something more complex.</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PART 4 — TROUBLE WITH GRAMMARS              -->
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="part4">Part 4 — Trouble with Grammars</h2>
+
+<p>Grammars are, in a sense, a kind of programming language — you're writing rules that define behavior (what strings are valid). And just like any programming language, you can write <strong>buggy grammars</strong>. Some bugs are obvious, some are subtle. Let's go through the categories.</p>
+
+<h3 id="undefined-nonterminals">Trouble 1: Undefined Non-Terminals (Used but Not Defined)</h3>
+
+<p>This is like calling a function that doesn't exist in your code.</p>
+
+<pre><code>S → S a
+S → T b    ← what is T? It's never defined!
+S → c</code></pre>
+
+<p>The non-terminal <code>T</code> appears on the right-hand side of a rule (it's <em>used</em>), but no rule has <code>T</code> on the left-hand side (it's never <em>defined</em>). If you try to derive a sentence and you use rule 2, you get stuck with <code>T</code> in your string — and there's no rule to replace it with anything.</p>
+
+<p>This means the rule <code>S → T b</code> can <em>never</em> produce a valid terminal string. It's a dead-end rule. You can simply remove it without changing the language:</p>
+
+<pre><code>(* Fixed: remove the useless rule *)
+S → S a
+S → c</code></pre>
+
+<h3 id="unreachable">Trouble 2: Unreachable Non-Terminals (Defined but Not Reachable)</h3>
+
+<p>This is like writing a function that nothing in your program ever calls.</p>
+
+<pre><code>S → S a
+S → c
+T → T b    ← T is defined, but no rule mentions T on its right side!</code></pre>
+
+<p>Here, <code>T</code> has a definition, but no rule reachable from the start symbol <code>S</code> ever produces <code>T</code>. Since you always start deriving from <code>S</code>, and <code>S</code> only goes to things involving <code>S</code>, <code>a</code>, and <code>c</code>, you can never reach <code>T</code>. The rule for <code>T</code> is dead code.</p>
+
+<p>But it's slightly more subtle than just "defined but not used." Consider:</p>
+
+<pre><code>S → S a
+S → T b
+T → T c
+S → c</code></pre>
+
+<p>Here, <code>T</code> is both defined (rule 3) and used (rule 2). But rule 3 says <code>T → T c</code> — the only way to expand <code>T</code> is to get <em>another</em> <code>T</code> plus a <code>c</code>. There's no "base case" for <code>T</code>. You'll generate <code>Tc</code>, then <code>Tcc</code>, then <code>Tccc</code>, but you'll <em>always</em> have a <code>T</code> left over. <code>T</code> can never produce a string of pure terminals.</p>
+
+<p>So the real criteria are:</p>
+
+<div class="callout key-insight">
+  <div class="callout-title">Two Necessary Properties</div>
+  <p><strong>Reachable from the top:</strong> You must be able to get to the non-terminal starting from the start symbol, following rules.</p>
+  <p><strong>Reachable to the bottom:</strong> The non-terminal must be able to eventually produce a string of pure terminal symbols (no non-terminals left over).</p>
+  <p>If a non-terminal fails either test, any rule involving it is useless and can be removed.</p>
+</div>
+
+<h3 id="neverending">Trouble 3: Never-Ending Derivations</h3>
+
+<p>This is the problem we just saw with <code>T → T c</code>. Let's be explicit:</p>
+
+<pre><code>(* Trouble: T can never finish *)
+S → S a
+S → T b
+T → T c     ← T always produces another T
+S → c</code></pre>
+
+<p>If you apply rule 2, you get <code>Tb</code>. Then the only way to expand <code>T</code> is rule 3: <code>Tcb</code>. Again: <code>Tccb</code>. You're stuck in an infinite loop. <code>T</code> will never disappear from your string.</p>
+
+<p>The fix: either remove the offending rules, or add a base case for <code>T</code>:</p>
+
+<pre><code>(* Option A: remove rules involving T *)
+S → S a
+S → c
+
+(* Option B: add a base case for T *)
+S → S a
+S → T b
+T → T c
+T → d      ← NOW T can produce a terminal string!
+S → c</code></pre>
+
+<!-- QUIZ for Trouble 1-3 would go here, but let's continue -->
+
+<h3 id="constraints">Trouble 4: Extra Constraints the Grammar Can't Capture</h3>
+
+<p>Sometimes a grammar is technically correct — it describes a set of strings — but it's <strong>too generous</strong>. It allows strings that shouldn't be allowed, because there are extra rules that the grammar notation can't express.</p>
+
+<h4>The English Example</h4>
+
+<p>Consider this tiny grammar for English sentences:</p>
+
+<pre><code>S  → NP VP .
+NP → N
+NP → Adj NP
+VP → V
+VP → VP Adv</code></pre>
+
+<p>This generates noun phrases (NP) made of adjectives and nouns, and verb phrases (VP) made of verbs and adverbs. Perfectly fine — except it allows:</p>
+
+<pre><code>"blue dogs barks loudly."</code></pre>
+
+<p>This follows all the grammar rules perfectly: "blue dogs" is a valid NP (adjective + noun), "barks loudly" is a valid VP (verb + adverb). But it's <em>wrong</em> in English because "dogs" is plural and "barks" is singular. They don't agree in number.</p>
+
+<h4>Fixing It (and the Cost)</h4>
+
+<p>You <em>can</em> fix this by splitting every non-terminal into singular and plural versions:</p>
+
+<pre><code>S  → SingNP SingVP .
+S  → PlurNP PlurVP .
+SingNP → SingN
+SingNP → Adj SingNP
+PlurNP → PlurN
+PlurNP → Adj PlurNP
+SingVP → SingV
+SingVP → SingVP Adv
+PlurVP → PlurV
+PlurVP → PlurVP Adv</code></pre>
+
+<p>We went from 5 rules to 10. The grammar doubled in size. And English only has <em>two</em> numbers (singular and plural). Many other languages have additional features that verbs and nouns must agree on:</p>
+
+<div class="table-wrap">
+<table>
+  <tr><th>Feature</th><th>Values</th><th>Multiplicative Factor</th></tr>
+  <tr><td>Number</td><td>singular, plural</td><td>×2</td></tr>
+  <tr><td>Gender</td><td>masculine, feminine, neuter</td><td>×3</td></tr>
+  <tr><td>Case</td><td>nominative, accusative, dative, ...</td><td>×4+</td></tr>
+</table>
+</div>
+
+<p>With just number and gender, you'd need 2 × 3 = 6 versions of every rule. With 10 features, you'd need 1000+ rules where you started with 1. This <strong>combinatorial explosion</strong> makes grammars impractical for encoding all constraints. That's why real language processing systems handle things like subject-verb agreement <em>outside</em> the grammar, using separate type-checking or constraint systems.</p>
+
+<h4>The Same Problem in Programming Languages</h4>
+
+<p>You see the same issue in programming languages. For example:</p>
+
+<pre><code>cos("hello")   // syntactically valid function call, but type error!</code></pre>
+
+<p>The grammar says this is a valid function call: identifier, open paren, expression, close paren. But semantically, you can't take the cosine of a string. This type mismatch isn't caught by the grammar — it's caught by the <strong>type checker</strong>, which is a separate phase.</p>
+
+<div class="callout big-picture">
+  <div class="callout-title">The Scylla and Charybdis of Grammars</div>
+  <p>(Scylla and Charybdis were two monsters from Greek mythology on opposite sides of a strait — avoid one and you hit the other.)</p>
+  <p><strong>Too generous:</strong> The grammar allows invalid strings and you need extra machinery (type checking, constraint checking) to reject them.</p>
+  <p><strong>Too detailed:</strong> The grammar tries to capture every constraint, making it explosively large and hard to read.</p>
+  <p>Real language designers try to find a sweet spot between these extremes. The grammar handles the structural/syntactic stuff, and separate mechanisms handle type checking and other constraints.</p>
+</div>
+
+<h3 id="ambiguity-prolog">Trouble 5: Ambiguity and How Prolog Avoids It</h3>
+
+<p>An <strong>ambiguous grammar</strong> allows a string to be parsed in more than one way. This is a problem because the parse tree determines the meaning of the expression. If <code>3 + 4 * 5</code> can be parsed as either <code>(3 + 4) * 5</code> or <code>3 + (4 * 5)</code>, you don't know what the expression means.</p>
+
+<p>We've seen that you fix ambiguity with <strong>precedence</strong> (which operation binds tighter) and <strong>associativity</strong> (when two operators have the same precedence, do you group left or right). Most languages hard-code these rules. But Prolog takes a different approach: it lets you <strong>define your own operators</strong> with your own precedence and associativity.</p>
+
+<h4>Prolog's Operator Definitions</h4>
+
+<pre><code>:- op(100, yf,  [!]).       (* factorial: suffix operator *)
+:- op(200, xfy, [**]).      (* exponentiation: right associative *)
+:- op(400, yfx, [*, /]).    (* multiply/divide: left associative *)
+:- op(500, yfx, [+, -]).    (* add/subtract: left associative *)
+:- op(700, xfx, [<, >, =<, >=, ==]).  (* comparisons: non-associative *)</code></pre>
+
+<p>Let's break down what each part means:</p>
+
+<p>The <strong>number</strong> is the precedence level. <em>Lower numbers mean higher precedence</em> (do it first). So <code>!</code> at 100 has the highest precedence (applied first), and comparisons at 700 have the lowest (applied last).</p>
+
+<p>The <strong>letter code</strong> tells you the associativity. <code>f</code> represents the operator itself, and <code>x</code>/<code>y</code> represent operands:</p>
+
+<div class="table-wrap">
+<table>
+  <tr><th>Code</th><th>Meaning</th><th>Associativity</th></tr>
+  <tr><td><code>yfx</code></td><td><code>y</code> (can have equal precedence) on left, <code>x</code> (must have strictly higher precedence) on right</td><td><strong>Left associative</strong> — groups from the left: <code>a - b - c</code> = <code>(a - b) - c</code></td></tr>
+  <tr><td><code>xfy</code></td><td><code>x</code> on left, <code>y</code> on right</td><td><strong>Right associative</strong> — groups from the right: <code>a ** b ** c</code> = <code>a ** (b ** c)</code></td></tr>
+  <tr><td><code>xfx</code></td><td><code>x</code> on both sides</td><td><strong>Non-associative</strong> — chaining is a <em>syntax error</em>: <code>a < b < c</code> is <strong>illegal</strong></td></tr>
+  <tr><td><code>yf</code></td><td><code>y</code> on left, nothing on right</td><td><strong>Suffix unary operator</strong>: <code>5!</code></td></tr>
+  <tr><td><code>fy</code></td><td>Nothing on left, <code>y</code> on right</td><td><strong>Prefix unary operator</strong>: <code>-x</code></td></tr>
+</table>
+</div>
+
+<p>The key distinction between <code>x</code> and <code>y</code>: <code>y</code> means the operand <em>can</em> have the same precedence level as this operator (allowing chaining). <code>x</code> means the operand must have <em>strictly higher</em> precedence (preventing chaining at the same level).</p>
+
+<div class="callout key-insight">
+  <div class="callout-title">Why This Eliminates Ambiguity</div>
+  <p>With this system, every operator has a unique numeric precedence and a definite associativity (left, right, or none). There's no way to write an ambiguous expression — the rules always determine exactly one parse. Even user-defined operators get the same treatment.</p>
+  <p>Compare this to C++, where you can <em>overload</em> existing operators (give them new meanings) but can't define <em>new</em> operators or change the built-in precedence rules. The C++ designers felt that letting users change precedence would be too confusing. Prolog's designers disagreed — they trusted programmers to design sensible notation.</p>
+</div>
+
+<div class="callout example">
+  <div class="callout-title">Example — Non-associativity in Prolog vs C++</div>
+  <p>In Prolog: <code>x < y < z</code> is a <strong>syntax error</strong> because <code><</code> is declared as <code>xfx</code> (non-associative).</p>
+  <p>In C++: <code>x < y < z</code> is <strong>legal</strong> because <code><</code> is left-associative. It means <code>(x < y) < z</code>, which evaluates <code>x < y</code> to 0 or 1, then compares that 0 or 1 to z. This is almost never what the programmer intended!</p>
+  <p>Prolog's approach is arguably safer — it forces you to write <code>(x < y) and (y < z)</code> explicitly.</p>
+</div>
+
+<!-- QUIZ: Grammar Troubles -->
+<div class="quiz" id="quiz-trouble">
+  <div class="quiz-label">Check Your Understanding</div>
+  <p class="quiz-question">In Prolog, <code>:- op(400, yfx, [*, /]).</code> means that <code>*</code> and <code>/</code> are:</p>
+  <ul class="quiz-options" data-correct="2">
+    <li onclick="handleQuiz(this, 0)">Right associative with precedence 400</li>
+    <li onclick="handleQuiz(this, 1)">Non-associative with precedence 400</li>
+    <li onclick="handleQuiz(this, 2)">Left associative with precedence 400</li>
+    <li onclick="handleQuiz(this, 3)">Prefix operators with precedence 400</li>
+  </ul>
+  <div class="quiz-feedback"><code>yfx</code> means: <code>y</code> (operand allowing same precedence) on the left, <code>f</code> (the operator) in the middle, <code>x</code> (operand requiring strictly higher precedence) on the right. The <code>y</code> on the left means you can chain: <code>a * b * c</code> groups as <code>(a * b) * c</code> because the left operand of the second <code>*</code> is allowed to be another multiplication. That's <strong>left associativity</strong>.</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PART 5 — FROM SOURCE TO RUNNING             -->
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="part5">Part 5 — From Source Code to Running Program</h2>
+
+<p>Now let's zoom out. We've spent time on grammars and parsing — but parsing is just one step in turning your source code into a running program. Let's trace the full journey.</p>
+
+<h3 id="compiler-pipeline">The Compiler Pipeline</h3>
+
+<p>A compiler is like a factory with multiple stations. Each station transforms the program into a slightly different representation, getting closer and closer to something the hardware can execute.</p>
+
+<div class="steps">
+  <div class="step">
+    <div class="step-title">Input: Byte Sequence</div>
+    <p>Your source file is just bytes on disk. For example, <code>int x = 3;</code> is stored as the bytes <code>105 110 116 32 120 32 61 32 51 59</code> (ASCII values). The first thing the compiler does is decode these bytes into characters.</p>
+  </div>
+
+  <div class="step">
+    <div class="step-title">Character Sequence</div>
+    <p>The bytes get decoded (using ASCII, UTF-8, etc.) into a sequence of <strong>characters</strong>. Now you have letters, digits, spaces, and symbols. Unicode makes this interesting — characters can be encoded in multiple bytes, some characters look alike but mean different things, and the same character can sometimes have two different byte representations.</p>
+  </div>
+
+  <div class="step">
+    <div class="step-title">Lexical Analysis → Token Sequence</div>
+    <p>The character sequence gets broken into <strong>tokens</strong>. This strips away whitespace and comments, and groups characters into meaningful units. For <code>int x = 3;</code>, the tokens are: <code>INT</code>, <code>ID(x)</code>, <code>=</code>, <code>NUM(3)</code>, <code>;</code>. There are a relatively small number of distinct token <em>types</em> — maybe 80-100 for a typical language. All identifiers are the same token type, all numbers are the same token type, etc.</p>
+  </div>
+
+  <div class="step">
+    <div class="step-title">Parsing → Parse Tree (or Reductions)</div>
+    <p>The parser takes the token sequence and checks it against the grammar rules, building a <strong>parse tree</strong> — a tree structure where each internal node represents a grammar rule that was applied. This enforces precedence, associativity, nesting, and all the structural rules of the language.</p>
+    <p>For efficiency, many compilers don't actually build the full tree in memory. Instead, they output a sequence of <strong>reductions</strong> — essentially a list of rule numbers: "apply rule 12, then rule 27, then rule 13." If you apply each rule to the leftmost unexpanded non-terminal, this sequence uniquely determines the parse tree.</p>
+  </div>
+
+  <div class="step">
+    <div class="step-title">Intermediate Code Generation</div>
+    <p>The compiler translates the parse tree into <strong>intermediate code</strong> — instructions for an <em>abstract machine</em> that doesn't correspond to any real hardware. This is a key design decision. The intermediate code is chosen to be convenient for the programming language, not for any specific processor.</p>
+  </div>
+
+  <div class="step">
+    <div class="step-title">Optimization (optional)</div>
+    <p>Optimization phases take the intermediate code and try to make it faster or use less memory. Examples include removing redundant calculations, unrolling loops, and eliminating dead code. This happens at the intermediate code level so it benefits all target architectures.</p>
+  </div>
+
+  <div class="step">
+    <div class="step-title">Code Generation → Assembly Language</div>
+    <p>The compiler generates <strong>assembly code</strong> targeted at a specific processor architecture (x86-64, ARM, RISC-V, etc.). This is now machine-specific.</p>
+  </div>
+
+  <div class="step">
+    <div class="step-title">Assembler → Object File (.o)</div>
+    <p>The assembler turns assembly language into an <strong>object file</strong> containing actual machine code (binary instructions). But the object file has "holes" — references to functions and variables that are defined in other files. The object file says, "I need the address of <code>getchar</code> — please fill it in."</p>
+  </div>
+
+  <div class="step">
+    <div class="step-title">Linker (ld) → Executable</div>
+    <p>The <strong>linker</strong> takes all the object files, combines them, and fills in all the holes. It resolves every reference to an external function or variable, replacing symbolic names with actual memory addresses. The result is an <strong>executable file</strong> with no unresolved references.</p>
+  </div>
+
+  <div class="step">
+    <div class="step-title">Kernel Loader → Running Process</div>
+    <p>When you run the executable, the operating system's <strong>loader</strong> reads it into memory, sets up the stack and heap, assigns a program counter, and starts executing. Your program is now a living <strong>process</strong>.</p>
+  </div>
+</div>
+
+<h3 id="frontend-backend">The Frontend / Backend Split</h3>
+
+<p>There's a beautiful modularity trick that almost all major compilers use. The intermediate code acts as a <strong>dividing line</strong>:</p>
+
+<div class="diagram-box">
+<pre>
+     FRONT ENDS                    BACK ENDS
+  ┌──────────┐                  ┌──────────────┐
+  │   C       │──┐          ┌──→│  x86-64      │
+  └──────────┘   │          │   └──────────────┘
+  ┌──────────┐   │   ┌───────┐  ┌──────────────┐
+  │  C++     │──→│──→│ IR    │──→│  ARM         │
+  └──────────┘   │   └───────┘  └──────────────┘
+  ┌──────────┐   │          │   ┌──────────────┐
+  │  Java    │──┘          └──→│  RISC-V       │
+  └──────────┘                  └──────────────┘
+</pre>
+<div class="caption">IR = Intermediate Representation. Without this split, you'd need 3 × 3 = 9 complete compilers. With it, you need 3 front ends + 3 back ends = 6 half-compilers. The savings grow with more languages and architectures.</div>
+</div>
+
+<p>Each <strong>front end</strong> handles lexing, parsing, and intermediate code generation for one language. Each <strong>back end</strong> handles code generation and optimization for one hardware architecture. This is how GCC and Clang work — they support many languages and many architectures without writing a separate compiler for every combination.</p>
+
+<h3 id="interpreters">Interpreters: A Different Approach</h3>
+
+<p>Compilers go through all those steps <em>before</em> your program runs. An <strong>interpreter</strong> takes a different approach: it combines the front-end steps (lexing, parsing, intermediate code generation) and then <em>directly executes</em> the intermediate code, without ever producing machine code.</p>
+
+<div class="table-wrap">
+<table>
+  <tr><th></th><th>Compiler</th><th>Interpreter</th></tr>
+  <tr><td><strong>Startup</strong></td><td>Slow (many phases to complete before running)</td><td>Fast (starts executing almost immediately)</td></tr>
+  <tr><td><strong>Runtime speed</strong></td><td>Fast (executes native machine code)</td><td>Slower (2-10x) because intermediate code is simulated in software</td></tr>
+  <tr><td><strong>Debugging</strong></td><td>Harder (compiled code is far from source)</td><td>Easier (intermediate code is close to source)</td></tr>
+  <tr><td><strong>Output</strong></td><td>Executable files on disk</td><td>Everything stays in RAM</td></tr>
+  <tr><td><strong>Examples</strong></td><td>C, C++, Rust, Go</td><td>Python, Ruby, early JavaScript</td></tr>
+</table>
+</div>
+
+<h3 id="jit">JIT Compilation: The Best of Both Worlds</h3>
+
+<p>Modern systems often use a <strong>hybrid approach</strong> called <strong>Just-In-Time (JIT) compilation</strong>. The idea:</p>
+
+<div class="steps">
+  <div class="step">
+    <div class="step-title">Start as an interpreter</div>
+    <p>Run the program using an interpreter for fast startup and easy debugging.</p>
+  </div>
+  <div class="step">
+    <div class="step-title">Profile during execution</div>
+    <p>While running, collect data about which functions get called frequently ("hot code"), what types of arguments they receive, which branches are taken, etc. This is called <strong>profiling</strong>.</p>
+  </div>
+  <div class="step">
+    <div class="step-title">Compile hot code to machine code</div>
+    <p>When a function has been called enough times, the JIT compiler kicks in and compiles it from intermediate code to native machine code — <em>while the program is still running</em>. From then on, calls to that function execute at near-native speed.</p>
+  </div>
+</div>
+
+<div class="callout example">
+  <div class="callout-title">Example — The Java Virtual Machine (JVM)</div>
+  <p>Java compiles source code to <strong>bytecode</strong> (intermediate code for the JVM). The JVM starts by interpreting bytecode. As it runs, it profiles the code and identifies hot methods. For those methods, the JIT compiler generates optimized machine code.</p>
+  <p>The JIT can even do things traditional compilers can't: it can <strong>specialize methods based on runtime types</strong>. If a method is usually called with String arguments, the JIT can generate one version of machine code optimized for Strings. If it's later called with Thread arguments, it generates a different optimized version. This can sometimes make JIT-compiled code faster than statically compiled C++ for workloads with predictable patterns.</p>
+  <p>You'll find JIT compilers in: Firefox and Chrome (for JavaScript), the JVM (for Java/Kotlin/Scala), .NET (for C#), and even Emacs (for Emacs Lisp).</p>
+</div>
+
+<div class="table-wrap">
+<table>
+  <tr><th>Model</th><th>Startup Time</th><th>Long-Term Speed</th></tr>
+  <tr><td>Interpreter</td><td>Very fast</td><td>Slow</td></tr>
+  <tr><td>Compiler</td><td>Slow</td><td>Fast</td></tr>
+  <tr><td>JIT</td><td>Fast</td><td>Fast (after profiling)</td></tr>
+</table>
+</div>
+
+<h3 id="dynamic-linking">Dynamic Linking</h3>
+
+<p>In the classical model, the linker combines all object files into one big executable <em>before</em> you run it. <strong>Dynamic linking</strong> changes this: some of the linking happens <em>while the program is running</em>.</p>
+
+<div class="callout definition">
+  <div class="callout-title">Definition — Static vs Dynamic Linking</div>
+  <p><strong>Static linking:</strong> All code is combined at compile/link time into one executable. Result: big file, but completely self-contained. No surprises at runtime.</p>
+  <p><strong>Dynamic linking:</strong> Libraries (shared objects / DLLs) are stored in separate files. They get loaded and linked when the program starts (or even later, on demand). The executable file is smaller because it doesn't include the library code.</p>
+</div>
+
+<div class="table-wrap">
+<table>
+  <tr><th>Pros of Dynamic Linking</th><th>Cons of Dynamic Linking</th></tr>
+  <tr><td>Smaller executables (library code isn't duplicated in every program)</td><td><strong>"DLL Hell"</strong> — your program worked with library v1.0 but breaks with v1.1</td></tr>
+  <tr><td>Easy to patch: fix a security hole in the C library, and <em>all</em> programs benefit immediately without recompilation</td><td>Runtime failures if the library isn't found or has incompatible changes</td></tr>
+  <tr><td>Multiple programs can share one copy of a library in memory</td><td>Type safety concerns — the dynamic linker doesn't do type checking, so mismatches can cause silent bugs</td></tr>
+</table>
+</div>
+
+<p>Python's <code>from __future__ import something</code> is a related idea — it says "this code uses a feature from a future version of Python; please make it available." It's the Python community's way of managing version compatibility, similar to the library version issues in dynamic linking.</p>
+
+<!-- QUIZ: Pipeline -->
+<div class="quiz" id="quiz-pipeline">
+  <div class="quiz-label">Check Your Understanding</div>
+  <p class="quiz-question">Why do compilers use an intermediate representation (IR) between the front end and back end?</p>
+  <ul class="quiz-options" data-correct="1">
+    <li onclick="handleQuiz(this, 0)">To make the compiled program run faster</li>
+    <li onclick="handleQuiz(this, 1)">To enable modularity — any language front end can pair with any architecture back end</li>
+    <li onclick="handleQuiz(this, 2)">Because hardware can directly execute IR</li>
+    <li onclick="handleQuiz(this, 3)">To make the source code easier to read</li>
+  </ul>
+  <div class="quiz-feedback">The IR is the boundary between language-specific concerns (handled by front ends) and machine-specific concerns (handled by back ends). Instead of writing N × M compilers for N languages and M architectures, you write N front ends + M back ends = N + M half-compilers. The IR doesn't run faster by itself and isn't directly executable by hardware.</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PART 6 — TYPES PREVIEW                      -->
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="part6">Part 6 — Types (Preview)</h2>
+
+<h3 id="types-intro">What Are Types?</h3>
+
+<p>The lecture ends with a brief introduction to types, which will be covered more fully in upcoming lectures. Here's the setup:</p>
+
+<p>We've established that grammars handle the <em>syntax</em> (structure) of a language but can't capture all constraints (like type checking). Types are the main mechanism for capturing those additional constraints.</p>
+
+<div class="callout definition">
+  <div class="callout-title">Two Definitions of Type</div>
+  <p><strong>Concrete definition:</strong> A type tells you what a byte sequence <em>represents</em>. The bytes <code>01000001</code> could mean the integer 65, or the character 'A', or part of a floating-point number. The type tells you which interpretation is correct.</p>
+  <p><strong>Abstract definition:</strong> A type is a <em>category of data values</em> together with the <em>operations</em> that make sense on those values. For example, the type "integer" includes values like 0, 1, -42, and operations like +, -, *, /. The type "string" includes values like "hello" and operations like concatenation and substring.</p>
+</div>
+
+<p>Types connect to our earlier discussion about grammars being "too generous." The grammar allows <code>cos("hello")</code> syntactically, but the type system rejects it because <code>cos</code> expects a numeric argument, not a string. Types are the extra layer of checking that sits on top of the grammar.</p>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SUMMARY                                     -->
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="summary">Summary — The Big Picture</h2>
+
+<div class="callout big-picture">
+  <div class="callout-title">How Everything Connects</div>
+
+  <p><strong>Grammars</strong> define the valid structure of a language. They can be written in text (BNF, EBNF) or diagrams (railroad diagrams). Diagrams reduce duplication and serve as blueprints for parsers.</p>
+
+  <p><strong>Regular vs Context-Free:</strong> If a grammar has no recursion (or only left/right recursion), it describes a <em>regular language</em> that can be handled with regex and finite state machines. If it has <em>middle recursion</em> (nesting), it's <em>context-free</em> and needs a parser with a stack.</p>
+
+  <p><strong>ISO EBNF</strong> is a standardized grammar notation with features like the exception operator. It can even describe itself, illustrating the idea of self-referential formal systems.</p>
+
+  <p><strong>Grammar troubles</strong> include undefined non-terminals, unreachable rules, never-ending derivations, extra constraints the grammar can't capture, and ambiguity. These mirror the kinds of bugs you can write in code — calling undefined functions, writing dead code, creating infinite loops, missing validation logic, and creating ambiguous control flow.</p>
+
+  <p><strong>The compiler pipeline</strong> transforms source code through many stages: bytes → characters → tokens → parse tree → intermediate code → assembly → object files → executables → running processes. The intermediate representation enables modularity: front ends (one per language) pair with back ends (one per architecture).</p>
+
+  <p><strong>Interpreters</strong> skip the back-end stages and directly execute intermediate code, trading runtime speed for fast startup and easy debugging. <strong>JIT compilers</strong> combine both approaches, using profiling to selectively compile hot code paths.</p>
+
+  <p><strong>Dynamic linking</strong> defers part of the linking to runtime, enabling smaller executables and easier patching at the cost of potential version-mismatch issues.</p>
+
+  <p><strong>Types</strong> fill the gap that grammars leave — they express constraints about data values and operations that can't be encoded in syntax rules without combinatorial explosion.</p>
+</div>
+
+<details>
+  <summary>Key Definitions Cheat Sheet</summary>
+  <div class="details-body">
+    <p><strong>Railroad Diagram</strong> — A flowchart for generating valid strings; each path = one valid form.</p>
+    <p><strong>Regular Language</strong> — Validatable by scanning left-to-right with finite memory; no nesting.</p>
+    <p><strong>Context-Free Language</strong> — May involve arbitrarily deep nesting; needs a stack to parse.</p>
+    <p><strong>Left/Right Recursion</strong> — Recursion at the start or end of a rule; equivalent to repetition (regular).</p>
+    <p><strong>Middle Recursion</strong> — Recursion with stuff on both sides; creates nesting (context-free).</p>
+    <p><strong>ISO EBNF</strong> — International standard notation for grammars; uses <code>,</code> for concatenation, <code>-</code> for exception.</p>
+    <p><strong>Lexical Analysis</strong> — Turning characters into tokens.</p>
+    <p><strong>Parsing</strong> — Turning tokens into a parse tree by checking grammar rules.</p>
+    <p><strong>Intermediate Code</strong> — Instructions for an abstract machine; the boundary between front end and back end.</p>
+    <p><strong>Object File</strong> — Machine code with unresolved references ("holes").</p>
+    <p><strong>Linker</strong> — Fills the holes in object files to produce an executable.</p>
+    <p><strong>Loader</strong> — Puts an executable into memory and starts it running.</p>
+    <p><strong>JIT Compiler</strong> — Interprets at first, then compiles hot code to machine code at runtime.</p>
+    <p><strong>Profiling</strong> — Collecting runtime statistics (call counts, types, branches) to guide optimization.</p>
+    <p><strong>Dynamic Linking</strong> — Loading and linking libraries at runtime instead of compile time.</p>
+    <p><strong>Type</strong> — Concretely: what a byte sequence represents. Abstractly: a category of values + their operations.</p>
+  </div>
+</details>
+
+</main>
+
+<script>
+function handleQuiz(el, chosenIndex) {
+  const ul = el.parentElement;
+  const correctIndex = parseInt(ul.dataset.correct);
+  const feedback = ul.nextElementSibling;
+  const items = ul.querySelectorAll('li');
+
+  // disable all
+  items.forEach(li => li.classList.add('disabled'));
+
+  if (chosenIndex === correctIndex) {
+    el.classList.add('correct');
+    feedback.classList.add('show', 'correct-fb');
+  } else {
+    el.classList.add('wrong');
+    items[correctIndex].classList.add('correct');
+    feedback.classList.add('show', 'wrong-fb');
+  }
+}
+
+// Highlight active nav link on scroll
+const sections = document.querySelectorAll('h2[id], h3[id], div[id]');
+const navLinks = document.querySelectorAll('.nav a');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      navLinks.forEach(a => a.classList.remove('active'));
+      const link = document.querySelector(`.nav a[href="#${entry.target.id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>

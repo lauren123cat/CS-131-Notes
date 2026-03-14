@@ -1,0 +1,1967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CS 131 — Lecture 1: Interactive Textbook</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,400&family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FAF7F2;
+  --bg-warm: #F3EDE4;
+  --bg-code: #2B2B2B;
+  --text: #2C2418;
+  --text-light: #6B5E4F;
+  --text-code: #E8DCC8;
+  --accent: #C45D2C;
+  --accent-glow: #E87840;
+  --accent-soft: #F4C6A8;
+  --green: #4A7C59;
+  --green-soft: #D4E8D0;
+  --blue: #3B6B8A;
+  --blue-soft: #C5DBE8;
+  --purple: #7B5EA7;
+  --purple-soft: #DDD0EC;
+  --gold: #B8963E;
+  --border: #D9CFBF;
+  --shadow: rgba(44, 36, 24, 0.08);
+  --shadow-lg: rgba(44, 36, 24, 0.14);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; font-size: 17px; }
+
+body {
+  font-family: 'Source Sans 3', Georgia, serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.72;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Sidebar ─── */
+.sidebar {
+  position: fixed;
+  left: 0; top: 0;
+  width: 300px;
+  height: 100vh;
+  background: #2C2418;
+  color: #D9CFBF;
+  overflow-y: auto;
+  z-index: 100;
+  padding: 2rem 0;
+  transform: translateX(0);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  scrollbar-width: thin;
+  scrollbar-color: #5a4d3a #2C2418;
+}
+
+.sidebar.collapsed { transform: translateX(-300px); }
+
+.sidebar-header {
+  padding: 0 1.5rem 1.5rem;
+  border-bottom: 1px solid rgba(217,207,191,0.15);
+  margin-bottom: 1rem;
+}
+
+.sidebar-header h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 1.1rem;
+  color: var(--accent-soft);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.sidebar-header p {
+  font-size: 0.78rem;
+  opacity: 0.5;
+  margin-top: 0.3rem;
+}
+
+.toc-section {
+  padding: 0.5rem 1.5rem;
+}
+
+.toc-section-title {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(217,207,191,0.4);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.toc-link {
+  display: block;
+  padding: 0.4rem 0.8rem;
+  margin: 0.15rem 0;
+  font-size: 0.85rem;
+  color: rgba(217,207,191,0.7);
+  text-decoration: none;
+  border-radius: 6px;
+  transition: all 0.2s;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.toc-link:hover { background: rgba(217,207,191,0.08); color: #F4C6A8; }
+.toc-link.active { background: rgba(196,93,44,0.2); color: #F4C6A8; font-weight: 600; }
+
+.sidebar-toggle {
+  position: fixed;
+  left: 300px;
+  top: 1rem;
+  z-index: 101;
+  width: 36px; height: 36px;
+  background: #2C2418;
+  color: var(--accent-soft);
+  border: none;
+  border-radius: 0 8px 8px 0;
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 2px 0 8px var(--shadow);
+}
+
+.sidebar.collapsed ~ .sidebar-toggle { left: 0; }
+
+/* ─── Progress Bar ─── */
+.progress-bar {
+  position: fixed;
+  top: 0; left: 300px; right: 0;
+  height: 3px;
+  background: rgba(196,93,44,0.15);
+  z-index: 99;
+  transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sidebar.collapsed ~ .progress-bar { left: 0; }
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-glow));
+  width: 0%;
+  transition: width 0.3s;
+}
+
+/* ─── Main Content ─── */
+.main {
+  margin-left: 300px;
+  padding: 3rem 4rem 6rem;
+  max-width: 1100px;
+  transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar.collapsed ~ .main { margin-left: 0; max-width: 900px; margin-inline: auto; }
+
+/* ─── Typography ─── */
+h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  font-size: 1.15rem;
+  color: var(--text-light);
+  margin-bottom: 3rem;
+  font-style: italic;
+  font-family: 'Fraunces', serif;
+  font-weight: 300;
+}
+
+h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 3.5rem 0 1rem;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+h2 .chapter-num {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+  font-family: 'Source Sans 3', sans-serif;
+}
+
+h3 {
+  font-family: 'Fraunces', serif;
+  font-size: 1.35rem;
+  font-weight: 500;
+  margin: 2.5rem 0 0.8rem;
+  color: var(--text);
+}
+
+p { margin-bottom: 1.1rem; }
+
+strong { font-weight: 600; color: var(--text); }
+
+/* ─── Sections ─── */
+.section {
+  padding-top: 1rem;
+  margin-bottom: 2rem;
+  opacity: 0;
+  transform: translateY(18px);
+  animation: fadeUp 0.6s ease forwards;
+}
+
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Callout Boxes ─── */
+.callout {
+  border-radius: 10px;
+  padding: 1.3rem 1.5rem;
+  margin: 1.5rem 0;
+  position: relative;
+}
+
+.callout-big-idea {
+  background: linear-gradient(135deg, #FFF8F0, #FEF0E4);
+  border-left: 4px solid var(--accent);
+}
+
+.callout-big-idea::before {
+  content: '💡 Big Idea';
+  display: block;
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.callout-why {
+  background: linear-gradient(135deg, #F0F7FF, #E4F0FE);
+  border-left: 4px solid var(--blue);
+}
+
+.callout-why::before {
+  content: '🔗 Why This Matters';
+  display: block;
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--blue);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.callout-example {
+  background: linear-gradient(135deg, #F0FFF4, #E4FEE8);
+  border-left: 4px solid var(--green);
+}
+
+.callout-example::before {
+  content: '📖 Example';
+  display: block;
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--green);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.callout-story {
+  background: linear-gradient(135deg, #F8F0FF, #F0E4FE);
+  border-left: 4px solid var(--purple);
+}
+
+.callout-story::before {
+  content: '📜 Story';
+  display: block;
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--purple);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.callout-warning {
+  background: linear-gradient(135deg, #FFFBF0, #FEF5E4);
+  border-left: 4px solid var(--gold);
+}
+
+.callout-warning::before {
+  content: '⚠️ Watch Out';
+  display: block;
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--gold);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.callout p:last-child { margin-bottom: 0; }
+
+/* ─── Code Blocks ─── */
+.code-block {
+  background: var(--bg-code);
+  border-radius: 10px;
+  margin: 1.5rem 0;
+  overflow: hidden;
+  box-shadow: 0 4px 20px var(--shadow-lg);
+}
+
+.code-header {
+  background: rgba(255,255,255,0.06);
+  padding: 0.5rem 1.2rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: rgba(232,220,200,0.5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.code-lang {
+  background: rgba(196,93,44,0.3);
+  color: var(--accent-soft);
+  padding: 0.15rem 0.6rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+}
+
+.code-body {
+  padding: 1.2rem 1.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: var(--text-code);
+  overflow-x: auto;
+}
+
+.code-body .comment { color: #7A8A6E; font-style: italic; }
+.code-body .keyword { color: #E89B6C; }
+.code-body .string { color: #A8C97E; }
+.code-body .type { color: #7BB8D4; }
+.code-body .output { color: #B0A090; }
+.code-body .prompt { color: #C45D2C; font-weight: 600; }
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.88em;
+  background: rgba(44,36,24,0.07);
+  padding: 0.15em 0.45em;
+  border-radius: 4px;
+  color: var(--accent);
+}
+
+/* ─── Interactive Quiz ─── */
+.quiz {
+  background: var(--bg-warm);
+  border-radius: 12px;
+  padding: 1.8rem 2rem;
+  margin: 2rem 0;
+  border: 1px solid var(--border);
+}
+
+.quiz-title {
+  font-family: 'Fraunces', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.quiz-question {
+  font-weight: 600;
+  margin-bottom: 1rem;
+  font-size: 1.02rem;
+}
+
+.quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.quiz-option {
+  padding: 0.8rem 1.2rem;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s;
+  background: white;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.quiz-option:hover { border-color: var(--accent); background: #FFF8F4; }
+.quiz-option.selected { border-color: var(--accent); background: #FFF0E8; font-weight: 600; }
+.quiz-option.correct { border-color: var(--green); background: var(--green-soft); }
+.quiz-option.incorrect { border-color: #C44D2C; background: #FDE8E4; opacity: 0.7; }
+
+.quiz-feedback {
+  padding: 1rem 1.2rem;
+  border-radius: 8px;
+  margin-top: 0.5rem;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  display: none;
+}
+
+.quiz-feedback.show { display: block; }
+.quiz-feedback.correct-fb { background: var(--green-soft); color: #2A5C39; }
+.quiz-feedback.incorrect-fb { background: #FDE8E4; color: #8B3020; }
+
+.quiz-btn {
+  padding: 0.6rem 1.5rem;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.quiz-btn:hover { background: var(--accent-glow); transform: translateY(-1px); }
+.quiz-btn:disabled { opacity: 0.4; cursor: default; transform: none; }
+
+/* ─── Interactive Pipeline Demo ─── */
+.pipeline-demo {
+  background: var(--bg-code);
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 2rem 0;
+  color: var(--text-code);
+  box-shadow: 0 4px 24px var(--shadow-lg);
+}
+
+.pipeline-title {
+  font-family: 'Fraunces', serif;
+  color: var(--accent-soft);
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.pipeline-input {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  color: var(--text-code);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+  outline: none;
+}
+
+.pipeline-input:focus { border-color: var(--accent); }
+
+.pipeline-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.pipeline-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: all 0.4s ease;
+}
+
+.pipeline-step.visible { opacity: 1; transform: translateX(0); }
+
+.pipe-symbol {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent-glow);
+  font-size: 1.2rem;
+  font-weight: 700;
+  min-width: 24px;
+  text-align: center;
+  padding-top: 0.3rem;
+}
+
+.step-content {
+  flex: 1;
+}
+
+.step-cmd {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  color: var(--accent-soft);
+  margin-bottom: 0.3rem;
+  font-weight: 600;
+}
+
+.step-output {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: rgba(232,220,200,0.6);
+  white-space: pre-wrap;
+  background: rgba(0,0,0,0.2);
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.pipeline-run-btn {
+  margin-top: 1rem;
+  padding: 0.6rem 1.5rem;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Source Sans 3', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.pipeline-run-btn:hover { background: var(--accent-glow); }
+
+/* ─── OCaml REPL ─── */
+.repl-demo {
+  background: var(--bg-code);
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 2rem 0;
+  box-shadow: 0 4px 24px var(--shadow-lg);
+}
+
+.repl-header {
+  background: rgba(255,255,255,0.05);
+  padding: 0.6rem 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.repl-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+}
+
+.repl-dot.red { background: #E85D4A; }
+.repl-dot.yellow { background: #E8B84A; }
+.repl-dot.green { background: #5ABF6A; }
+
+.repl-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: rgba(232,220,200,0.4);
+  margin-left: 0.5rem;
+}
+
+.repl-body {
+  padding: 1.2rem 1.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--text-code);
+  min-height: 120px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.repl-line { margin-bottom: 0.3rem; line-height: 1.6; }
+.repl-line .prompt { color: #C45D2C; font-weight: 600; }
+.repl-line .result { color: #7BB8D4; }
+.repl-line .error { color: #E85D4A; }
+
+.repl-input-row {
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem 1rem;
+  gap: 0.5rem;
+}
+
+.repl-prompt-symbol {
+  color: #C45D2C;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.repl-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-code);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+/* ─── Comparison Table ─── */
+.comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.compare-card {
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+}
+
+.compare-card.knuth {
+  background: linear-gradient(135deg, #F8F0FF, #F0E4FE);
+  border-color: #C8B0E8;
+}
+
+.compare-card.mcilroy {
+  background: linear-gradient(135deg, #F0FFF4, #E4FEE8);
+  border-color: #A0D8A8;
+}
+
+.compare-card h4 {
+  font-family: 'Fraunces', serif;
+  font-size: 1.05rem;
+  margin-bottom: 0.8rem;
+}
+
+.compare-card ul {
+  list-style: none;
+  padding: 0;
+}
+
+.compare-card li {
+  padding: 0.3rem 0;
+  font-size: 0.92rem;
+  padding-left: 1.3rem;
+  position: relative;
+}
+
+.compare-card li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--text-light);
+}
+
+/* ─── Diagram / Visual ─── */
+.visual-box {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 2rem 0;
+  text-align: center;
+}
+
+.visual-box svg { max-width: 100%; }
+
+.visual-title {
+  font-family: 'Fraunces', serif;
+  font-size: 0.9rem;
+  color: var(--text-light);
+  margin-top: 1rem;
+  font-style: italic;
+}
+
+/* ─── Connection Map ─── */
+.connection-map {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.conn-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.2rem;
+  transition: all 0.3s;
+  cursor: default;
+}
+
+.conn-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px var(--shadow);
+  border-color: var(--accent-soft);
+}
+
+.conn-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.conn-card h4 {
+  font-family: 'Fraunces', serif;
+  font-size: 0.95rem;
+  margin-bottom: 0.3rem;
+}
+
+.conn-card p {
+  font-size: 0.82rem;
+  color: var(--text-light);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ─── Expandable sections ─── */
+.expandable {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin: 1rem 0;
+  overflow: hidden;
+}
+
+.expandable-header {
+  padding: 1rem 1.3rem;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: background 0.2s;
+}
+
+.expandable-header:hover { background: #FEFCF8; }
+
+.expandable-arrow {
+  transition: transform 0.3s;
+  color: var(--text-light);
+}
+
+.expandable.open .expandable-arrow { transform: rotate(180deg); }
+
+.expandable-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+
+.expandable.open .expandable-content { max-height: 2000px; }
+
+.expandable-inner {
+  padding: 0 1.3rem 1.3rem;
+  border-top: 1px solid var(--border);
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 900px) {
+  .sidebar { transform: translateX(-300px); }
+  .sidebar.collapsed { transform: translateX(-300px); }
+  .sidebar.mobile-open { transform: translateX(0); }
+  .sidebar-toggle { left: 0; }
+  .sidebar.mobile-open ~ .sidebar-toggle { left: 300px; }
+  .main { margin-left: 0; padding: 2rem 1.5rem 4rem; }
+  .progress-bar { left: 0; }
+  h1 { font-size: 2.2rem; }
+  .comparison { grid-template-columns: 1fr; }
+}
+
+/* ─── Separator ─── */
+.section-sep {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  margin: 3rem 0;
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar / Table of Contents -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h2>CS 131 — Lecture 1</h2>
+    <p>Programming Languages</p>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-section-title">The Big Picture</div>
+    <a class="toc-link" href="#welcome">Welcome & Overview</a>
+    <a class="toc-link" href="#why-study">Why Study Programming Languages?</a>
+    <a class="toc-link" href="#five-reasons">The Five Reasons</a>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-section-title">Language & Thought</div>
+    <a class="toc-link" href="#sapir-whorf">The Sapir-Whorf Hypothesis</a>
+    <a class="toc-link" href="#notation-matters">Choice of Notation Matters</a>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-section-title">Literate Programming</div>
+    <a class="toc-link" href="#knuth">Donald Knuth & TeX</a>
+    <a class="toc-link" href="#literate-prog">What Is Literate Programming?</a>
+    <a class="toc-link" href="#concordance">The Concordance Problem</a>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-section-title">Knuth vs. McIlroy</div>
+    <a class="toc-link" href="#knuth-solution">Knuth's Pascal Solution</a>
+    <a class="toc-link" href="#mcilroy">McIlroy's Shell Pipeline</a>
+    <a class="toc-link" href="#pipeline-demo-section">Interactive Pipeline Demo</a>
+    <a class="toc-link" href="#comparison">Comparing the Two</a>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-section-title">OCaml Basics</div>
+    <a class="toc-link" href="#ocaml-intro">What Is OCaml?</a>
+    <a class="toc-link" href="#ocaml-repl">The REPL</a>
+    <a class="toc-link" href="#ocaml-values">Values, Names & Types</a>
+    <a class="toc-link" href="#ocaml-lists">Lists in OCaml</a>
+    <a class="toc-link" href="#ocaml-try">Try It Yourself</a>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-section-title">Course Logistics</div>
+    <a class="toc-link" href="#logistics">Course Mechanics</a>
+  </div>
+</nav>
+
+<button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">☰</button>
+
+<div class="progress-bar" id="progressBar">
+  <div class="progress-fill" id="progressFill"></div>
+</div>
+
+<!-- Main Content -->
+<div class="main" id="mainContent">
+
+  <!-- ═══════ HERO ═══════ -->
+  <div class="section" id="welcome" style="animation-delay: 0.1s">
+    <h1>Lecture 1: Why Languages Matter</h1>
+    <p class="subtitle">An introduction to programming languages — and why the way we write code shapes the way we think.</p>
+
+    <div class="callout callout-why">
+      <p>This first lecture sets up the <strong>entire philosophy</strong> of the course. Before we write a single line of OCaml, Prolog, or Java, the professor wants you to understand a deeper question: <em>why</em> do different programming languages exist, and <em>why should you care?</em></p>
+      <p>The answer will change how you approach every software problem for the rest of your career.</p>
+    </div>
+  </div>
+
+  <hr class="section-sep">
+
+  <!-- ═══════ WHY STUDY PL ═══════ -->
+  <div class="section" id="why-study" style="animation-delay: 0.15s">
+    <h2><span class="chapter-num">Chapter 1</span>Why Study Programming Languages?</h2>
+
+    <p>You already know how to code. You've written C++, some Python, maybe JavaScript. So why spend an entire course studying <em>programming languages themselves</em> as a subject?</p>
+
+    <p>Here's the core insight: <strong>technology changes constantly.</strong> The language that's popular today might be obsolete in ten years. But if you understand the <em>principles</em> behind programming languages — why they're designed the way they are, what trade-offs they make, what computational models they embody — then you can adapt to any new language or paradigm that comes along. You won't just be a user of tools; you'll understand <em>why</em> the tools work.</p>
+
+    <p>The professor's one-line summary:</p>
+
+    <div class="callout callout-big-idea">
+      <p>Studying programming languages affects how we build software efficiently and the decisions we make in the process — whether it involves choosing the right language, or using the structure of one language inside another.</p>
+    </div>
+
+    <p>Let's break this down into five specific, concrete reasons.</p>
+  </div>
+
+  <!-- ═══════ FIVE REASONS ═══════ -->
+  <div class="section" id="five-reasons" style="animation-delay: 0.2s">
+    <h3>The Five Reasons</h3>
+
+    <div class="connection-map">
+      <div class="conn-card">
+        <div class="conn-icon">🏗️</div>
+        <h4>1. Build & Design Better Software</h4>
+        <p>Learning PL concepts gives you techniques you can apply in <em>any</em> language. Google invented MapReduce by borrowing ideas from functional programming languages — and it made their search engines dramatically faster.</p>
+      </div>
+      <div class="conn-card">
+        <div class="conn-icon">🔧</div>
+        <h4>2. Create Domain-Specific Languages</h4>
+        <p>General-purpose languages (Python, Java) do everything. DSLs are specialized for one thing and do it <em>really well</em> — like SQL for databases, regex for pattern matching, or CSS for styling. Understanding PL lets you create your own DSLs.</p>
+      </div>
+      <div class="conn-card">
+        <div class="conn-icon">🧠</div>
+        <h4>3. Learn New Computational Models</h4>
+        <p>Different languages embody different ways of thinking about computation — imperative, functional, logic-based. Each model opens new approaches to solving problems. This circles back to reason #1.</p>
+      </div>
+      <div class="conn-card">
+        <div class="conn-icon">⚡</div>
+        <h4>4. Speed Up Language Learning</h4>
+        <p>The more languages you know, the easier it is to learn the next one. Someone who only knows Python will struggle to pick up Rust. But if you know the underlying concepts (type systems, memory models, paradigms), every new language clicks faster.</p>
+      </div>
+      <div class="conn-card">
+        <div class="conn-icon">🎯</div>
+        <h4>5. Choose the Right Language</h4>
+        <p>Knowing pros and cons of different languages lets you pick the best tool for the job. This is <em>exactly</em> what the Knuth vs. McIlroy story (coming soon!) is about — the right language for a problem can turn pages of code into a single line.</p>
+      </div>
+    </div>
+
+    <div class="callout callout-example">
+      <p><strong>Real-world example — AI and MCP:</strong> The professor notes that modern AI tools support popular languages like Python and Java but leave out C and C++ because they're "too hard" for AI to work with reliably. This is a <em>design decision driven by language characteristics</em> — the complexity and low-level nature of C/C++ makes them harder to auto-generate safely. Understanding why helps you predict what tools can and can't do.</p>
+    </div>
+
+    <div class="quiz" id="quiz-1">
+      <div class="quiz-title">✏️ Check Your Understanding</div>
+      <div class="quiz-question">Google's MapReduce was inspired by techniques from which category of programming languages?</div>
+      <div class="quiz-options">
+        <div class="quiz-option" onclick="selectOption(this, 'quiz-1')">Object-oriented languages like Java</div>
+        <div class="quiz-option" onclick="selectOption(this, 'quiz-1')">Low-level languages like Assembly</div>
+        <div class="quiz-option" data-correct="true" onclick="selectOption(this, 'quiz-1')">Functional programming languages</div>
+        <div class="quiz-option" onclick="selectOption(this, 'quiz-1')">Scripting languages like Bash</div>
+      </div>
+      <button class="quiz-btn" onclick="checkQuiz('quiz-1')">Check Answer</button>
+      <div class="quiz-feedback correct-fb" id="quiz-1-correct">Correct! MapReduce was inspired by the <code>map</code> and <code>reduce</code> functions found in functional programming languages like Lisp and ML. This is a perfect example of reason #1 — understanding PL concepts lets you build better software even in a completely different context (distributed systems at Google).</div>
+      <div class="quiz-feedback incorrect-fb" id="quiz-1-incorrect">Not quite. MapReduce got its name — and its core idea — from the <code>map</code> and <code>reduce</code> operations in <strong>functional programming languages</strong> (like Lisp and ML). The "map" step applies a function to every element; the "reduce" step combines them. Google took these PL concepts and applied them to massive distributed data processing.</div>
+    </div>
+  </div>
+
+  <hr class="section-sep">
+
+  <!-- ═══════ SAPIR-WHORF ═══════ -->
+  <div class="section" id="sapir-whorf" style="animation-delay: 0.25s">
+    <h2><span class="chapter-num">Chapter 2</span>The Sapir-Whorf Hypothesis</h2>
+
+    <p>Before we get into specific languages or code, the professor introduces a powerful idea from <em>linguistics</em> — the study of natural human languages — that directly applies to programming.</p>
+
+    <div class="callout callout-big-idea">
+      <p><strong>The Sapir-Whorf Hypothesis:</strong> The language we use, to some extent, determines how we view the world and how we think.</p>
+    </div>
+
+    <p>This idea comes from linguists Edward Sapir and Benjamin Lee Whorf, who studied how different natural languages shape their speakers' perceptions. The key insight is that language isn't just a way to express pre-existing thoughts — language actually <em>shapes</em> what thoughts are possible.</p>
+
+    <h3>A Classic Example: Snow</h3>
+
+    <p>The Inuit people have approximately seven distinct words for "snow" — different words for falling snow, packed snow, drifting snow, and so on. English speakers see snow as basically one thing (we modify it with adjectives: "wet snow," "powdery snow"). But Inuit speakers perceive these as fundamentally <em>different things</em>, because their language treats them as different things.</p>
+
+    <p>Their language gives them mental categories that English speakers don't naturally have.</p>
+
+    <h3>What Does This Have to Do with Programming?</h3>
+
+    <p>The Sapir-Whorf Hypothesis applies to programming languages in exactly the same way. The programming language you think in shapes the solutions you imagine.</p>
+
+    <div class="callout callout-example">
+      <p>If you only know C++, every problem looks like it needs classes, pointers, and manual memory management. If you know a functional language like OCaml, you start seeing problems in terms of recursive transformations and pattern matching. If you know shell scripting, you start seeing problems as pipelines of small tools. <em>Each language gives you different mental tools.</em></p>
+    </div>
+
+    <p>The professor also makes an important theoretical point:</p>
+
+    <div class="callout callout-big-idea">
+      <p>The structural diversity of natural languages is essentially limitless and recursive. There is no one general rule of syntax that <em>all</em> languages follow.</p>
+    </div>
+
+    <p>This is also true for programming languages. There's no single "right" way to structure a language. Different languages make radically different choices about syntax, type systems, memory models, and execution models — and each choice leads to different strengths and weaknesses.</p>
+
+    <div class="callout callout-why">
+      <p><strong>Connection to the course:</strong> This is why you'll be learning OCaml, Prolog, and Java in this class — not just one language. Each one embodies a fundamentally different <em>computational model</em> (functional, logic-based, and object-oriented). By learning all three, you're expanding your mental vocabulary for thinking about computation — just like learning a new natural language gives you new ways to think about the world.</p>
+    </div>
+
+    <div class="quiz" id="quiz-2">
+      <div class="quiz-title">✏️ Check Your Understanding</div>
+      <div class="quiz-question">According to the Sapir-Whorf Hypothesis, what is the relationship between language and thought?</div>
+      <div class="quiz-options">
+        <div class="quiz-option" onclick="selectOption(this, 'quiz-2')">Language is just a way to communicate pre-existing thoughts</div>
+        <div class="quiz-option" data-correct="true" onclick="selectOption(this, 'quiz-2')">The language we use shapes and influences how we think</div>
+        <div class="quiz-option" onclick="selectOption(this, 'quiz-2')">All languages express the exact same ideas equally well</div>
+        <div class="quiz-option" onclick="selectOption(this, 'quiz-2')">Only natural languages affect thought, not programming languages</div>
+      </div>
+      <button class="quiz-btn" onclick="checkQuiz('quiz-2')">Check Answer</button>
+      <div class="quiz-feedback correct-fb" id="quiz-2-correct">Exactly! The Sapir-Whorf Hypothesis says language <em>shapes</em> thought — it doesn't just express it. This applies to both natural languages (like English vs. Inuit) and programming languages (like C++ vs. OCaml). The language you think in determines what solutions you can imagine.</div>
+      <div class="quiz-feedback incorrect-fb" id="quiz-2-incorrect">Not quite. The Sapir-Whorf Hypothesis specifically claims that language <strong>shapes and influences how we think</strong>. It's not just a communication tool — it actively determines what thoughts and concepts are easy or hard to express. And the professor explicitly says this applies to <em>both</em> natural languages and programming languages.</div>
+    </div>
+  </div>
+
+  <hr class="section-sep">
+
+  <!-- ═══════ NOTATION MATTERS ═══════ -->
+  <div class="section" id="notation-matters" style="animation-delay: 0.3s">
+    <h2><span class="chapter-num">Chapter 3</span>Choice of Notation Matters</h2>
+
+    <p>The Sapir-Whorf idea leads to a very practical principle that the professor emphasizes as one of the most important takeaways of the entire course:</p>
+
+    <div class="callout callout-big-idea">
+      <p><strong>Choice of notation matters.</strong> If you have a problem that fits well in one language's design space, you probably won't do as well trying to solve it in a different language. And the converse is also true.</p>
+    </div>
+
+    <p>This isn't just academic theory. The professor tells a story: a former student came back and said Microsoft used the word-counting problem (which we'll see shortly) as an interview question — but forced candidates to solve it in C++. The professor's reaction: <em>"Those Microsoft interviewers totally missed the point."</em></p>
+
+    <p>The point isn't to solve every problem in one language. The point is to <strong>choose the right tool for the job.</strong> A problem that takes 4 pages of carefully optimized Pascal can sometimes be solved in a single line of shell script — not because one programmer is better, but because one <em>language</em> is better suited to that particular problem.</p>
+
+    <div class="callout callout-why">
+      <p><strong>Connection:</strong> This principle ties everything together. Reason #5 for studying PL (choose a good language) and the Sapir-Whorf Hypothesis both lead here. The rest of this lecture will give you a <em>dramatic</em> concrete example of this principle in action: the Knuth vs. McIlroy story.</p>
+    </div>
+  </div>
+
+  <hr class="section-sep">
+
+  <!-- ═══════ KNUTH & TEX ═══════ -->
+  <div class="section" id="knuth" style="animation-delay: 0.35s">
+    <h2><span class="chapter-num">Chapter 4</span>Donald Knuth & the Birth of Literate Programming</h2>
+
+    <p>To understand the famous Knuth vs. McIlroy story, you need some background on who these people are and what they were trying to do.</p>
+
+    <h3>Who Is Donald Knuth?</h3>
+
+    <p>Donald Knuth is one of the most important computer scientists in history. He won the <strong>Turing Award</strong> (the "Nobel Prize of computing") and is best known for writing <em>The Art of Computer Programming</em>, a multi-volume masterwork on algorithms and data structures. He's also the creator of <strong>TeX</strong>, the typesetting system that is still used today to write virtually all mathematics and computer science papers.</p>
+
+    <div class="callout callout-story">
+      <p>Knuth created TeX because he was unhappy with how the publishers were typesetting his books. Rather than just complain, he spent <em>years</em> building an entire typesetting system from scratch. The source code for TeX was written in Pascal and was, at the time, one of the most carefully crafted programs ever written.</p>
+    </div>
+  </div>
+
+  <!-- ═══════ LITERATE PROGRAMMING ═══════ -->
+  <div class="section" id="literate-prog" style="animation-delay: 0.4s">
+    <h3>What Is Literate Programming?</h3>
+
+    <p>While writing TeX, Knuth invented a new approach to programming called <strong>literate programming</strong>. The core idea is revolutionary:</p>
+
+    <div class="callout callout-big-idea">
+      <p><strong>Literate programming</strong> is a method where programs are written as plain-language explanations with embedded code snippets — making them both readable (as a document) <em>and</em> executable (as a program). The program and its documentation live in a single source file.</p>
+    </div>
+
+    <p>Here's how it worked concretely. Knuth wrote a single source file — let's call it something like <code>tex.tangled</code> — that contained <em>both</em> the Pascal source code for TeX <em>and</em> the English text of the book explaining it, all intermingled together.</p>
+
+    <h3>How the Single-Source File Worked</h3>
+
+    <p>Pascal uses curly braces <code>{ }</code> for comments. Knuth exploited this: inside Pascal comments, he would write the text of his book. To the Pascal compiler, these looked like ordinary comments and were ignored. But a separate simple program (let's call it "untangle") could read the same file and extract just the text portions to produce the book.</p>
+
+    <div class="code-block">
+      <div class="code-header"><span>How the tangled file looked</span><span class="code-lang">Pascal</span></div>
+      <div class="code-body">
+<span class="keyword">begin</span>
+  <span class="comment">{ This section handles line breaking. When TeX encounters
+    a paragraph, it needs to find optimal break points... }</span>
+  <span class="keyword">procedure</span> lineBreak(text: string);
+  <span class="comment">{ The algorithm uses dynamic programming to minimize
+    the total "badness" of all lines... }</span>
+  <span class="keyword">var</span> breakPoints: <span class="type">array</span> <span class="keyword">of</span> <span class="type">integer</span>;
+  ...
+<span class="keyword">end</span></div>
+    </div>
+
+    <p>The brilliant part: when Knuth wanted to write a comment about some piece of code, the comment was <em>right there next to the code</em>. He didn't have to say "go look at file X, 100 kilobytes away." Everything was in one place.</p>
+
+    <p>From this single file, two outputs could be generated:</p>
+
+    <div class="visual-box">
+      <svg viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+            <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.1"/>
+          </filter>
+        </defs>
+        <!-- Source file -->
+        <rect x="200" y="10" width="200" height="55" rx="8" fill="#F3EDE4" stroke="#D9CFBF" stroke-width="1.5" filter="url(#shadow)"/>
+        <text x="300" y="33" text-anchor="middle" font-family="Fraunces,serif" font-size="12" font-weight="700" fill="#2C2418">tex.tangled</text>
+        <text x="300" y="52" text-anchor="middle" font-family="Source Sans 3,sans-serif" font-size="10" fill="#6B5E4F">Single source file (code + text)</text>
+
+        <!-- Arrow left -->
+        <line x1="240" y1="70" x2="150" y2="120" stroke="#C45D2C" stroke-width="2" marker-end="url(#arrowhead)"/>
+        <text x="170" y="95" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#C45D2C">untangle</text>
+
+        <!-- Arrow right -->
+        <line x1="360" y1="70" x2="450" y2="120" stroke="#3B6B8A" stroke-width="2" marker-end="url(#arrowhead2)"/>
+        <text x="430" y="95" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#3B6B8A">compile</text>
+
+        <!-- Book -->
+        <rect x="50" y="125" width="180" height="55" rx="8" fill="#FEF0E4" stroke="#C45D2C" stroke-width="1.5" filter="url(#shadow)"/>
+        <text x="140" y="148" text-anchor="middle" font-family="Fraunces,serif" font-size="12" font-weight="700" fill="#C45D2C">📖 The Book</text>
+        <text x="140" y="167" text-anchor="middle" font-family="Source Sans 3,sans-serif" font-size="10" fill="#6B5E4F">Human-readable documentation</text>
+
+        <!-- Program -->
+        <rect x="370" y="125" width="180" height="55" rx="8" fill="#E4F0FE" stroke="#3B6B8A" stroke-width="1.5" filter="url(#shadow)"/>
+        <text x="460" y="148" text-anchor="middle" font-family="Fraunces,serif" font-size="12" font-weight="700" fill="#3B6B8A">⚙️ The Program</text>
+        <text x="460" y="167" text-anchor="middle" font-family="Source Sans 3,sans-serif" font-size="10" fill="#6B5E4F">Executable Pascal code</text>
+
+        <defs>
+          <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#C45D2C"/>
+          </marker>
+          <marker id="arrowhead2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#3B6B8A"/>
+          </marker>
+        </defs>
+      </svg>
+      <div class="visual-title">One source file → two outputs: a readable book and a runnable program</div>
+    </div>
+
+    <div class="callout callout-example">
+      <p><strong>Modern equivalent:</strong> If you've ever used <strong>Jupyter Notebooks</strong>, you've seen a descendant of literate programming. Jupyter notebooks interleave code cells and Markdown text cells in a single document, so you can read the explanation <em>and</em> run the code in one place. Knuth invented the concept decades earlier.</p>
+    </div>
+  </div>
+
+  <hr class="section-sep">
+
+  <!-- ═══════ THE CONCORDANCE PROBLEM ═══════ -->
+  <div class="section" id="concordance" style="animation-delay: 0.45s">
+    <h2><span class="chapter-num">Chapter 5</span>The Concordance Problem</h2>
+
+    <p>Knuth wanted to publish a paper demonstrating literate programming in the <strong>Communications of the ACM</strong> (the ACM is the Association for Computing Machinery — the premier professional organization for computer scientists). The editor in charge of software papers was <strong>Douglas McIlroy</strong>, a manager at Bell Labs (where Unix was invented).</p>
+
+    <p>McIlroy suggested that Knuth demonstrate literate programming by solving a specific problem:</p>
+
+    <div class="callout callout-big-idea">
+      <p><strong>The Concordance Problem:</strong> Given a text input, produce a list of all the words in the text (considering only alphabetic characters A-Z, a-z), count how many times each word appears, and output the list sorted by frequency in descending order.</p>
+    </div>
+
+    <p>Let's make sure you understand the problem completely with a small example:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span>Example</span><span class="code-lang">Input → Output</span></div>
+      <div class="code-body">
+<span class="comment">Input:</span>  four score and score years four and plus
+
+<span class="comment">Step 1: Extract words (only A-Za-z characters count)</span>
+→ four, score, and, score, years, four, and, plus
+
+<span class="comment">Step 2: Count each word</span>
+→ and: 2, four: 2, score: 2, plus: 1, years: 1
+
+<span class="comment">Step 3: Sort by count, descending</span>
+<span class="comment">Output:</span>
+  2 and
+  2 four
+  2 score
+  1 plus
+  1 years</div>
+    </div>
+
+    <p>Simple to understand, right? But the <em>way</em> you solve it depends dramatically on what language you use. And that's exactly the point of this whole story.</p>
+  </div>
+
+  <hr class="section-sep">
+
+  <!-- ═══════ KNUTH'S SOLUTION ═══════ -->
+  <div class="section" id="knuth-solution" style="animation-delay: 0.5s">
+    <h2><span class="chapter-num">Chapter 6</span>Knuth's Solution: Elegant Pascal</h2>
+
+    <p>Knuth solved the concordance problem in Pascal, using literate programming, and published it in the ACM paper. Remember: Knuth is a Turing Award winner — his solution was both <em>elegant</em> and <em>efficient</em>.</p>
+
+    <h3>The Data Structure: Hash Tries</h3>
+
+    <p>To understand why Knuth's solution was impressive (and also why it was complex), you need to know about the data structure he used.</p>
+
+    <div class="expandable" id="exp-hashing">
+      <div class="expandable-header" onclick="toggleExpand('exp-hashing')">
+        <span>📚 Background: What is hashing?</span>
+        <span class="expandable-arrow">▼</span>
+      </div>
+      <div class="expandable-content">
+        <div class="expandable-inner">
+          <p><strong>Hashing</strong> is a technique for quickly looking up data. You take a piece of data (like a word), run it through a <em>hash function</em> that converts it into a number, and use that number as an index into an array. This lets you check "have I seen this word before?" in approximately constant time — O(1) — rather than searching through a list.</p>
+          <p>You've probably used hash tables (also called hash maps or dictionaries) in languages like Python (<code>dict</code>) or C++ (<code>unordered_map</code>). They're one of the most fundamental data structures in CS.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="expandable" id="exp-tries">
+      <div class="expandable-header" onclick="toggleExpand('exp-tries')">
+        <span>📚 Background: What is a trie?</span>
+        <span class="expandable-arrow">▼</span>
+      </div>
+      <div class="expandable-content">
+        <div class="expandable-inner">
+          <p>A <strong>trie</strong> (pronounced "try") is a tree-like data structure specifically designed for storing strings. Each node in the tree represents a character, and paths from the root to leaves spell out words. For example, storing "cat" and "car" would share the nodes for 'c' and 'a', then branch at the third character.</p>
+          <p>Tries are extremely fast for string operations because you only need to look at each character once — there's no comparison of entire strings like in a binary search tree.</p>
+        </div>
+      </div>
+    </div>
+
+    <p>Knuth combined both techniques into a <strong>hash trie</strong>: a trie where each node uses a hash table to store its children. This gave him blazing-fast performance — the program could process enormous texts very efficiently on a sequential machine.</p>
+
+    <p>The result: an elegant, highly optimized Pascal program. The paper was about four pages long (two-column, small print), containing both the code and the literate-programming commentary explaining it. It was, by all accounts, a beautifully crafted piece of work.</p>
+
+    <div class="callout callout-story">
+      <p>The professor says: <em>"I remember reading that paper and being impressed by the idea and being impressed by the code. And then at the end, McIlroy dropped his bomb."</em></p>
+    </div>
+  </div>
+
+  <!-- ═══════ MCILROY'S SOLUTION ═══════ -->
+  <div class="section" id="mcilroy" style="animation-delay: 0.55s">
+    <h2><span class="chapter-num">Chapter 7</span>McIlroy's Bomb: One Line of Shell</h2>
+
+    <p>Douglas McIlroy wrote an afterword to Knuth's paper. He praised Knuth's work and agreed that literate programming was a great idea. <em>But then he said he would have solved the problem differently.</em></p>
+
+    <h3>Who Is Douglas McIlroy?</h3>
+
+    <p>McIlroy was a manager at Bell Labs and is famous for inventing one single symbol in the Unix shell: the <strong>pipe operator</strong> <code>|</code>. The pipe takes the output of one command and feeds it as input to the next command. It's a simple idea with enormous power — it lets you chain small, specialized tools together to solve complex problems.</p>
+
+    <h3>McIlroy's One-Line Solution</h3>
+
+    <p>Instead of building an elaborate data structure in Pascal, McIlroy just piped together existing Unix utilities:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span>McIlroy's complete solution</span><span class="code-lang">Shell</span></div>
+      <div class="code-body"><span class="keyword">tr</span> -cs <span class="string">'A-Za-z'</span> <span class="string">'[\n]*'</span> | <span class="keyword">sort</span> | <span class="keyword">uniq</span> -c | <span class="keyword">sort</span> -nr</div>
+    </div>
+
+    <p>That's it. One line. Let's break it down piece by piece, because understanding <em>each</em> piece is crucial to understanding why choice of notation matters.</p>
+
+    <h3>Step-by-Step Breakdown</h3>
+
+    <div class="expandable open" id="exp-step1">
+      <div class="expandable-header" onclick="toggleExpand('exp-step1')">
+        <span>Step 1: <code>tr -cs 'A-Za-z' '[\n]*'</code> — Split into words</span>
+        <span class="expandable-arrow">▼</span>
+      </div>
+      <div class="expandable-content">
+        <div class="expandable-inner">
+          <p><code>tr</code> stands for "translate" or "transliterate." It's a Unix utility that replaces characters.</p>
+          <p>The flags mean:</p>
+          <p><code>-c</code> means <strong>complement</strong>: instead of matching the specified characters, match everything that is <em>not</em> in the specified set. So <code>-c 'A-Za-z'</code> means "match every character that is NOT a letter."</p>
+          <p><code>-s</code> means <strong>squeeze</strong>: if you produce multiple consecutive copies of the replacement character, collapse them into one.</p>
+          <p>The replacement is <code>'[\n]*'</code>, which means "replace with a newline."</p>
+          <p><strong>Net effect:</strong> every non-letter character (spaces, punctuation, numbers) gets replaced with a single newline. So the input text gets split into one word per line.</p>
+          <div class="code-block">
+            <div class="code-header"><span>Example</span></div>
+            <div class="code-body">
+<span class="comment">Input:</span>  four score and score years four and plus
+
+<span class="comment">After tr -cs 'A-Za-z' '[\n]*':</span>
+four
+score
+and
+score
+years
+four
+and
+plus</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="expandable open" id="exp-step2">
+      <div class="expandable-header" onclick="toggleExpand('exp-step2')">
+        <span>Step 2: <code>| sort</code> — Sort alphabetically</span>
+        <span class="expandable-arrow">▼</span>
+      </div>
+      <div class="expandable-content">
+        <div class="expandable-inner">
+          <p>The pipe <code>|</code> takes the output of <code>tr</code> and feeds it into <code>sort</code>. The <code>sort</code> command arranges lines in alphabetical order. This groups identical words together — which is essential for the next step.</p>
+          <div class="code-block">
+            <div class="code-header"><span>After sort</span></div>
+            <div class="code-body">and
+and
+four
+four
+plus
+score
+score
+years</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="expandable open" id="exp-step3">
+      <div class="expandable-header" onclick="toggleExpand('exp-step3')">
+        <span>Step 3: <code>| uniq -c</code> — Count duplicates</span>
+        <span class="expandable-arrow">▼</span>
+      </div>
+      <div class="expandable-content">
+        <div class="expandable-inner">
+          <p><code>uniq</code> looks at adjacent lines and removes duplicates. But with the <code>-c</code> flag, it doesn't just remove them — it <strong>counts</strong> how many copies of each line there were and outputs that count.</p>
+          <p>This is why we needed <code>sort</code> first: <code>uniq</code> only detects <em>adjacent</em> duplicates. If the identical words aren't next to each other, <code>uniq</code> won't merge them.</p>
+          <div class="code-block">
+            <div class="code-header"><span>After uniq -c</span></div>
+            <div class="code-body">   2 and
+   2 four
+   1 plus
+   2 score
+   1 years</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="expandable open" id="exp-step4">
+      <div class="expandable-header" onclick="toggleExpand('exp-step4')">
+        <span>Step 4: <code>| sort -nr</code> — Sort by count, descending</span>
+        <span class="expandable-arrow">▼</span>
+      </div>
+      <div class="expandable-content">
+        <div class="expandable-inner">
+          <p>We sort again, but this time with special flags:</p>
+          <p><code>-n</code> means <strong>numeric sort</strong>: sort by the numerical value of the first field, not alphabetically. (Without this, "9" would sort after "10" because '9' > '1' alphabetically.)</p>
+          <p><code>-r</code> means <strong>reverse</strong>: highest counts first.</p>
+          <div class="code-block">
+            <div class="code-header"><span>Final output</span></div>
+            <div class="code-body">   2 and
+   2 four
+   2 score
+   1 plus
+   1 years</div>
+          </div>
+          <p>Done! The most frequent words are at the top.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ INTERACTIVE PIPELINE DEMO ═══════ -->
+  <div class="section" id="pipeline-demo-section" style="animation-delay: 0.6s">
+    <h3>Try It Yourself: Interactive Pipeline</h3>
+
+    <p>Type any text into the box below and watch McIlroy's pipeline process it step by step. This simulates exactly what the shell commands do:</p>
+
+    <div class="pipeline-demo">
+      <div class="pipeline-title">🔧 McIlroy's Pipeline Simulator</div>
+      <input class="pipeline-input" id="pipelineInput" type="text" value="four score and seven years ago four score and" placeholder="Type any text here...">
+      <button class="pipeline-run-btn" onclick="runPipeline()">▶ Run Pipeline</button>
+      <div class="pipeline-steps" id="pipelineSteps"></div>
+    </div>
+  </div>
+
+  <!-- ═══════ COMPARISON ═══════ -->
+  <div class="section" id="comparison" style="animation-delay: 0.65s">
+    <h3>Knuth vs. McIlroy: Which Is Better?</h3>
+
+    <p>This is a trick question — and that's the whole point. Neither solution "wins" in all categories:</p>
+
+    <div class="comparison">
+      <div class="compare-card knuth">
+        <h4>🏛️ Knuth's Pascal + Hash Tries</h4>
+        <ul>
+          <li><strong>Faster execution</strong> — the hash trie is a carefully optimized data structure that runs rings around the shell pipeline</li>
+          <li><strong>Single-processor performance</strong> — designed to be blazingly efficient on one machine</li>
+          <li><strong>Complex to write</strong> — took 4 pages of dense two-column code + commentary</li>
+          <li><strong>Hard to understand</strong> — even the professor admits hash tries are tough</li>
+          <li>Demonstrates <em>literate programming</em></li>
+        </ul>
+      </div>
+      <div class="compare-card mcilroy">
+        <h4>🐚 McIlroy's Shell Pipeline</h4>
+        <ul>
+          <li><strong>Faster to write</strong> — literally one line</li>
+          <li><strong>Easy to understand</strong> — each step does one clear thing</li>
+          <li><strong>Slower execution</strong> — spawns multiple processes, sorts the whole file, etc.</li>
+          <li><strong>Composable</strong> — builds on existing tools rather than reinventing</li>
+          <li>Demonstrates the <em>Unix philosophy</em>: small tools chained together</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout-big-idea">
+      <p><strong>The lesson:</strong> The "best" solution depends on what you're optimizing for. If you need raw speed, use a low-level language with a custom data structure. If you need to write something quickly and clearly, use the right high-level tool. <strong>Choice of notation matters.</strong></p>
+      <p>The professor's verdict: <em>"I knew which solution I liked. I like the short one because I could understand it."</em></p>
+    </div>
+
+    <div class="callout callout-warning">
+      <p><strong>The Microsoft Interview Story:</strong> The professor recounts that a former student reported Microsoft used this exact problem as an interview question — but required solving it in C++, forbidding other languages. The professor's take: <em>"Those Microsoft interviewers totally missed the point."</em> The whole lesson of the Knuth/McIlroy paper is that choice of notation matters — forcing one language defeats the purpose entirely.</p>
+    </div>
+
+    <div class="quiz" id="quiz-3">
+      <div class="quiz-title">✏️ Check Your Understanding</div>
+      <div class="quiz-question">Why does McIlroy's pipeline require the first <code>sort</code> before <code>uniq -c</code>?</div>
+      <div class="quiz-options">
+        <div class="quiz-option" onclick="selectOption(this, 'quiz-3')">Because <code>sort</code> makes the output look nicer</div>
+        <div class="quiz-option" data-correct="true" onclick="selectOption(this, 'quiz-3')">Because <code>uniq</code> only detects <em>adjacent</em> duplicate lines</div>
+        <div class="quiz-option" onclick="selectOption(this, 'quiz-3')">Because <code>uniq</code> requires sorted input to work at all</div>
+        <div class="quiz-option" onclick="selectOption(this, 'quiz-3')">Because the pipe operator requires sorted data</div>
+      </div>
+      <button class="quiz-btn" onclick="checkQuiz('quiz-3')">Check Answer</button>
+      <div class="quiz-feedback correct-fb" id="quiz-3-correct">Exactly! <code>uniq</code> only compares <em>adjacent</em> lines. If you had "cat, dog, cat" it would NOT merge the two "cat" entries because they aren't next to each other. Sorting first ensures all identical words are grouped together, so <code>uniq -c</code> can count them correctly. This is a common Unix pattern: sort then uniq.</div>
+      <div class="quiz-feedback incorrect-fb" id="quiz-3-incorrect">Not quite. The key reason is that <code>uniq</code> only compares <strong>adjacent lines</strong>. If identical words aren't next to each other in the input, <code>uniq</code> won't detect them as duplicates. So we sort first to group identical words together, then <code>uniq -c</code> can properly count them. The pipe operator itself has no sorting requirement.</div>
+    </div>
+  </div>
+
+  <hr class="section-sep">
+
+  <!-- ═══════ OCAML INTRO ═══════ -->
+  <div class="section" id="ocaml-intro" style="animation-delay: 0.7s">
+    <h2><span class="chapter-num">Chapter 8</span>Introduction to OCaml</h2>
+
+    <p>Now we shift gears from philosophy to practice. The rest of the course will use three main languages — <strong>OCaml</strong>, <strong>Prolog</strong>, and <strong>Java</strong> — each representing a fundamentally different computational model. We start with OCaml.</p>
+
+    <div class="callout callout-why">
+      <p><strong>Why OCaml?</strong> OCaml (Objective Caml) is a <strong>functional programming language</strong> in the ML family. The course textbook uses ML as one of its three example languages, and OCaml is a close variant. The differences between ML and OCaml are minor enough that you can read about ML and apply it to OCaml. You'll use OCaml to study <strong>programming language syntax</strong> — the first major topic of the course.</p>
+    </div>
+
+    <h3>What Is Functional Programming?</h3>
+
+    <p>If you've only used C++ and Python, you've primarily used <strong>imperative</strong> programming: you write sequences of statements that change the state of variables. "Set x to 5. Then increment x. Then if x > 6, do this..."</p>
+
+    <p>Functional programming is a different paradigm. In functional programming:</p>
+
+    <p>You write <strong>expressions</strong> that evaluate to values, rather than statements that modify state. Functions are "first-class citizens" — they can be passed as arguments, returned from other functions, and stored in variables, just like numbers or strings. You work with <strong>immutable data</strong> — instead of changing a value, you create a new one. Computation happens through <strong>function composition and recursion</strong> rather than loops and mutation.</p>
+
+    <p>This might sound strange right now, but it'll make more sense as we see examples. The Sapir-Whorf connection: learning functional programming will give you a new way of <em>thinking</em> about problems that you can use even when you go back to writing C++ or Python.</p>
+  </div>
+
+  <!-- ═══════ OCAML REPL ═══════ -->
+  <div class="section" id="ocaml-repl" style="animation-delay: 0.75s">
+    <h3>The OCaml REPL</h3>
+
+    <p>To use OCaml on the course's Linux servers, you would SSH in and type <code>ocaml</code>. This gives you a <strong>REPL</strong> — a Read-Eval-Print Loop:</p>
+
+    <p>1. It <strong>reads</strong> an expression you type.<br>
+    2. It <strong>evaluates</strong> (executes) that expression.<br>
+    3. It <strong>prints</strong> the result.<br>
+    4. It <strong>loops</strong> back to step 1, ready for your next input.</p>
+
+    <p>If you've used Python's interactive interpreter, it's the same concept. You type code, and immediately see the result.</p>
+
+    <div class="callout callout-warning">
+      <p><strong>Important syntax note:</strong> In OCaml's REPL, you must end every expression with <code>;;</code> (two semicolons). This tells OCaml "I'm done with this expression, evaluate it now." This is a quirk of the REPL — in OCaml source files, the rules are slightly different, but for now, always type <code>;;</code> at the end.</p>
+    </div>
+  </div>
+
+  <!-- ═══════ OCAML VALUES & TYPES ═══════ -->
+  <div class="section" id="ocaml-values" style="animation-delay: 0.8s">
+    <h3>Values, Names, and Types</h3>
+
+    <p>Let's start with the simplest possible OCaml expression: arithmetic.</p>
+
+    <div class="code-block">
+      <div class="code-header"><span>OCaml REPL</span><span class="code-lang">OCaml</span></div>
+      <div class="code-body"><span class="prompt">#</span> 2+2;;
+<span class="output">- : int = 4</span></div>
+    </div>
+
+    <p>The output <code>- : int = 4</code> looks cryptic at first, but it has <strong>three parts</strong>, and understanding them is essential:</p>
+
+    <div class="callout callout-big-idea">
+      <p>Every result in OCaml has three components:</p>
+      <p><code>name : type = value</code></p>
+      <p>In this case: <code>-</code> (no name) <code>:</code> <code>int</code> (the type is integer) <code>=</code> <code>4</code> (the value is 4)</p>
+    </div>
+
+    <p><strong>Name (<code>-</code>):</strong> The dash means this result doesn't have a name. We just typed an expression; we didn't store it anywhere. It's an anonymous result — like typing <code>2+2</code> in a calculator.</p>
+
+    <p><strong>Type (<code>int</code>):</strong> This is where OCaml differs from Python. OCaml tells you the <em>type</em> of every result. Python would just say <code>4</code> and let you figure out it's an integer. OCaml explicitly says "this is an <code>int</code>." This is part of OCaml's <strong>static type system</strong> — the language checks types at compile time, not at runtime.</p>
+
+    <p><strong>Value (<code>4</code>):</strong> The actual computed result.</p>
+
+    <h3>Giving Names to Values with <code>let</code></h3>
+
+    <p>To store a result with a name, use the <code>let</code> keyword:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span>OCaml REPL</span><span class="code-lang">OCaml</span></div>
+      <div class="code-body"><span class="prompt">#</span> <span class="keyword">let</span> n = 37 * 37;;
+<span class="output">val n : int = 1369</span></div>
+    </div>
+
+    <p>Now the output says <code>val n : int = 1369</code>. Let's decode it:</p>
+
+    <p><code>val</code> means "this is a named value" (instead of <code>-</code> for anonymous).<br>
+    <code>n</code> is the name we gave it.<br>
+    <code>int</code> is the type.<br>
+    <code>1369</code> is the computed value (37 × 37).</p>
+
+    <div class="callout callout-warning">
+      <p><strong>Key difference from C++/Python:</strong> In OCaml, <code>let n = 37 * 37</code> creates a <em>binding</em>, not a variable assignment. By default, <code>n</code> cannot be changed later — it's <strong>immutable</strong>. This is a fundamental concept in functional programming: values don't change once they're created. (There are ways to have mutable state in OCaml, but immutability is the default.)</p>
+    </div>
+
+    <div class="quiz" id="quiz-4">
+      <div class="quiz-title">✏️ Check Your Understanding</div>
+      <div class="quiz-question">If you type <code>let x = 10 + 5;;</code> in the OCaml REPL, what will the output look like?</div>
+      <div class="quiz-options">
+        <div class="quiz-option" onclick="selectOption(this, 'quiz-4')"><code>15</code></div>
+        <div class="quiz-option" onclick="selectOption(this, 'quiz-4')"><code>x = 15</code></div>
+        <div class="quiz-option" data-correct="true" onclick="selectOption(this, 'quiz-4')"><code>val x : int = 15</code></div>
+        <div class="quiz-option" onclick="selectOption(this, 'quiz-4')"><code>- : int = 15</code></div>
+      </div>
+      <button class="quiz-btn" onclick="checkQuiz('quiz-4')">Check Answer</button>
+      <div class="quiz-feedback correct-fb" id="quiz-4-correct">That's right! Because we used <code>let x = ...</code>, the result has the name <code>x</code>, so OCaml outputs <code>val x : int = 15</code>. The <code>val</code> keyword appears (instead of <code>-</code>) because the result has a name. The type is <code>int</code> because <code>10 + 5</code> is integer arithmetic. The value is <code>15</code>.</div>
+      <div class="quiz-feedback incorrect-fb" id="quiz-4-incorrect">Remember, OCaml always shows three things: name, type, and value. Since we used <code>let x = ...</code>, the answer has the name <code>x</code>. The correct output is <code>val x : int = 15</code>. We get <code>val</code> (because it's named), <code>x</code> (the name), <code>int</code> (the type), and <code>15</code> (the value).</div>
+    </div>
+  </div>
+
+  <!-- ═══════ OCAML LISTS ═══════ -->
+  <div class="section" id="ocaml-lists" style="animation-delay: 0.85s">
+    <h3>Lists in OCaml</h3>
+
+    <p>Lists are one of the most important data structures in functional programming. In OCaml, lists use square brackets with <strong>semicolons</strong> to separate elements (not commas, like Python):</p>
+
+    <div class="code-block">
+      <div class="code-header"><span>OCaml REPL</span><span class="code-lang">OCaml</span></div>
+      <div class="code-body"><span class="prompt">#</span> <span class="keyword">let</span> l = [3; 5; 17; -12];;
+<span class="output">val l : int list = [3; 5; 17; -12]</span></div>
+    </div>
+
+    <p>The output <code>val l : int list = [3; 5; 17; -12]</code> tells us:</p>
+
+    <p><code>l</code> is the name. The type is <code>int list</code> — a list of integers. The value is the list <code>[3; 5; 17; -12]</code>.</p>
+
+    <h3>Type Constructors: Reading Types Right-to-Left</h3>
+
+    <p>Notice something interesting about the type: it says <code>int list</code>, not <code>list of int</code>. In OCaml, <strong>type constructors follow the data type</strong>. You read it as "an <code>int list</code>" — the <code>list</code> part is the type constructor, and <code>int</code> is the element type. This is the opposite of how you might say it in English ("list of integers") or in Java (<code>List&lt;Integer&gt;</code>).</p>
+
+    <h3>Lists Must Be Homogeneous</h3>
+
+    <p>Unlike Python, where a list can contain mixed types (<code>[1, "hello", 3.14]</code>), <strong>OCaml lists require all elements to be the same type</strong>:</p>
+
+    <div class="code-block">
+      <div class="code-header"><span>Type error example</span><span class="code-lang">OCaml</span></div>
+      <div class="code-body"><span class="prompt">#</span> <span class="keyword">let</span> n = [3; 5; <span class="string">"ABC"</span>; 12];;
+<span class="error">Error: this constant has type string but an expression was
+expected of type int</span></div>
+    </div>
+
+    <p>OCaml saw that the first elements were integers, so it expected the whole list to be <code>int list</code>. When it hit the string <code>"ABC"</code>, it raised a type error. This is OCaml's type system protecting you: it catches mismatches <em>before</em> your program runs, not during.</p>
+
+    <div class="callout callout-why">
+      <p><strong>Why is this useful?</strong> In Python, you might accidentally put a string in a list of numbers and not notice until the program crashes at runtime. OCaml catches this immediately. This is one of the big advantages of a strong, static type system — you find bugs earlier.</p>
+    </div>
+
+    <h3>The Empty List and Polymorphic Types</h3>
+
+    <div class="code-block">
+      <div class="code-header"><span>OCaml REPL</span><span class="code-lang">OCaml</span></div>
+      <div class="code-body"><span class="prompt">#</span> <span class="keyword">let</span> nt = [];;
+<span class="output">val nt : 'a list = []</span></div>
+    </div>
+
+    <p>When you create an empty list, OCaml can't know what type of elements it will contain — there aren't any elements yet! So it gives it a <strong>polymorphic type</strong>: <code>'a list</code>.</p>
+
+    <p>The <code>'a</code> (pronounced "alpha" or "tick-a") is a <strong>type variable</strong> — a placeholder that means "any type." An <code>'a list</code> is "a list of anything." Once you use this list in a context that requires a specific type (like appending an integer to it), OCaml will figure out what <code>'a</code> should be.</p>
+
+    <h3>String Lists and Concatenation</h3>
+
+    <div class="code-block">
+      <div class="code-header"><span>OCaml REPL</span><span class="code-lang">OCaml</span></div>
+      <div class="code-body"><span class="prompt">#</span> <span class="keyword">let</span> n = [<span class="string">"ax"</span>; <span class="string">"by"</span>];;
+<span class="output">val n : string list = ["ax"; "by"]</span>
+
+<span class="prompt">#</span> <span class="keyword">let</span> m = [<span class="string">""</span>];;
+<span class="output">val m : string list = [""]</span>
+
+<span class="prompt">#</span> n @ m;;
+<span class="output">- : string list = ["ax"; "by"; ""]</span></div>
+    </div>
+
+    <p>The <code>@</code> operator <strong>concatenates</strong> (joins) two lists together. Here, <code>n @ m</code> joins <code>["ax"; "by"]</code> and <code>[""]</code> to produce <code>["ax"; "by"; ""]</code>. Notice that <code>[""]</code> is a list containing one element: the empty string. It's not the same as the empty list <code>[]</code>.</p>
+
+    <div class="quiz" id="quiz-5">
+      <div class="quiz-title">✏️ Check Your Understanding</div>
+      <div class="quiz-question">What is the type of <code>[1; 2; 3]</code> in OCaml?</div>
+      <div class="quiz-options">
+        <div class="quiz-option" onclick="selectOption(this, 'quiz-5')"><code>list int</code></div>
+        <div class="quiz-option" data-correct="true" onclick="selectOption(this, 'quiz-5')"><code>int list</code></div>
+        <div class="quiz-option" onclick="selectOption(this, 'quiz-5')"><code>List&lt;int&gt;</code></div>
+        <div class="quiz-option" onclick="selectOption(this, 'quiz-5')"><code>'a list</code></div>
+      </div>
+      <button class="quiz-btn" onclick="checkQuiz('quiz-5')">Check Answer</button>
+      <div class="quiz-feedback correct-fb" id="quiz-5-correct">Right! In OCaml, the type constructor comes <em>after</em> the element type. So a list of integers is written as <code>int list</code>. It would only be <code>'a list</code> if the list were empty (since OCaml wouldn't know the element type yet).</div>
+      <div class="quiz-feedback incorrect-fb" id="quiz-5-incorrect">In OCaml, types are written with the type constructor <em>after</em> the element type. So it's <code>int list</code>, not <code>list int</code> or <code>List&lt;int&gt;</code>. The <code>'a list</code> type is only for empty lists where the element type isn't known yet.</div>
+    </div>
+
+    <div class="quiz" id="quiz-6">
+      <div class="quiz-title">✏️ Check Your Understanding</div>
+      <div class="quiz-question">What happens if you type <code>[1; "hello"];;</code> in OCaml?</div>
+      <div class="quiz-options">
+        <div class="quiz-option" onclick="selectOption(this, 'quiz-6')">It creates a list with type <code>'a list</code></div>
+        <div class="quiz-option" onclick="selectOption(this, 'quiz-6')">It creates a mixed-type list like Python</div>
+        <div class="quiz-option" data-correct="true" onclick="selectOption(this, 'quiz-6')">It produces a type error</div>
+        <div class="quiz-option" onclick="selectOption(this, 'quiz-6')">It converts "hello" to an integer automatically</div>
+      </div>
+      <button class="quiz-btn" onclick="checkQuiz('quiz-6')">Check Answer</button>
+      <div class="quiz-feedback correct-fb" id="quiz-6-correct">Correct! OCaml lists must be <strong>homogeneous</strong> — all elements must have the same type. Since <code>1</code> is an <code>int</code> and <code>"hello"</code> is a <code>string</code>, OCaml raises a type error. This is caught at compile time, before the program runs.</div>
+      <div class="quiz-feedback incorrect-fb" id="quiz-6-incorrect">OCaml lists must be <strong>homogeneous</strong> — every element must be the same type. Mixing <code>int</code> and <code>string</code> in the same list causes a <strong>type error</strong>. Unlike Python, OCaml will refuse to even create this list. The type system catches this at compile time.</div>
+    </div>
+  </div>
+
+  <!-- ═══════ OCAML TRY IT ═══════ -->
+  <div class="section" id="ocaml-try" style="animation-delay: 0.9s">
+    <h3>Try It: Simulated OCaml REPL</h3>
+
+    <p>Type OCaml expressions below to see how the REPL responds. Try things like <code>2+2;;</code>, <code>let x = 42;;</code>, <code>[1;2;3];;</code>, or <code>let y = [10;20];;</code></p>
+
+    <div class="repl-demo">
+      <div class="repl-header">
+        <span class="repl-dot red"></span>
+        <span class="repl-dot yellow"></span>
+        <span class="repl-dot green"></span>
+        <span class="repl-label">OCaml REPL (simulated)</span>
+      </div>
+      <div class="repl-body" id="replBody">
+        <div class="repl-line"><span style="color:#7A8A6E; font-style:italic">        OCaml version 4.14.0</span></div>
+        <div class="repl-line"><span style="color:#7A8A6E; font-style:italic">Type expressions ending with ;; to evaluate</span></div>
+      </div>
+      <div class="repl-input-row">
+        <span class="repl-prompt-symbol">#</span>
+        <input class="repl-input" id="replInput" type="text" placeholder="Type OCaml here..." onkeydown="if(event.key==='Enter')evalOCaml()">
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-sep">
+
+  <!-- ═══════ LOGISTICS ═══════ -->
+  <div class="section" id="logistics" style="animation-delay: 0.95s">
+    <h2><span class="chapter-num">Chapter 9</span>Course Logistics</h2>
+
+    <p>The professor covered important practical details about the course. Here's a summary:</p>
+
+    <div class="expandable" id="exp-prereqs">
+      <div class="expandable-header" onclick="toggleExpand('exp-prereqs')">
+        <span>📋 Prerequisites</span>
+        <span class="expandable-arrow">▼</span>
+      </div>
+      <div class="expandable-content">
+        <div class="expandable-inner">
+          <p>The course assumes you've taken CS 31/32 (data structures and OOP in C++), CS 33 (assembly language / how computers work at the instruction level), and CS 35L (software construction — scripting, JavaScript, client-server apps, Python). If you're a transfer student, you need equivalent background in these areas.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="expandable" id="exp-languages">
+      <div class="expandable-header" onclick="toggleExpand('exp-languages')">
+        <span>📋 Languages Used in the Course</span>
+        <span class="expandable-arrow">▼</span>
+      </div>
+      <div class="expandable-content">
+        <div class="expandable-inner">
+          <p>The three major languages are <strong>OCaml</strong>, <strong>Prolog</strong>, and <strong>Java</strong>. The textbook uses ML (very close to OCaml), Prolog, and Java. Each has homework assignments that require knowing the language. Resources for OCaml include <em>Real World OCaml</em> (2nd edition, available online). The first topic is programming language syntax, studied using OCaml.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="expandable" id="exp-grading">
+      <div class="expandable-header" onclick="toggleExpand('exp-grading')">
+        <span>📋 Grading Breakdown</span>
+        <span class="expandable-arrow">▼</span>
+      </div>
+      <div class="expandable-content">
+        <div class="expandable-inner">
+          <p><strong>Homeworks:</strong> ~32% of total grade. Seven homeworks, one worth double. Regular homeworks = 4% each, double homework = 8%.</p>
+          <p><strong>Midterm:</strong> 24%.</p>
+          <p><strong>Final:</strong> 44%.</p>
+          <p>Exams are weighted heavily! They're open book / open notes, pencil-and-paper, taken in the lecture room. No written make-up exams.</p>
+          <p><strong>Lateness penalty:</strong> Exponential! 1 point for up to 1 day late, 3 for up to 2 days, then 9, 27, 81, then don't bother. The Friday of week 10 is a hard drop-dead date for all submissions.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="expandable" id="exp-integrity">
+      <div class="expandable-header" onclick="toggleExpand('exp-integrity')">
+        <span>📋 Academic Integrity & AI</span>
+        <span class="expandable-arrow">▼</span>
+      </div>
+      <div class="expandable-content">
+        <div class="expandable-inner">
+          <p>Do your own work. Don't share code. Don't grab old solutions from the internet. You <em>can</em> use generative AI as an assistant, but be careful it doesn't find old solutions for you. If an assignment says to include your ChatGPT prompts/responses, do so. Study together is fine — sharing code is not.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="expandable" id="exp-reading">
+      <div class="expandable-header" onclick="toggleExpand('exp-reading')">
+        <span>📋 Reading Assignment</span>
+        <span class="expandable-arrow">▼</span>
+      </div>
+      <div class="expandable-content">
+        <div class="expandable-inner">
+          <p>Read textbook chapters 1–3 (programming language syntax), 5, 7, and 9 (about ML/OCaml). This should be done by the next Tuesday at the latest. First homework is due on the 20th.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout-warning">
+      <p><strong>Professor's advice:</strong> <em>"Take the study seriously. Don't try to just wing it by doing the minimal work on the homeworks and using ChatGPT to fill in the blanks. If you try to do that, you'll find that the exams are just totally over your head."</em> This is a learn-by-doing class. Discussion sections are essential — they cover practical details the lectures don't.</p>
+    </div>
+  </div>
+
+  <hr class="section-sep">
+
+  <!-- ═══════ WRAP UP ═══════ -->
+  <div class="section" style="animation-delay: 1s">
+    <h2>Recap: What You Learned in Lecture 1</h2>
+
+    <div class="connection-map">
+      <div class="conn-card">
+        <div class="conn-icon">🎯</div>
+        <h4>Five Reasons to Study PL</h4>
+        <p>Build better software, create DSLs, learn computational models, speed up language learning, choose the right tool.</p>
+      </div>
+      <div class="conn-card">
+        <div class="conn-icon">🧠</div>
+        <h4>Sapir-Whorf Hypothesis</h4>
+        <p>Language shapes thought — true for natural languages AND programming languages.</p>
+      </div>
+      <div class="conn-card">
+        <div class="conn-icon">✍️</div>
+        <h4>Literate Programming</h4>
+        <p>Knuth's idea: programs and documentation should live in a single source file.</p>
+      </div>
+      <div class="conn-card">
+        <div class="conn-icon">⚔️</div>
+        <h4>Knuth vs. McIlroy</h4>
+        <p>4 pages of Pascal vs. 1 line of shell — choice of notation matters!</p>
+      </div>
+      <div class="conn-card">
+        <div class="conn-icon">🐪</div>
+        <h4>OCaml Basics</h4>
+        <p>The REPL, values/names/types, let bindings, lists, type safety, and polymorphic types.</p>
+      </div>
+      <div class="conn-card">
+        <div class="conn-icon">🔗</div>
+        <h4>The Big Connection</h4>
+        <p>Everything ties together: the language you choose shapes your solution. This course teaches you to see problems through multiple lenses.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── Sidebar Toggle ───
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const isMobile = window.innerWidth <= 900;
+  if (isMobile) {
+    sb.classList.toggle('mobile-open');
+  } else {
+    sb.classList.toggle('collapsed');
+  }
+}
+
+// ─── Active TOC tracking ───
+const tocLinks = document.querySelectorAll('.toc-link');
+const sections = [];
+tocLinks.forEach(link => {
+  const id = link.getAttribute('href')?.replace('#','');
+  if (id) sections.push({ id, el: document.getElementById(id), link });
+});
+
+window.addEventListener('scroll', () => {
+  // Progress bar
+  const scrollTop = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = Math.min(scrollTop / docHeight * 100, 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+
+  // Active section
+  let current = sections[0];
+  for (const s of sections) {
+    if (s.el && s.el.getBoundingClientRect().top <= 120) current = s;
+  }
+  tocLinks.forEach(l => l.classList.remove('active'));
+  if (current) current.link.classList.add('active');
+});
+
+// ─── Expandable sections ───
+function toggleExpand(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+// ─── Quiz Logic ───
+function selectOption(el, quizId) {
+  const quiz = document.getElementById(quizId);
+  if (quiz.dataset.answered) return;
+  quiz.querySelectorAll('.quiz-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function checkQuiz(quizId) {
+  const quiz = document.getElementById(quizId);
+  if (quiz.dataset.answered) return;
+  const selected = quiz.querySelector('.quiz-option.selected');
+  if (!selected) return;
+  quiz.dataset.answered = 'true';
+  const isCorrect = selected.dataset.correct === 'true';
+  
+  quiz.querySelectorAll('.quiz-option').forEach(o => {
+    if (o.dataset.correct === 'true') o.classList.add('correct');
+    else if (o.classList.contains('selected')) o.classList.add('incorrect');
+  });
+
+  if (isCorrect) {
+    document.getElementById(quizId + '-correct').classList.add('show');
+  } else {
+    document.getElementById(quizId + '-incorrect').classList.add('show');
+  }
+  quiz.querySelector('.quiz-btn').disabled = true;
+}
+
+// ─── Pipeline Demo ───
+function runPipeline() {
+  const input = document.getElementById('pipelineInput').value;
+  const container = document.getElementById('pipelineSteps');
+  container.innerHTML = '';
+
+  // Step 1: tr -cs 'A-Za-z' '[\n]*'
+  const words = input.match(/[A-Za-z]+/g) || [];
+  
+  // Step 2: sort
+  const sorted = [...words].sort((a, b) => a.localeCompare(b));
+
+  // Step 3: uniq -c
+  const counts = {};
+  sorted.forEach(w => { counts[w] = (counts[w] || 0) + 1; });
+  const uniqLines = Object.entries(counts).map(([w, c]) => `   ${c} ${w}`);
+
+  // Step 4: sort -nr
+  const finalLines = Object.entries(counts)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([w, c]) => `   ${c} ${w}`);
+
+  const steps = [
+    { sym: '$', cmd: `echo "${input}"`, output: input },
+    { sym: '|', cmd: `tr -cs 'A-Za-z' '[\\n]*'`, output: words.join('\n') },
+    { sym: '|', cmd: 'sort', output: sorted.join('\n') },
+    { sym: '|', cmd: 'uniq -c', output: uniqLines.join('\n') },
+    { sym: '|', cmd: 'sort -nr', output: finalLines.join('\n') },
+  ];
+
+  steps.forEach((step, i) => {
+    const div = document.createElement('div');
+    div.className = 'pipeline-step';
+    div.innerHTML = `
+      <div class="pipe-symbol">${step.sym}</div>
+      <div class="step-content">
+        <div class="step-cmd">${step.cmd}</div>
+        <div class="step-output">${step.output || '(empty)'}</div>
+      </div>
+    `;
+    container.appendChild(div);
+    setTimeout(() => div.classList.add('visible'), 200 + i * 350);
+  });
+}
+
+// ─── Simulated OCaml REPL ───
+function evalOCaml() {
+  const input = document.getElementById('replInput');
+  const body = document.getElementById('replBody');
+  const raw = input.value.trim();
+  input.value = '';
+  if (!raw) return;
+
+  // Add user line
+  const userLine = document.createElement('div');
+  userLine.className = 'repl-line';
+  userLine.innerHTML = `<span class="prompt"># </span>${escapeHtml(raw)}`;
+  body.appendChild(userLine);
+
+  // Parse & respond
+  const expr = raw.replace(/;;$/, '').trim();
+  let result = '';
+
+  try {
+    // let binding with list
+    const letListMatch = expr.match(/^let\s+(\w+)\s*=\s*\[(.*)\]$/);
+    if (letListMatch) {
+      const name = letListMatch[1];
+      const inner = letListMatch[2].trim();
+      if (inner === '') {
+        result = `<span class="result">val ${name} : 'a list = []</span>`;
+      } else {
+        const elems = inner.split(';').map(s => s.trim());
+        const hasStr = elems.some(e => /^".*"$/.test(e));
+        const hasInt = elems.some(e => /^-?\d+$/.test(e));
+        if (hasStr && hasInt) {
+          result = `<span class="error">Error: This expression has type string but an expression was expected of type int</span>`;
+        } else if (hasStr) {
+          const vals = elems.map(e => e).join('; ');
+          result = `<span class="result">val ${name} : string list = [${vals}]</span>`;
+        } else {
+          const vals = elems.map(e => e).join('; ');
+          result = `<span class="result">val ${name} : int list = [${vals}]</span>`;
+        }
+      }
+    }
+    // let binding
+    else if (/^let\s+(\w+)\s*=\s*(.+)$/.test(expr)) {
+      const m = expr.match(/^let\s+(\w+)\s*=\s*(.+)$/);
+      const name = m[1];
+      const valExpr = m[2];
+      if (/^".*"$/.test(valExpr)) {
+        result = `<span class="result">val ${name} : string = ${valExpr}</span>`;
+      } else if (/^[0-9+\-*/ ()]+$/.test(valExpr)) {
+        const val = Function('"use strict";return (' + valExpr + ')')();
+        result = `<span class="result">val ${name} : int = ${val}</span>`;
+      } else if (/^true$|^false$/.test(valExpr)) {
+        result = `<span class="result">val ${name} : bool = ${valExpr}</span>`;
+      } else {
+        result = `<span class="result">val ${name} : int = ${valExpr}</span>`;
+      }
+    }
+    // list literal
+    else if (/^\[.*\]$/.test(expr)) {
+      const inner = expr.slice(1, -1).trim();
+      if (inner === '') {
+        result = `<span class="result">- : 'a list = []</span>`;
+      } else {
+        const elems = inner.split(';').map(s => s.trim());
+        const hasStr = elems.some(e => /^".*"$/.test(e));
+        const hasInt = elems.some(e => /^-?\d+$/.test(e));
+        if (hasStr && hasInt) {
+          result = `<span class="error">Error: This expression has type string but an expression was expected of type int</span>`;
+        } else if (hasStr) {
+          result = `<span class="result">- : string list = [${elems.join('; ')}]</span>`;
+        } else {
+          result = `<span class="result">- : int list = [${elems.join('; ')}]</span>`;
+        }
+      }
+    }
+    // string literal
+    else if (/^".*"$/.test(expr)) {
+      result = `<span class="result">- : string = ${expr}</span>`;
+    }
+    // boolean
+    else if (/^true$|^false$/.test(expr)) {
+      result = `<span class="result">- : bool = ${expr}</span>`;
+    }
+    // arithmetic
+    else if (/^[0-9+\-*/ ()]+$/.test(expr)) {
+      const val = Function('"use strict";return (' + expr + ')')();
+      result = `<span class="result">- : int = ${Math.trunc(val)}</span>`;
+    }
+    else {
+      result = `<span class="error">Error: Unbound value or syntax error</span>`;
+    }
+  } catch(e) {
+    result = `<span class="error">Error: ${escapeHtml(e.message)}</span>`;
+  }
+
+  const resLine = document.createElement('div');
+  resLine.className = 'repl-line';
+  resLine.innerHTML = result;
+  body.appendChild(resLine);
+  body.scrollTop = body.scrollHeight;
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── Staggered section animations ───
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) e.target.style.animationPlayState = 'running';
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.section').forEach(s => {
+  s.style.animationPlayState = 'paused';
+  observer.observe(s);
+});
+
+// Run initial pipeline on load
+setTimeout(runPipeline, 800);
+</script>
+</body>
+</html>

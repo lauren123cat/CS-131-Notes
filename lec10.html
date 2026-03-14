@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 10 — Java Memory Model, Errors & Exceptions</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf8f5;
+  --bg-warm: #f5f0ea;
+  --text: #2a2520;
+  --text-muted: #6b6058;
+  --accent: #c0552e;
+  --accent-light: #e8a880;
+  --accent-bg: #fdf0e8;
+  --blue: #3a6b8c;
+  --blue-light: #e4eff6;
+  --green: #4a7c59;
+  --green-light: #e6f2ea;
+  --purple: #6b5080;
+  --purple-light: #f0eaf6;
+  --code-bg: #2b2520;
+  --code-text: #f0e8e0;
+  --border: #e0d8d0;
+  --shadow: rgba(42, 37, 32, 0.08);
+  --chapter-marker: #c0552e;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Source Serif 4', Georgia, serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 17.5px;
+  line-height: 1.72;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── NAV SIDEBAR ─── */
+.nav-toggle {
+  position: fixed; top: 20px; left: 20px; z-index: 1001;
+  width: 44px; height: 44px; border-radius: 12px;
+  background: var(--bg); border: 1.5px solid var(--border);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 12px var(--shadow);
+  transition: all 0.2s;
+}
+.nav-toggle:hover { background: var(--bg-warm); }
+.nav-toggle span { font-size: 20px; }
+
+.sidebar {
+  position: fixed; top: 0; left: -360px; width: 340px; height: 100vh;
+  background: var(--bg); border-right: 1.5px solid var(--border);
+  z-index: 1000; overflow-y: auto; padding: 80px 28px 40px;
+  transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 4px 0 24px rgba(0,0,0,0.06);
+}
+.sidebar.open { left: 0; }
+.sidebar-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px; font-weight: 600; letter-spacing: 1.8px;
+  text-transform: uppercase; color: var(--text-muted); margin-bottom: 18px;
+}
+.sidebar a {
+  display: block; padding: 9px 14px; margin-bottom: 3px;
+  font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+  color: var(--text-muted); text-decoration: none; border-radius: 8px;
+  transition: all 0.15s; line-height: 1.45;
+}
+.sidebar a:hover { background: var(--bg-warm); color: var(--text); }
+.sidebar a.sub { padding-left: 30px; font-size: 13px; }
+.sidebar .chapter-dot {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  margin-right: 8px; vertical-align: middle;
+}
+
+/* ─── MAIN CONTENT ─── */
+.content {
+  max-width: 740px; margin: 0 auto; padding: 50px 24px 120px;
+}
+
+/* ─── HERO ─── */
+.hero {
+  text-align: center; padding: 60px 0 50px;
+  border-bottom: 2px solid var(--border); margin-bottom: 60px;
+}
+.hero-eyebrow {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px; font-weight: 600; letter-spacing: 2.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 16px;
+}
+.hero h1 {
+  font-size: 42px; font-weight: 700; line-height: 1.18;
+  letter-spacing: -0.5px; margin-bottom: 16px;
+}
+.hero-sub {
+  font-size: 19px; color: var(--text-muted); font-style: italic;
+  max-width: 520px; margin: 0 auto;
+}
+
+/* ─── CHAPTER HEADERS ─── */
+.chapter-header {
+  margin: 70px 0 36px; padding-top: 30px;
+  border-top: 3px solid var(--border);
+}
+.chapter-header .ch-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; margin-bottom: 10px;
+}
+.chapter-header h2 {
+  font-size: 32px; font-weight: 700; line-height: 1.22;
+  letter-spacing: -0.3px;
+}
+.chapter-header .ch-desc {
+  margin-top: 10px; color: var(--text-muted); font-size: 17px;
+  font-style: italic;
+}
+
+/* section headers */
+h3 {
+  font-size: 23px; font-weight: 600; margin: 44px 0 16px;
+  line-height: 1.3; letter-spacing: -0.2px;
+}
+h4 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px; font-weight: 700; margin: 30px 0 12px;
+  text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);
+}
+
+p { margin-bottom: 18px; }
+
+/* ─── CALLOUT BOXES ─── */
+.callout {
+  padding: 22px 26px; border-radius: 12px; margin: 26px 0;
+  border-left: 4px solid; font-size: 16.5px;
+}
+.callout.key {
+  background: var(--accent-bg); border-color: var(--accent);
+}
+.callout.info {
+  background: var(--blue-light); border-color: var(--blue);
+}
+.callout.why {
+  background: var(--green-light); border-color: var(--green);
+}
+.callout.warn {
+  background: #fdf5e6; border-color: #c9a030;
+}
+.callout.purple {
+  background: var(--purple-light); border-color: var(--purple);
+}
+.callout-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px; font-weight: 700; letter-spacing: 1.2px;
+  text-transform: uppercase; margin-bottom: 8px;
+}
+.callout.key .callout-title { color: var(--accent); }
+.callout.info .callout-title { color: var(--blue); }
+.callout.why .callout-title { color: var(--green); }
+.callout.warn .callout-title { color: #9a7a20; }
+.callout.purple .callout-title { color: var(--purple); }
+
+/* ─── CODE BLOCKS ─── */
+pre {
+  background: var(--code-bg); color: var(--code-text);
+  padding: 22px 26px; border-radius: 10px; margin: 22px 0;
+  overflow-x: auto; font-family: 'JetBrains Mono', monospace;
+  font-size: 14px; line-height: 1.65; position: relative;
+}
+pre .code-label {
+  position: absolute; top: 10px; right: 14px;
+  font-size: 10.5px; font-weight: 600; letter-spacing: 1px;
+  text-transform: uppercase; color: #8a7a6a; opacity: 0.7;
+}
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.88em; background: var(--bg-warm);
+  padding: 2px 7px; border-radius: 5px;
+}
+pre code { background: none; padding: 0; font-size: 1em; }
+
+.cm { color: #7a8a6a; } /* comment */
+.kw { color: #d4a06a; } /* keyword */
+.str { color: #8abfa0; } /* string */
+.num { color: #c0a0d0; } /* number */
+.fn { color: #80b8d8; } /* function */
+.err { color: #e07070; } /* error highlight */
+
+/* ─── DIAGRAM / TABLE ─── */
+.concept-table {
+  width: 100%; border-collapse: collapse; margin: 24px 0;
+  font-size: 15.5px;
+}
+.concept-table th {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; text-align: left;
+  padding: 12px 16px; background: var(--bg-warm);
+  border-bottom: 2px solid var(--border); color: var(--text-muted);
+}
+.concept-table td {
+  padding: 13px 16px; border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.concept-table tr:last-child td { border-bottom: none; }
+
+/* ─── INTERACTIVE QUIZZES ─── */
+.quiz {
+  background: var(--bg-warm); border-radius: 14px; padding: 28px 28px 22px;
+  margin: 32px 0; border: 1.5px solid var(--border);
+}
+.quiz-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 14px;
+}
+.quiz-q { font-weight: 600; margin-bottom: 16px; font-size: 17px; }
+.quiz-options { list-style: none; }
+.quiz-options li {
+  padding: 12px 18px; margin-bottom: 8px; border-radius: 10px;
+  border: 1.5px solid var(--border); cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-size: 15px;
+  transition: all 0.15s; background: var(--bg);
+}
+.quiz-options li:hover { border-color: var(--accent); background: var(--accent-bg); }
+.quiz-options li.correct {
+  border-color: var(--green); background: var(--green-light);
+  pointer-events: none;
+}
+.quiz-options li.incorrect {
+  border-color: #c05050; background: #fde8e8;
+  pointer-events: none; opacity: 0.7;
+}
+.quiz-options li.disabled { pointer-events: none; opacity: 0.5; }
+.quiz-explanation {
+  display: none; margin-top: 16px; padding: 16px 20px;
+  background: var(--bg); border-radius: 10px;
+  border-left: 3px solid var(--green); font-size: 15.5px;
+}
+.quiz-explanation.show { display: block; }
+
+/* ─── FLOW DIAGRAMS (ASCII-style) ─── */
+.flow-box {
+  background: var(--bg-warm); border: 1.5px solid var(--border);
+  border-radius: 12px; padding: 26px; margin: 24px 0;
+  font-family: 'JetBrains Mono', monospace; font-size: 14px;
+  line-height: 1.8; overflow-x: auto; text-align: center;
+}
+
+/* ─── ANALOGY BOX ─── */
+.analogy {
+  background: linear-gradient(135deg, #fdf8f0, #f8f0e8);
+  border-radius: 14px; padding: 26px 28px; margin: 28px 0;
+  border: 1.5px solid #e8ddd0;
+}
+.analogy-icon { font-size: 28px; margin-bottom: 10px; }
+.analogy-title {
+  font-family: 'DM Sans', sans-serif; font-weight: 700;
+  font-size: 15px; margin-bottom: 8px;
+}
+
+/* ─── REVEAL SECTIONS ─── */
+.reveal-section { margin: 24px 0; }
+.reveal-btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px; font-weight: 600; color: var(--accent);
+  background: none; border: 1.5px dashed var(--accent-light);
+  padding: 11px 22px; border-radius: 10px; cursor: pointer;
+  transition: all 0.2s; width: 100%; text-align: left;
+}
+.reveal-btn:hover { background: var(--accent-bg); border-style: solid; }
+.reveal-content {
+  display: none; padding: 20px 0 0;
+  animation: fadeIn 0.3s ease;
+}
+.reveal-content.show { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ─── STEP-BY-STEP ─── */
+.steps { counter-reset: step; margin: 20px 0; }
+.step {
+  counter-increment: step;
+  padding: 18px 22px 18px 60px; position: relative;
+  margin-bottom: 12px; border-radius: 10px;
+  background: var(--bg-warm); border: 1px solid var(--border);
+}
+.step::before {
+  content: counter(step);
+  position: absolute; left: 18px; top: 18px;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--accent); color: white;
+  font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ─── COMPARISON ─── */
+.compare {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0;
+}
+.compare-box {
+  padding: 22px; border-radius: 12px; border: 1.5px solid var(--border);
+}
+.compare-box.pro { background: var(--green-light); border-color: #b0d4ba; }
+.compare-box.con { background: #fde8e8; border-color: #e0b0b0; }
+.compare-box h5 {
+  font-family: 'DM Sans', sans-serif; font-size: 13px;
+  font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.compare-box.pro h5 { color: var(--green); }
+.compare-box.con h5 { color: #a04040; }
+
+/* progress bar */
+.progress-bar {
+  position: fixed; top: 0; left: 0; height: 3px;
+  background: var(--accent); z-index: 1002; width: 0%;
+  transition: width 0.1s;
+}
+
+/* responsive */
+@media (max-width: 600px) {
+  .hero h1 { font-size: 30px; }
+  .chapter-header h2 { font-size: 26px; }
+  .compare { grid-template-columns: 1fr; }
+  .content { padding: 30px 16px 100px; }
+  pre { padding: 16px; font-size: 13px; }
+}
+
+strong { font-weight: 600; }
+em { font-style: italic; color: var(--text-muted); }
+hr { border: none; border-top: 1.5px solid var(--border); margin: 40px 0; }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<button class="nav-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">
+  <span>☰</span>
+</button>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-label">Table of Contents</div>
+  <a href="#part1"><span class="chapter-dot" style="background:#c0552e"></span>Part I — Java Memory Model Flaw</a>
+  <a href="#jmm-recap" class="sub">Quick Recap: The JMM</a>
+  <a href="#constructor-flaw" class="sub">The Constructor Flaw</a>
+  <a href="#jmm-fix" class="sub">The Fix: Additional Rules</a>
+  <a href="#part2"><span class="chapter-dot" style="background:#3a6b8c"></span>Part II — Errors in Programs</a>
+  <a href="#error-fault-failure" class="sub">Error → Fault → Failure</a>
+  <a href="#scheme-errors" class="sub">Scheme's 4 Error Categories</a>
+  <a href="#part3"><span class="chapter-dot" style="background:#4a7c59"></span>Part III — Addressing Errors</a>
+  <a href="#static-checking" class="sub">Static Checking</a>
+  <a href="#preconditions" class="sub">Preconditions</a>
+  <a href="#total-defs" class="sub">Total Definitions</a>
+  <a href="#fatal-errors" class="sub">Fatal Errors</a>
+  <a href="#exceptions" class="sub">Exceptions</a>
+  <a href="#part4"><span class="chapter-dot" style="background:#6b5080"></span>Part IV — Exception Handling</a>
+  <a href="#try-catch" class="sub">Try / Catch / Finally</a>
+  <a href="#stack-impl" class="sub">Stack Implementation</a>
+  <a href="#checked-exceptions" class="sub">Checked Exceptions</a>
+  <a href="#hierarchy" class="sub">Exception Hierarchy</a>
+  <a href="#part5"><span class="chapter-dot" style="background:#c9a030"></span>Part V — Java's Object Class</a>
+  <a href="#obj-constructor" class="sub">Constructor</a>
+  <a href="#equals-hash" class="sub">equals & hashCode</a>
+  <a href="#tostring" class="sub">toString</a>
+  <a href="#getclass" class="sub">getClass</a>
+  <a href="#finalize" class="sub">finalize (deprecated)</a>
+  <a href="#clone" class="sub">clone</a>
+</nav>
+
+<main class="content">
+
+<!-- ═══════════════════════ HERO ═══════════════════════ -->
+<div class="hero">
+  <div class="hero-eyebrow">Lecture 10 — Programming Languages</div>
+  <h1>Java Memory Model, Errors &amp; Exceptions</h1>
+  <p class="hero-sub">From constructor flaws to exception hierarchies — understanding how programs fail and how languages help us cope.</p>
+</div>
+
+<div class="callout why">
+  <div class="callout-title">🗺️ The Big Picture</div>
+  <p style="margin-bottom:10px">This lecture covers <strong>three connected themes</strong>:</p>
+  <p style="margin-bottom:8px"><strong>1. Finishing Java's Memory Model</strong> — We discover a flaw in the original JMM that lets multi-threaded programs see garbage memory. This shows us that even well-designed languages have subtle bugs.</p>
+  <p style="margin-bottom:8px"><strong>2. How Programs Go Wrong</strong> — We step back and study errors as a general topic: what kinds exist, how different languages classify them, and what strategies languages use to deal with them.</p>
+  <p><strong>3. Exception Handling & Java Internals</strong> — We dive into exceptions as the most popular error-recovery strategy, see how they work under the hood (stack unwinding!), and examine Java's <code>Object</code> class — the foundation every Java object is built on.</p>
+</div>
+
+<!-- ═══════════════════════ PART I ═══════════════════════ -->
+<div class="chapter-header" id="part1">
+  <div class="ch-label" style="color:var(--accent)">Part I</div>
+  <h2>The Java Memory Model Flaw</h2>
+  <p class="ch-desc">A subtle bug that tripped up Java's own designers — and what it teaches us about multi-threaded programming.</p>
+</div>
+
+<h3 id="jmm-recap">Quick Recap: What Is the JMM?</h3>
+
+<p>Before we get to the flaw, let's make sure you understand the context. When you write a Java program, the code you write isn't necessarily executed in the exact order you wrote it. The <strong>Java Memory Model (JMM)</strong> is a set of rules that defines how the Java Virtual Machine (JVM), the compiler, and the CPU are allowed to <strong>reorder your operations</strong> for speed.</p>
+
+<div class="callout key">
+  <div class="callout-title">Key Definition</div>
+  <p><strong>Java Memory Model (JMM)</strong>: The rules that define <em>when</em> one thread is guaranteed to see writes made by another thread. It governs what reorderings are legal.</p>
+</div>
+
+<p>Why does reordering happen? Because modern CPUs and compilers can execute things out of order to go faster. For example, if you write:</p>
+
+<pre><code><span class="kw">x</span> = 1;
+<span class="kw">y</span> = 2;</code><span class="code-label">JAVA</span></pre>
+
+<p>The JVM might actually execute <code>y = 2</code> first, then <code>x = 1</code>. In a single-threaded program, this doesn't matter — you'll never notice. But in a <strong>multi-threaded</strong> program, another thread might see <code>y</code> change before <code>x</code>, which could cause bugs.</p>
+
+<p>The JMM categorizes operations into three types, each with different rules about how freely they can be reordered:</p>
+
+<table class="concept-table">
+  <tr>
+    <th>Operation Type</th>
+    <th>Reordering Freedom</th>
+    <th>Visibility Guarantee</th>
+    <th>What It Means</th>
+  </tr>
+  <tr>
+    <td><code>normal read/write</code></td>
+    <td>Lots of freedom</td>
+    <td>No guarantee</td>
+    <td>Thread A writes, Thread B <em>might not see it</em></td>
+  </tr>
+  <tr>
+    <td><code>volatile load/store</code></td>
+    <td>More restricted</td>
+    <td>Immediate guarantee</td>
+    <td>Thread A writes, Thread B sees it <em>immediately</em></td>
+  </tr>
+  <tr>
+    <td><code>enter/exit monitor</code></td>
+    <td>Heavily restricted</td>
+    <td>Strong guarantee</td>
+    <td>Thread B sees everything A did before releasing the lock</td>
+  </tr>
+</table>
+
+<p>The rules seemed complete: don't move things across volatile boundaries, don't move things outside critical sections. But then someone found a problem…</p>
+
+<h3 id="constructor-flaw">The Constructor Flaw: Seeing Garbage Memory</h3>
+
+<div class="callout why">
+  <div class="callout-title">Why This Matters</div>
+  <p>This isn't just a Java trivia fact. It teaches a fundamental lesson: <strong>in multi-threaded programs, you have to think very carefully about when objects become visible to other threads.</strong> This same issue appears in any concurrent programming environment.</p>
+</div>
+
+<p>Here's the scenario. Imagine you have a string and you call <code>substring()</code> on it:</p>
+
+<pre><code><span class="kw">String</span> s1 = <span class="str">"user_temp"</span>;
+<span class="kw">String</span> s2 = s1.substring(<span class="num">4</span>);  <span class="cm">// creates a new String pointing to "_temp"</span></code><span class="code-label">JAVA</span></pre>
+
+<p>What does <code>substring()</code> actually do? It invokes a <strong>constructor</strong> — it creates a brand-new String object. Internally, that constructor does something like this:</p>
+
+<pre><code><span class="cm">// Pseudocode for what happens inside substring()</span>
+<span class="kw">String</span> s = <span class="kw">new</span> String();     <span class="cm">// (1) Allocate fresh memory</span>
+s.base = s1.base;            <span class="cm">// (2) Point to same underlying char array</span>
+s.offset = <span class="num">4</span>;               <span class="cm">// (3) Start from the 4th character</span>
+<span class="kw">return</span> s;                    <span class="cm">// (4) Hand it back to whoever asked</span></code><span class="code-label">PSEUDOCODE</span></pre>
+
+<p>Normally, when you create a new object in Java, the process follows these steps:</p>
+
+<div class="steps">
+  <div class="step"><strong>Allocate memory</strong> — Reserve a chunk of bytes for the new object.</div>
+  <div class="step"><strong>Initialize to defaults</strong> — Set all fields to their zero values (0, <code>false</code>, <code>null</code>).</div>
+  <div class="step"><strong>Run the constructor</strong> — Fill in the actual values (like <code>base</code> and <code>offset</code>).</div>
+  <div class="step"><strong>Return the reference</strong> — Now other code can use the object.</div>
+</div>
+
+<p>The important thing: by the time anyone <em>else</em> sees this object, all four steps are done. The object is fully initialized. That's the promise.</p>
+
+<h4>The Optimization That Breaks Things</h4>
+
+<p>Here's where it gets interesting. Constructors have a <strong>very common optimization</strong>: since you're about to fill in all the fields anyway (step 3), why bother zeroing them first (step 2)? Just skip the zeroing, run the constructor, and everything ends up correct.</p>
+
+<p>This is perfectly fine in single-threaded code — nobody sees the object until the constructor returns. But what if a constructor does something <strong>very unusual</strong>?</p>
+
+<pre><code><span class="kw">class</span> Bad {
+    <span class="kw">static</span> Object G;       <span class="cm">// A global variable, visible to ALL threads</span>
+
+    Bad() {
+        G = <span class="kw">this</span>;           <span class="cm">// ← DANGER: publishes object BEFORE it's ready!</span>
+        value = <span class="num">42</span>;
+    }
+    <span class="kw">int</span> value;
+}</code><span class="code-label">JAVA</span></pre>
+
+<div class="callout warn">
+  <div class="callout-title">⚠️ The Problem</div>
+  <p>The constructor stores <code>this</code> into a global variable <code>G</code> — meaning <strong>other threads can now access this object</strong>. But the constructor hasn't finished yet! The field <code>value</code> hasn't been set to 42.</p>
+</div>
+
+<p>Now imagine this timeline with two threads:</p>
+
+<pre><code><span class="cm">/* ─── THREAD A ─── */</span>
+<span class="cm">// Constructor starts. Optimization: skip zeroing!</span>
+<span class="cm">// value = garbage (whatever bytes were in memory)</span>
+G = <span class="kw">this</span>;      <span class="cm">// Object is now visible to the whole program!</span>
+value = <span class="num">42</span>;    <span class="cm">// ...but this hasn't happened yet</span>
+
+<span class="cm">/* ─── THREAD B ─── */</span>
+Bad obj = G;           <span class="cm">// Thread B grabs the object from G</span>
+System.out.println(obj.value);  <span class="cm">// Reads GARBAGE, not 42!</span></code><span class="code-label">TIMELINE</span></pre>
+
+<p>Thread B accesses <code>obj.value</code> and sees <strong>random garbage memory</strong> — not 0 (the default), not 42 (the intended value), but whatever bytes happened to be sitting in that memory location. This <strong>completely violates Java's safety guarantees</strong>. In Java, you should <em>never</em> be able to observe uninitialized memory.</p>
+
+<div class="analogy">
+  <div class="analogy-icon">🏗️</div>
+  <div class="analogy-title">Analogy: The Unfinished House</div>
+  <p>Imagine you're building a house (the object). Normally, you finish building, then hand the keys to the buyer (return from constructor). But here, you posted the address on a public bulletin board (global variable) <em>while the walls are still being put up</em>. A visitor could walk in and find exposed wires and no floor — that's the "garbage memory" other threads see.</p>
+</div>
+
+<div class="quiz" id="quiz1">
+  <div class="quiz-label">✦ Check Your Understanding</div>
+  <p class="quiz-q">Why can Thread B see garbage instead of 0 or 42 for <code>value</code>?</p>
+  <ul class="quiz-options" data-correct="2">
+    <li onclick="handleQuiz(this, false, 'quiz1')">Because Java doesn't guarantee field values in constructors</li>
+    <li onclick="handleQuiz(this, false, 'quiz1')">Because the global variable G hasn't been properly synchronized</li>
+    <li onclick="handleQuiz(this, true, 'quiz1')">Because the optimizer skipped zero-initialization, and the constructor published <code>this</code> before setting the field</li>
+    <li onclick="handleQuiz(this, false, 'quiz1')">Because Thread B is reading from a cached copy of memory</li>
+  </ul>
+  <div class="quiz-explanation" id="quiz1-exp">
+    <strong>Correct!</strong> The optimizer skipped step 2 (zeroing all fields) as an optimization. Then the constructor published <code>this</code> into a global variable before step 3 (setting <code>value = 42</code>). So Thread B sees the object with its fields still containing whatever was previously in that memory — raw garbage bytes.
+  </div>
+</div>
+
+<h3 id="jmm-fix">The Fix: Two Additional JMM Rules</h3>
+
+<p>The Java designers realized they needed extra rules to prevent this scenario. The fix consists of <strong>two rules</strong> — one for the optimizer, one for the programmer:</p>
+
+<div class="callout key">
+  <div class="callout-title">Rule 1 — For the Optimizer</div>
+  <p>Stores to an object's fields (like zeroing or initializing them) <strong>cannot be delayed until after the constructor returns</strong>. The optimizer must ensure that by the time the constructor finishes, all field initialization is visible.</p>
+  <p style="margin-top:8px"><em>In other words: the optimizer must follow the sequence — allocate → set defaults → run constructor → return reference.</em></p>
+</div>
+
+<div class="callout key">
+  <div class="callout-title">Rule 2 — For the Programmer</div>
+  <p>A constructor <strong>must not store <code>this</code> anywhere that is visible to another thread</strong>. You cannot "publish" the object you're constructing before the constructor finishes.</p>
+</div>
+
+<p>When both rules are followed together, the skip-zeroing optimization becomes safe again: since no other thread can see the object until the constructor returns, it doesn't matter if we skip zeroing — by the time anyone sees it, all fields have been properly initialized.</p>
+
+<div class="callout info">
+  <div class="callout-title">Design Lesson</div>
+  <p>The professor calls this "a design bug in Java." The fact that you <em>need</em> a special rule like this suggests the language didn't quite get multi-threading right from the start. Storing <code>this</code> into a global variable during construction was always bad style — but it was <em>legal</em> Java code. These extra rules had to be added after the fact, which is messy.</p>
+</div>
+
+<div class="quiz" id="quiz2">
+  <div class="quiz-label">✦ Check Your Understanding</div>
+  <p class="quiz-q">Which of these is allowed under the additional JMM rules?</p>
+  <ul class="quiz-options" data-correct="1">
+    <li onclick="handleQuiz(this, false, 'quiz2')">A constructor that assigns <code>this</code> to a static field</li>
+    <li onclick="handleQuiz(this, true, 'quiz2')">A constructor that only sets instance fields and then returns</li>
+    <li onclick="handleQuiz(this, false, 'quiz2')">A constructor that passes <code>this</code> to another thread's method</li>
+    <li onclick="handleQuiz(this, false, 'quiz2')">A constructor that stores <code>this</code> in a collection visible to other threads</li>
+  </ul>
+  <div class="quiz-explanation" id="quiz2-exp">
+    <strong>Correct!</strong> The only safe option is a constructor that just sets its own fields and returns. All other options "publish" <code>this</code> to places visible to other threads, which violates Rule 2.
+  </div>
+</div>
+
+<!-- ═══════════════════════ PART II ═══════════════════════ -->
+<div class="chapter-header" id="part2">
+  <div class="ch-label" style="color:var(--blue)">Part II</div>
+  <h2>How Programs Go Wrong</h2>
+  <p class="ch-desc">A broader look at errors — what they are, how to classify them, and why this matters for programming language design.</p>
+</div>
+
+<div class="callout why">
+  <div class="callout-title">Why Study Errors?</div>
+  <p>We're taught to write correct programs. But in reality, <strong>most software has mistakes</strong>. A huge part of software engineering is dealing with imperfect code. Understanding the <em>types</em> of errors helps us pick the right language features and strategies to minimize damage.</p>
+</div>
+
+<h3 id="error-fault-failure">Error → Fault → Failure</h3>
+
+<p>The first classification comes from general engineering (applies to mechanical engineering, electrical engineering, etc.). It distinguishes between three stages of how things go wrong:</p>
+
+<div class="callout key">
+  <div class="callout-title">Definition: Error</div>
+  <p>A <strong>mistake in the programmer's head</strong>. You misunderstood the requirements, or had a wrong mental model. Example: you thought you needed to write a square root function, but the spec actually called for a cube root.</p>
+  <p style="margin-top:8px"><em>An error exists even before you write any code. It's a conceptual mistake.</em></p>
+</div>
+
+<div class="callout key">
+  <div class="callout-title">Definition: Fault</div>
+  <p>A <strong>bug sitting in the code</strong>. It's latent — it exists whether or not the program has been run. You could theoretically find it just by reading the source code carefully.</p>
+  <p style="margin-top:8px">Example: <code>if (x = 5)</code> instead of <code>if (x == 5)</code> — the assignment instead of comparison is a fault.</p>
+</div>
+
+<div class="callout key">
+  <div class="callout-title">Definition: Failure</div>
+  <p>The <strong>observed, incorrect behavior</strong>. The program doesn't work, and the user notices. This is the bottom line — failures are what we ultimately care about preventing.</p>
+</div>
+
+<p>These three stages form a chain, but the links aren't guaranteed:</p>
+
+<div class="flow-box">
+  <strong style="color:var(--accent)">Error</strong> → <em>may lead to</em> → <strong style="color:var(--blue)">Fault</strong> → <em>may lead to</em> → <strong style="color:var(--green)">Failure</strong>
+</div>
+
+<p><strong>Not every error leads to a fault.</strong> Maybe you made a conceptual mistake but the code you wrote happens to be correct anyway. Or maybe the error was in a comment — wrong comment, right code.</p>
+
+<p><strong>Not every fault leads to a failure.</strong> If nobody ever exercises the buggy code path, the user never sees a problem. But every fault <em>came from</em> some earlier error, and every failure <em>came from</em> some earlier fault.</p>
+
+<div class="callout info">
+  <div class="callout-title">Why the Distinction Matters</div>
+  <p>When someone says a language will "make your programs bug-free" (which is always an exaggeration), you should ask: does this feature reduce <strong>errors</strong> (helps you think better), <strong>faults</strong> (catches bugs before they run), or <strong>failures</strong> (prevents crashes at runtime)? Different features target different levels.</p>
+</div>
+
+<div class="quiz" id="quiz3">
+  <div class="quiz-label">✦ Check Your Understanding</div>
+  <p class="quiz-q">A programmer accidentally puts a wrong formula in a comment. The code itself is correct. What is this?</p>
+  <ul class="quiz-options" data-correct="0">
+    <li onclick="handleQuiz(this, true, 'quiz3')">An error (but not a fault or failure)</li>
+    <li onclick="handleQuiz(this, false, 'quiz3')">A fault (because it's in the source code)</li>
+    <li onclick="handleQuiz(this, false, 'quiz3')">A failure (because it could mislead future developers)</li>
+    <li onclick="handleQuiz(this, false, 'quiz3')">None of the above — comments don't count</li>
+  </ul>
+  <div class="quiz-explanation" id="quiz3-exp">
+    <strong>Correct!</strong> The programmer made a mistake (error) — their comment doesn't match the code. But since the code itself is fine, there's no fault in the executable program, and no failure will occur.
+  </div>
+</div>
+
+<h3 id="scheme-errors">Scheme's Four Categories of Errors</h3>
+
+<p>The Scheme programming language (which you'll learn about later in this course) classifies errors in a different way. This classification is more focused on <strong>programming languages specifically</strong>, rather than engineering in general. It asks: when something goes wrong, <em>what kind of "wrong" is it?</em></p>
+
+<h4>1. Implementation Restrictions</h4>
+
+<div class="callout key">
+  <div class="callout-title">Definition</div>
+  <p>Your program is <strong>perfectly correct</strong>, but the system running it can't handle it. The limitation is in the implementation (the compiler, runtime, or hardware), not in your code.</p>
+</div>
+
+<p>The classic example is <strong>memory exhaustion</strong>. Your program needs 60GB of RAM but your machine only has 32GB. Is that a bug in your program? Not really — if you had a bigger machine, it would work fine. But from the user's perspective, the program still crashed.</p>
+
+<div class="analogy">
+  <div class="analogy-icon">🍳</div>
+  <div class="analogy-title">Analogy</div>
+  <p>You have a perfect recipe, but your kitchen doesn't have enough burners or the right sized pots. The recipe isn't wrong — the kitchen is just too small.</p>
+</div>
+
+<p>Every language that does dynamic memory allocation (OCaml, Python, Java, etc.) can hit this. You'll get an "out of memory" message, but it's really a limitation of the machine, not a bug in the logic.</p>
+
+<h4>2. Unspecified Behavior</h4>
+
+<div class="callout key">
+  <div class="callout-title">Definition</div>
+  <p>Your program does something where the language standard says <strong>multiple outcomes are all valid</strong>. The implementation gets to choose which one happens. A portable program must work correctly regardless of which choice the implementation makes.</p>
+</div>
+
+<p>Here's the example from class. In OCaml, consider this expression:</p>
+
+<pre><code><span class="cm">(* Two floating point 1.0 values *)</span>
+# <span class="num">1.0</span> == <span class="num">1.0</span>;;</code><span class="code-label">OCAML</span></pre>
+
+<p>The <code>==</code> operator in OCaml tests <strong>reference equality</strong> (pointer comparison) — are these two things stored at the same memory address?</p>
+
+<p>The answer depends on the implementation:</p>
+
+<div class="compare">
+  <div class="compare-box con">
+    <h5>Implementation A</h5>
+    <p>Creates two separate memory locations for the two <code>1.0</code> values. They have different addresses. Result: <code>false</code></p>
+  </div>
+  <div class="compare-box pro">
+    <h5>Implementation B</h5>
+    <p>Notices both constants are <code>1.0</code> and <strong>coalesces</strong> them — stores only one copy. Both point to the same address. Result: <code>true</code></p>
+  </div>
+</div>
+
+<p><strong>Both implementations are correct!</strong> The language standard allows either behavior. If your program assumes the answer is <code>true</code>, it's not portable — it will break on Implementation A. A well-written program should work regardless of which answer it gets.</p>
+
+<p>An important detail: the implementation will almost never give you an error message for relying on unspecified behavior. It's just too expensive to detect. Your program will silently produce different results on different systems.</p>
+
+<h4>3. Undefined Behavior</h4>
+
+<div class="callout warn">
+  <div class="callout-title">⚠️ Definition</div>
+  <p>The program can do <strong>literally anything</strong>. There are <em>no guarantees</em> from the language about what will happen. The program might crash, produce garbage, corrupt memory, or appear to work fine. The implementation has complete freedom.</p>
+</div>
+
+<p>This is <strong>much stronger than unspecified</strong>. With unspecified behavior, you get one of a defined set of outcomes and computation continues. With undefined behavior, <em>all bets are off</em>.</p>
+
+<p>The classic example from class — integer division by zero in C++:</p>
+
+<pre><code>print(<span class="str">"x"</span>);
+<span class="kw">int</span> i = i/<span class="num">0</span>;    <span class="cm">// integer division by 0 = UNDEFINED BEHAVIOR</span>
+print(<span class="str">"y"</span>);</code><span class="code-label">C++</span></pre>
+
+<p>You might expect the output to be <code>x</code> followed by a crash. But because the behavior is undefined, the compiler is allowed to <strong>reorder things</strong>:</p>
+
+<pre><code><span class="cm">// The compiler might transform this to:</span>
+i = i/<span class="num">0</span>;          <span class="cm">// moved first!</span>
+print(<span class="str">"x"</span>);
+print(<span class="str">"y"</span>);
+
+<span class="cm">// Result: program crashes BEFORE printing anything</span>
+<span class="cm">// Or it might even optimize away the entire program!</span></code><span class="code-label">POSSIBLE TRANSFORMATION</span></pre>
+
+<div class="callout warn">
+  <div class="callout-title">Critical Insight</div>
+  <p>Undefined behavior can affect code <strong>that comes before it</strong> in the source. If the compiler can prove that your code will eventually hit undefined behavior, it can do <em>anything</em> with the entire program — including removing code that appears earlier. This is because the C/C++ standard says if undefined behavior occurs, the entire program's behavior is undefined, not just the statement that caused it.</p>
+</div>
+
+<p>Another example — using a freed pointer in C:</p>
+
+<pre><code><span class="kw">char</span>* p = malloc(<span class="num">10</span>);
+strcpy(p, <span class="str">"abc"</span>);      <span class="cm">// copy string to allocated memory</span>
+free(p);                <span class="cm">// memory is released back to the system</span>
+
+<span class="kw">char</span>* q = p;            <span class="cm">// UNDEFINED! Can't even LOOK at a freed pointer!</span></code><span class="code-label">C</span></pre>
+
+<p>In C, you're not just forbidden from <em>dereferencing</em> a freed pointer — you can't even <strong>read the pointer's value</strong>. You can't test <code>p == NULL</code>. It's undefined. Why? Because C is designed to run on "paranoid machines" that have special hardware registers for pointers with built-in checking. Even loading a freed pointer value into such a register could trigger a hardware fault.</p>
+
+<div class="quiz" id="quiz4">
+  <div class="quiz-label">✦ Check Your Understanding</div>
+  <p class="quiz-q">What's the key difference between <em>unspecified</em> and <em>undefined</em> behavior?</p>
+  <ul class="quiz-options" data-correct="2">
+    <li onclick="handleQuiz(this, false, 'quiz4')">Unspecified means the compiler warns you; undefined means it doesn't</li>
+    <li onclick="handleQuiz(this, false, 'quiz4')">Unspecified is for runtime errors; undefined is for compile-time errors</li>
+    <li onclick="handleQuiz(this, true, 'quiz4')">Unspecified gives you one of several valid outcomes; undefined means absolutely anything can happen</li>
+    <li onclick="handleQuiz(this, false, 'quiz4')">They mean the same thing — just different terminology</li>
+  </ul>
+  <div class="quiz-explanation" id="quiz4-exp">
+    <strong>Correct!</strong> With unspecified behavior, the standard says "pick from these valid options" (e.g., true or false for the OCaml example) and computation continues. With undefined behavior, the standard says nothing — the program can crash, give random output, corrupt memory, or even break code that appears before the undefined operation.
+  </div>
+</div>
+
+<h4>4. An Error Is Signaled</h4>
+
+<div class="callout key">
+  <div class="callout-title">Definition</div>
+  <p>A <strong>signal</strong> is how the operating system tells a program about certain runtime events. When an error is "signaled," the system actively notifies the program that something went wrong.</p>
+</div>
+
+<p>Examples include <code>SIGSEGV</code> (segmentation fault — invalid memory access), <code>SIGINT</code> (interruption, like pressing Ctrl+C), and <code>SIGFPE</code> (floating-point exception). These are the system's way of saying "something bad happened, here's what."</p>
+
+<!-- ═══════════════════════ PART III ═══════════════════════ -->
+<div class="chapter-header" id="part3">
+  <div class="ch-label" style="color:var(--green)">Part III</div>
+  <h2>Five Ways to Address Errors</h2>
+  <p class="ch-desc">Languages have very different philosophies about errors. These five approaches represent fundamentally different design decisions.</p>
+</div>
+
+<div class="callout why">
+  <div class="callout-title">Why This Matters</div>
+  <p>Every programming language makes a choice about how to handle errors. C/C++ allows undefined behavior because they prioritize performance and low-level control. Java tries to eliminate undefined behavior by throwing exceptions and enforcing memory safety. Understanding these approaches helps you understand <em>why</em> languages are designed the way they are.</p>
+</div>
+
+<h3 id="static-checking">Approach 1: Static Checking</h3>
+
+<div class="callout key">
+  <div class="callout-title">Definition</div>
+  <p><strong>Static checking</strong> means the compiler examines your program <em>before it runs</em> and guarantees that certain kinds of errors <strong>cannot happen</strong>. The most common form is static type checking.</p>
+</div>
+
+<p>In languages like <strong>OCaml</strong>, <strong>Java</strong>, <strong>Rust</strong>, and <strong>Haskell</strong>, the compiler checks your types at compile time. If you try to assign a string to an integer variable, the compiler rejects your program entirely — it won't even produce an executable.</p>
+
+<pre><code><span class="cm">// Java: this won't compile!</span>
+<span class="kw">int</span> x = <span class="str">"hello"</span>;   <span class="cm">// ERROR: incompatible types</span></code><span class="code-label">JAVA</span></pre>
+
+<p>Languages like <strong>Python</strong> and <strong>JavaScript</strong> use <strong>dynamic type checking</strong> instead — types are checked at runtime, not compile time. This means type errors only show up when you actually run the code.</p>
+
+<p>But it's not always black-and-white. Java <em>mostly</em> uses static type checking, but it also has <strong>dynamic type checking</strong> in some cases — specifically, when you use casts:</p>
+
+<pre><code><span class="kw">Object</span> o = <span class="str">"hello"</span>;       <span class="cm">// declared as Object</span>
+<span class="kw">String</span> s = (<span class="kw">String</span>) o;    <span class="cm">// runtime check: is o really a String?</span>
+<span class="cm">// If o were NOT a String → ClassCastException at runtime</span></code><span class="code-label">JAVA</span></pre>
+
+<p>So why do Python and JavaScript use dynamic checking? The professor identified several reasons:</p>
+
+<div class="compare">
+  <div class="compare-box pro">
+    <h5>Why Static Checking (Java, OCaml)</h5>
+    <p><strong>More reliable</strong> — once the compiler accepts your program, you know certain bugs are impossible. Catches type errors before anyone ever runs the code.</p>
+  </div>
+  <div class="compare-box pro">
+    <h5>Why Dynamic Checking (Python, JS)</h5>
+    <p><strong>More flexible</strong> — You can write code faster, don't have to figure out types upfront. Code can work on more kinds of data. Better for quick scripts and prototyping.</p>
+  </div>
+</div>
+
+<p>A concrete example of flexibility: In Java, <code>List&lt;String&gt;</code> is <em>not</em> a subtype of <code>List&lt;Object&gt;</code>, even though <code>String</code> is a subtype of <code>Object</code>. Java's type checker is cautious — it worries about what you <em>could</em> do with a <code>List&lt;Object&gt;</code> (like adding an <code>Integer</code> to it). In Python, you'd just pass the list and it would work, because Python only cares about what you <em>actually</em> do.</p>
+
+<h3 id="preconditions">Approach 2: Preconditions</h3>
+
+<div class="callout key">
+  <div class="callout-title">Definition</div>
+  <p><strong>Preconditions</strong> are formal requirements that must be true <em>before</em> a function runs. They are the <strong>caller's responsibility</strong>. If the precondition is false, the behavior is undefined.</p>
+</div>
+
+<p>Let's look at the professor's detailed example — integer division:</p>
+
+<pre><code><span class="kw">int</span> <span class="fn">divide</span>(<span class="kw">int</span> x, <span class="kw">int</span> y)
+  <span class="cm">// Precondition 1: y != 0</span>
+  <span class="cm">// Precondition 2: NOT (x == INT_MIN AND y == -1)</span>
+{
+    <span class="kw">return</span> x / y;
+}</code><span class="code-label">C</span></pre>
+
+<p>Why two preconditions? There are exactly <strong>two ways</strong> integer division can go wrong:</p>
+
+<p><strong>1. Division by zero</strong> — Obvious: <code>x / 0</code> is mathematically undefined.</p>
+
+<p><strong>2. Overflow</strong> — This one is subtle! On a 32-bit system, integers range from −2,147,483,648 (<code>INT_MIN</code>) to 2,147,483,647 (<code>INT_MAX</code>). If you divide <code>INT_MIN</code> by <code>-1</code>, the mathematical result is 2,147,483,648 — but that's <strong>one more than <code>INT_MAX</code></strong>. It can't be represented! In C/C++, this is undefined behavior. On x86-64, your program will crash.</p>
+
+<p>When you have preconditions, the caller is responsible for ensuring they're met. In debugging mode, you can add runtime checks for them:</p>
+
+<pre><code><span class="kw">int</span> <span class="fn">divide</span>(<span class="kw">int</span> x, <span class="kw">int</span> y) {
+    <span class="kw">if</span> (y == <span class="num">0</span>) { error(); }            <span class="cm">// runtime check</span>
+    <span class="kw">if</span> (x == INT_MIN && y == -<span class="num">1</span>) { error(); }
+    <span class="kw">return</span> x / y;
+}</code><span class="code-label">C — WITH RUNTIME CHECKS</span></pre>
+
+<p>These checks slow down execution, but help you catch violations during testing. In production, you can remove them and rely on the caller to get it right (better performance).</p>
+
+<div class="callout info">
+  <div class="callout-title">Preconditions vs. Static Checking</div>
+  <p>Preconditions typically depend on <strong>runtime values</strong> (like whether <code>y</code> is zero), so the compiler can't verify them statically. This makes them more flexible than static checking but less guaranteed — you're trusting the caller to do the right thing.</p>
+</div>
+
+<h3 id="total-defs">Approach 3: Total Definitions</h3>
+
+<div class="callout key">
+  <div class="callout-title">Definition</div>
+  <p>A <strong>total definition</strong> makes a function return a value for <em>every</em> possible input, even invalid ones. Instead of crashing or being undefined, you get a "special" answer that represents the error.</p>
+</div>
+
+<p>The best real-world example is <strong>IEEE floating-point arithmetic</strong>:</p>
+
+<pre><code><span class="num">1.0</span> / <span class="num">0.0</span>    → Infinity
+<span class="num">0.0</span> / <span class="num">0.0</span>    → NaN        <span class="cm">// "Not a Number"</span>
+<span class="num">-1.0</span> / <span class="num">0.0</span>   → -Infinity</code><span class="code-label">IEEE FLOATING POINT</span></pre>
+
+<p>There are <strong>no errors</strong>. Every division gives you some answer. Even dividing by zero! The "errors" have been migrated into the <em>values</em> — you get <code>Infinity</code> or <code>NaN</code> instead of crashing, and your computation keeps going.</p>
+
+<p>For integer division, you could define a total version: dividing by zero returns <code>INT_MAX</code> or <code>INT_MIN</code> depending on the sign. It's not mathematically correct, but it keeps the program running.</p>
+
+<div class="callout info">
+  <div class="callout-title">The Trade-off</div>
+  <p>With preconditions, it's the caller's job to check <em>before</em> calling the function. With total definitions, it's the caller's job to check <em>after</em> — they need to look at the result and handle special values like <code>NaN</code>. The error hasn't disappeared; it's just been moved to a different place.</p>
+</div>
+
+<h3 id="fatal-errors">Approach 4: Fatal Errors</h3>
+
+<div class="callout key">
+  <div class="callout-title">Definition</div>
+  <p>A <strong>fatal error</strong> stops the program immediately. Unlike undefined behavior (where anything can happen), a fatal error <em>guarantees</em> that the program terminates — it won't continue and cause more damage.</p>
+</div>
+
+<pre><code><span class="cm">// C:</span>
+abort();   <span class="cm">// crash immediately, core dump on Linux</span>
+
+<span class="cm">// Java:</span>
+System.exit(<span class="num">100</span>);   <span class="cm">// exit with status code 100</span></code><span class="code-label">EXAMPLES</span></pre>
+
+<p>This is <strong>safer than undefined behavior</strong> because at least the program stops instead of silently corrupting data. But it has a major scalability problem:</p>
+
+<div class="callout warn">
+  <div class="callout-title">The Scalability Problem</div>
+  <p>Imagine a million-line program. One small buggy corner calls <code>abort()</code>. Now your <em>entire program</em> crashes because of one bad section. For a server that needs to run 24/7, or an embedded system in a toaster, this is unacceptable. You want the rest of the program to keep running.</p>
+</div>
+
+<p>This problem motivates the fifth and final approach…</p>
+
+<h3 id="exceptions">Approach 5: Exceptions</h3>
+
+<div class="callout key">
+  <div class="callout-title">Definition</div>
+  <p><strong>Exceptions</strong> let a program signal that something went wrong <em>without killing the entire program</em>. The part that detected the error stops, but control transfers to a different part of the program that handles the recovery.</p>
+</div>
+
+<p>Think of it this way: with fatal errors, when you encounter a problem, you yell "FIRE!" and the whole building evacuates. With exceptions, you call the fire department — the fire is contained, and only the affected area is dealt with.</p>
+
+<table class="concept-table">
+  <tr><th>Approach</th><th>When Checked</th><th>What Happens</th></tr>
+  <tr><td>Static Checking</td><td>Compile time</td><td>Prevents errors before running</td></tr>
+  <tr><td>Preconditions</td><td>Caller responsibility</td><td>Undefined if violated</td></tr>
+  <tr><td>Total Definitions</td><td>Always returns a value</td><td>Errors encoded as values</td></tr>
+  <tr><td>Fatal Errors</td><td>Runtime</td><td>Stops the program</td></tr>
+  <tr><td>Exceptions</td><td>Runtime</td><td>Propagates error to a handler</td></tr>
+</table>
+
+<div class="quiz" id="quiz5">
+  <div class="quiz-label">✦ Check Your Understanding</div>
+  <p class="quiz-q">IEEE floating-point returning <code>NaN</code> for <code>0.0/0.0</code> is an example of which approach?</p>
+  <ul class="quiz-options" data-correct="2">
+    <li onclick="handleQuiz(this, false, 'quiz5')">Static checking — the compiler catches it</li>
+    <li onclick="handleQuiz(this, false, 'quiz5')">Preconditions — the caller should prevent it</li>
+    <li onclick="handleQuiz(this, true, 'quiz5')">Total definition — every input gets a result</li>
+    <li onclick="handleQuiz(this, false, 'quiz5')">Exception — the error is propagated</li>
+  </ul>
+  <div class="quiz-explanation" id="quiz5-exp">
+    <strong>Correct!</strong> IEEE floating-point uses the total definition approach. Every possible division returns <em>some</em> value: a number, Infinity, or NaN. There are no errors that stop or redirect computation — the error is embedded in the value itself.
+  </div>
+</div>
+
+<!-- ═══════════════════════ PART IV ═══════════════════════ -->
+<div class="chapter-header" id="part4">
+  <div class="ch-label" style="color:var(--purple)">Part IV</div>
+  <h2>Exception Handling In Depth</h2>
+  <p class="ch-desc">How try/catch/finally actually works — from syntax to stack unwinding to Java's checked exception system.</p>
+</div>
+
+<h3 id="try-catch">Java's Try / Catch / Finally</h3>
+
+<p>Java uses three blocks to separate normal code from error-handling code:</p>
+
+<pre><code><span class="kw">try</span> {
+    <span class="cm">// Code that might fail</span>
+    read(b);
+    write(b);
+}
+<span class="kw">catch</span> (IOException e) {
+    <span class="cm">// What to do if an I/O error occurs</span>
+    System.out.println(e);
+}
+<span class="kw">finally</span> {
+    <span class="cm">// ALWAYS runs, no matter what happened above</span>
+    close(file);
+}</code><span class="code-label">JAVA</span></pre>
+
+<p>Let's break down each piece and understand why it exists:</p>
+
+<h4>The Try Block</h4>
+
+<p>This contains your <strong>normal, happy-path code</strong> — what should happen if everything goes well. You read a buffer, then write a buffer. Simple. But in the back of your mind, you know reading and writing can fail — the flash drive might be disconnected, there might be a disk error, etc.</p>
+
+<h4>The Throw Statement (Inside read/write)</h4>
+
+<p>Somewhere deep inside the <code>read()</code> or <code>write()</code> implementation — possibly many method calls deep — a piece of code detects a problem and creates an exception:</p>
+
+<pre><code><span class="kw">throw new</span> IOException(<span class="str">"Flash drive disconnected"</span>);</code><span class="code-label">JAVA</span></pre>
+
+<p>The <strong>thrower</strong> creates a new exception object and throws it. This immediately stops normal execution at that point. No more code in the try block runs. Control jumps directly to the matching catch block.</p>
+
+<p>The thrower could be many layers deep in the call stack: <code>read()</code> calls <code>readInternal()</code> which calls <code>deviceRead()</code> which calls <code>ioCheck()</code>… and <code>ioCheck()</code> throws. Control jumps all the way back up past all those methods to your catch block.</p>
+
+<h4>The Catch Block</h4>
+
+<p>This handles the exception. The variable <code>e</code> is a reference to the exception object that was thrown, so you can inspect it to find out what went wrong. In this example, we just print it — not the most useful recovery, but it demonstrates the idea.</p>
+
+<h4>The Finally Block</h4>
+
+<p>This runs <strong>no matter what</strong>. Let's understand why it exists with a specific scenario:</p>
+
+<p>What if the try block throws an exception that your catch block <em>doesn't</em> handle? Say a <code>NullPointerException</code> instead of an <code>IOException</code>. In that case:</p>
+
+<div class="steps">
+  <div class="step">The try block throws <code>NullPointerException</code></div>
+  <div class="step">Java looks at your catch: it only catches <code>IOException</code> — no match!</div>
+  <div class="step">The catch block is <strong>skipped entirely</strong></div>
+  <div class="step">The <code>finally</code> block still runs (closes the file!)</div>
+  <div class="step">The exception propagates up to the caller to find a handler</div>
+</div>
+
+<p>If you had put <code>close(file)</code> after the entire try/catch (without finally), it would be <strong>skipped</strong> for any uncaught exception. The file would remain open, leaking a resource. That's why <code>finally</code> exists — to guarantee cleanup code always runs.</p>
+
+<p>Here are all the possible execution paths:</p>
+
+<pre><code><span class="cm">/* Case 1: No error */</span>
+try → read → write → <span class="kw">finally</span> → continue
+
+<span class="cm">/* Case 2: read() throws IOException */</span>
+try → read → <span class="err">THROW</span> → <span class="kw">catch</span> → <span class="kw">finally</span> → continue
+
+<span class="cm">/* Case 3: write() throws IOException */</span>
+try → read → write → <span class="err">THROW</span> → <span class="kw">catch</span> → <span class="kw">finally</span> → continue
+
+<span class="cm">/* Case 4: Uncaught exception (e.g., NullPointerException) */</span>
+try → <span class="err">THROW</span> → skip catch → <span class="kw">finally</span> → propagate to caller</code><span class="code-label">EXECUTION PATHS</span></pre>
+
+<h4>Exceptions vs. Return-Value Error Handling (C-Style)</h4>
+
+<p>Languages without exceptions (like C) handle errors by having functions return a status value:</p>
+
+<pre><code><span class="cm">// C-style: error handling with return values</span>
+failureObject f = read(b);         <span class="cm">// returns null if OK, error object if not</span>
+<span class="kw">if</span> (f == null) {
+    f = write(b);                  <span class="cm">// only write if read succeeded</span>
+}
+<span class="kw">if</span> (f != null) {
+    printf(<span class="str">"Error: %s\n"</span>, f);    <span class="cm">// handle the error</span>
+}</code><span class="code-label">C-STYLE</span></pre>
+
+<div class="compare">
+  <div class="compare-box pro">
+    <h5>Exception Handling Pros</h5>
+    <p><strong>Cleaner separation</strong>: Normal code is clearly in the try block. Error handling is clearly in catch. You can read the happy path without wading through error checks.</p>
+  </div>
+  <div class="compare-box con">
+    <h5>Exception Handling Cons</h5>
+    <p><strong>Hidden control flow</strong>: At any point in the try block, execution might jump to catch. This makes the code harder to reason about and harder for the compiler to optimize.</p>
+  </div>
+</div>
+
+<div class="compare">
+  <div class="compare-box pro">
+    <h5>Return-Value Pros</h5>
+    <p><strong>Explicit flow</strong>: You can see exactly what happens. The compiler can optimize aggressively because there are no hidden jumps.</p>
+  </div>
+  <div class="compare-box con">
+    <h5>Return-Value Cons</h5>
+    <p><strong>Code clutter</strong>: The normal logic and error logic are interleaved. The "real" algorithm is obscured by all the error checks.</p>
+  </div>
+</div>
+
+<h3 id="stack-impl">Under the Hood: Stack-Based Implementation</h3>
+
+<div class="callout why">
+  <div class="callout-title">Why This Matters</div>
+  <p>Understanding how exceptions are implemented helps you understand their performance characteristics and what happens when things go wrong with exception handling itself.</p>
+</div>
+
+<p>In a stack-based language like Java or C++, every function call pushes a <strong>stack frame</strong> onto the call stack. The stack grows downward in memory:</p>
+
+<pre><code><span class="cm">High addresses</span>
+┌─────────────────┐
+│   main's frame   │  main calls f
+├─────────────────┤
+│    f's frame     │  f has a TRY block; f calls g
+│    [exception    │
+│     records: E₁] │
+├─────────────────┤
+│    g's frame     │  g calls h
+├─────────────────┤
+│    h's frame     │  h has a FINALLY block; h calls i
+│    [finally: F₁] │
+├─────────────────┤
+│    i's frame     │  i does: throw IOException ← HERE!
+└─────────────────┘
+<span class="cm">Low addresses</span></code><span class="code-label">CALL STACK</span></pre>
+
+<p>When <code>i</code> throws an exception, here's what has to happen:</p>
+
+<div class="steps">
+  <div class="step"><strong>Check <code>i</code>'s frame</strong> — Does <code>i</code> have a catch that matches <code>IOException</code>? No. Does it have a finally? No. Pop <code>i</code>'s frame off the stack.</div>
+  <div class="step"><strong>Check <code>h</code>'s frame</strong> — Does <code>h</code> have a matching catch? No. Does it have a finally? <strong>Yes!</strong> Run <code>h</code>'s finally block. Then pop <code>h</code>'s frame.</div>
+  <div class="step"><strong>Check <code>g</code>'s frame</strong> — Does <code>g</code> have a matching catch? No. No finally either. Pop <code>g</code>'s frame.</div>
+  <div class="step"><strong>Check <code>f</code>'s frame</strong> — Does <code>f</code> have a matching catch? <strong>Yes!</strong> <code>f</code> catches <code>IOException</code>. Deliver the exception to <code>f</code>'s catch handler.</div>
+</div>
+
+<p>Key observations from this process:</p>
+
+<p><strong>It's a loop, not a single instruction.</strong> The throw operation has to iterate through stack frames, checking each one. This makes throwing exceptions relatively slow compared to normal function returns.</p>
+
+<p><strong>Every frame needs exception metadata.</strong> Each frame must store information about what exceptions it catches and what finally blocks it has. This takes space.</p>
+
+<p><strong>If no handler is found:</strong> the search continues all the way to <code>main</code>. If <code>main</code> doesn't catch it either, it's a <strong>fatal error</strong> — the program terminates.</p>
+
+<div class="callout info">
+  <div class="callout-title">Historical Note: Code on the Stack</div>
+  <p>Old C++ implementations would stuff actual machine code (usually just 1-2 jump instructions) directly onto the stack to handle exception matching faster. This was a security nightmare — if a buffer overflow let an attacker write to the stack, they could inject executable code. This is one reason modern systems mark the stack as non-executable.</p>
+</div>
+
+<h3 id="checked-exceptions">Java's Checked Exceptions</h3>
+
+<div class="callout why">
+  <div class="callout-title">Why This Exists</div>
+  <p>One of the problems with exceptions is that if nobody catches a thrown exception, it becomes a fatal error. The Java designers wanted to prevent this with a <strong>compile-time guarantee</strong> that every exception will be caught.</p>
+</div>
+
+<div class="callout key">
+  <div class="callout-title">Definition</div>
+  <p><strong>Checked exceptions</strong> require that the set of exceptions a method can throw is part of the method's <strong>signature</strong>. The compiler statically checks that every checked exception is either caught or declared.</p>
+</div>
+
+<p>The rule is simple:</p>
+
+<pre><code><span class="cm">// This method DECLARES that it might throw IOException</span>
+<span class="kw">int</span> m(<span class="kw">float</span> x) <span class="kw">throws</span> IOException {
+    <span class="cm">// ... code that might throw IOException ...</span>
+}</code><span class="code-label">JAVA</span></pre>
+
+<p><strong>If a method throws an exception (or calls a method that throws one), and doesn't catch it, it must declare <code>throws</code> in its signature.</strong></p>
+
+<p>Any caller of <code>m</code> now has two choices:</p>
+
+<pre><code><span class="cm">// Option 1: Catch it</span>
+<span class="kw">void</span> caller1() {
+    <span class="kw">try</span> {
+        m(<span class="num">3.0f</span>);
+    } <span class="kw">catch</span> (IOException e) {
+        <span class="cm">// handle it</span>
+    }
+}
+
+<span class="cm">// Option 2: Propagate it (declare it in YOUR signature too)</span>
+<span class="kw">void</span> caller2() <span class="kw">throws</span> IOException {
+    m(<span class="num">3.0f</span>);   <span class="cm">// if it throws, our caller handles it</span>
+}</code><span class="code-label">JAVA</span></pre>
+
+<p>This chain of declarations ensures that the compiler can trace every exception from where it's thrown to where it's caught. The <code>main</code> method must catch everything — it can't declare <code>throws</code> for checked exceptions (or if it does, the JVM handles it as a fatal error).</p>
+
+<h3 id="hierarchy">Java's Exception Hierarchy</h3>
+
+<p>All throwable things in Java form a hierarchy:</p>
+
+<pre><code>Throwable                    <span class="cm">← the root: anything that can be thrown</span>
+├── <span class="kw">Error</span>                   <span class="cm">← JVM/system problems (usually DON'T catch)</span>
+│   ├── OutOfMemoryError
+│   └── StackOverflowError
+└── <span class="kw">Exception</span>               <span class="cm">← recoverable problems (DO catch)</span>
+    ├── IOException
+    └── <span class="kw">RuntimeException</span>    <span class="cm">← unchecked exceptions</span>
+        ├── NullPointerException
+        ├── ArithmeticException
+        └── IndexOutOfBoundsException</code><span class="code-label">HIERARCHY</span></pre>
+
+<p><strong>Throwable</strong> is the root — anything you can put in a <code>throw</code> statement.</p>
+
+<p><strong>Error</strong> is for JVM-level problems. These map to Scheme's "implementation restrictions" — your program might be fine, but the JVM can't run it (out of memory, stack overflow). You generally <em>don't</em> try to catch these.</p>
+
+<p><strong>Exception</strong> is for recoverable problems. When your code detects something wrong, this is what you throw. If you catch <code>Exception</code>, you catch nearly everything recoverable.</p>
+
+<div class="callout warn">
+  <div class="callout-title">⚠️ Anti-Pattern: Silent Swallowing</div>
+  <p>This is bad practice (but common in real code):</p>
+  <pre style="margin:12px 0"><code><span class="kw">catch</span> (Exception e) { }   <span class="cm">// catches everything, does NOTHING</span></code></pre>
+  <p>This "swallows" the error silently. The program continues as if nothing went wrong, which can lead to corrupted state and bugs that are incredibly hard to track down. The exception carried useful information about what went wrong — and you threw it away.</p>
+</div>
+
+<div class="quiz" id="quiz6">
+  <div class="quiz-label">✦ Check Your Understanding</div>
+  <p class="quiz-q">Why does the <code>finally</code> block exist? Why not just put cleanup code after the try/catch?</p>
+  <ul class="quiz-options" data-correct="1">
+    <li onclick="handleQuiz(this, false, 'quiz6')">It's just syntactic sugar — there's no functional difference</li>
+    <li onclick="handleQuiz(this, true, 'quiz6')">Code after try/catch is skipped for uncaught exceptions; finally always runs</li>
+    <li onclick="handleQuiz(this, false, 'quiz6')">Finally runs before catch, giving you a chance to clean up first</li>
+    <li onclick="handleQuiz(this, false, 'quiz6')">Finally is required by Java — you can't have try/catch without it</li>
+  </ul>
+  <div class="quiz-explanation" id="quiz6-exp">
+    <strong>Correct!</strong> If the try block throws an exception your catch doesn't handle, the code after the try/catch is skipped entirely as Java searches up the call stack for a handler. But the <code>finally</code> block runs regardless — even for uncaught exceptions. This guarantees resources (like open files) are cleaned up.
+  </div>
+</div>
+
+<!-- ═══════════════════════ PART V ═══════════════════════ -->
+<div class="chapter-header" id="part5">
+  <div class="ch-label" style="color:#c9a030">Part V</div>
+  <h2>Java's <code>Object</code> Class: The Foundation</h2>
+  <p class="ch-desc">Looking at the "back side of the castle" — the methods every Java object inherits, and what they teach us about Java's design.</p>
+</div>
+
+<div class="callout why">
+  <div class="callout-title">Why Study Object?</div>
+  <p>Every single class in Java — <code>String</code>, <code>ArrayList</code>, your own classes — extends <code>Object</code>. The methods defined in <code>Object</code> are available on <em>every</em> object. Understanding them reveals the fundamental operations Java considers essential for all objects.</p>
+</div>
+
+<h3 id="obj-constructor">The Constructor: <code>public Object()</code></h3>
+
+<p>Every class in Java implicitly extends <code>Object</code>:</p>
+
+<pre><code><span class="cm">// When you write:</span>
+<span class="kw">class</span> Person { ... }
+
+<span class="cm">// Java actually sees:</span>
+<span class="kw">class</span> Person <span class="kw">extends</span> Object { ... }</code><span class="code-label">JAVA</span></pre>
+
+<p>Every constructor eventually calls <code>Object()</code>:</p>
+
+<pre><code><span class="kw">public</span> Person() {
+    <span class="kw">super</span>();   <span class="cm">// ← calls Object's constructor</span>
+    <span class="cm">// ... rest of Person's initialization</span>
+}</code><span class="code-label">JAVA</span></pre>
+
+<p>But why would you ever create a plain <code>Object</code>?</p>
+
+<pre><code>Object o = <span class="kw">new</span> Object();  <span class="cm">// a "vanilla" object with no special properties</span></code><span class="code-label">JAVA</span></pre>
+
+<p>The professor explains: a plain <code>Object</code> is the <strong>blandest object possible</strong>. It's useful for <strong>testing</strong> — if you have code that claims to work on any object, pass it a plain <code>Object</code> and see if it handles it correctly. For example, testing that casts throw exceptions properly:</p>
+
+<pre><code>Object o = <span class="kw">new</span> Object();
+String s = (String) o;      <span class="cm">// → ClassCastException! (o is NOT a String)</span></code><span class="code-label">JAVA</span></pre>
+
+<h3 id="equals-hash"><code>equals()</code> and <code>hashCode()</code></h3>
+
+<h4>equals()</h4>
+
+<pre><code><span class="kw">public boolean</span> <span class="fn">equals</span>(Object o);</code><span class="code-label">JAVA</span></pre>
+
+<p>Tests whether two objects are <strong>logically equal</strong>. The default implementation just does <strong>reference comparison</strong> (pointer comparison with <code>==</code>) — are they the same object in memory?</p>
+
+<pre><code>Object a = <span class="kw">new</span> Object();
+Object b = <span class="kw">new</span> Object();
+a.equals(b);   <span class="cm">// false — different objects in memory</span>
+a.equals(a);   <span class="cm">// true — same object</span></code><span class="code-label">JAVA</span></pre>
+
+<p>You can <strong>override</strong> this in subclasses. For example, <code>String</code> overrides <code>equals()</code> to compare the actual characters rather than the memory addresses. Two different String objects with the same text will return <code>true</code>.</p>
+
+<h4>hashCode()</h4>
+
+<pre><code><span class="kw">public int</span> <span class="fn">hashCode</span>();</code><span class="code-label">JAVA</span></pre>
+
+<p>Produces an integer "hash" of the object, used by hash table data structures (like <code>HashMap</code>). The default implementation is derived from the object's memory address.</p>
+
+<h4>The Critical Consistency Rule</h4>
+
+<div class="callout warn">
+  <div class="callout-title">⚠️ Must-Know Rule</div>
+  <p>If you override <code>equals()</code>, you <strong>must also</strong> override <code>hashCode()</code>. They must be consistent:</p>
+  <p style="margin:10px 0;text-align:center;font-size:18px;font-weight:600">If <code>o1.equals(o2)</code> is <code>true</code> → then <code>o1.hashCode() == o2.hashCode()</code> must be <code>true</code></p>
+  <p>The reverse is <strong>not required</strong>: two unequal objects <em>can</em> have the same hash code (that's just a hash collision).</p>
+</div>
+
+<p>Why? Because hash tables use <code>hashCode()</code> to decide which bucket to put an object in, and <code>equals()</code> to determine if two keys in the same bucket are the same. If equal objects hash to different buckets, you'll never find them!</p>
+
+<p><strong>What happens if you violate this?</strong> No compile-time error. No runtime error message. Your program just <strong>silently gives wrong answers</strong> whenever it uses those objects as keys in a hash table. These bugs are notoriously hard to find.</p>
+
+<h3 id="tostring"><code>toString()</code></h3>
+
+<pre><code><span class="kw">public</span> String <span class="fn">toString</span>();</code><span class="code-label">JAVA</span></pre>
+
+<p>Returns a printable string representation. This is what <code>System.out.println()</code> calls internally on any object:</p>
+
+<pre><code>System.out.println(someObject);
+<span class="cm">// is actually:</span>
+System.out.println(someObject.toString());</code><span class="code-label">JAVA</span></pre>
+
+<p>The default implementation returns something like <code>ClassName@1a2b3c4d</code> (the class name and a hex number). Override it to make debugging easier:</p>
+
+<pre><code><span class="kw">class</span> Person {
+    String name;
+
+    <span class="kw">public</span> String <span class="fn">toString</span>() {
+        <span class="kw">return</span> <span class="str">"Person: "</span> + name;   <span class="cm">// e.g., "Person: Alice"</span>
+    }
+}</code><span class="code-label">JAVA</span></pre>
+
+<h3 id="getclass"><code>getClass()</code> — Final and Type-Safe</h3>
+
+<pre><code><span class="kw">public final</span> Class <span class="fn">getClass</span>();</code><span class="code-label">JAVA</span></pre>
+
+<p>Returns a <code>Class</code> object representing the <strong>runtime type</strong> of the object. Two very important things about this method:</p>
+
+<h4>1. It Is <code>final</code></h4>
+
+<p>The keyword <code>final</code> means subclasses <strong>cannot override</strong> this method. This is the opposite of <code>abstract</code>:</p>
+
+<table class="concept-table">
+  <tr><th>Keyword</th><th>Meaning</th></tr>
+  <tr><td><code>abstract</code></td><td>Parent doesn't supply an implementation; child <strong>must</strong> override it</td></tr>
+  <tr><td><code>final</code></td><td>Parent supplies the implementation; child <strong>cannot</strong> override it</td></tr>
+</table>
+
+<p>Why is <code>getClass()</code> final? <strong>Objects must not be able to lie about their type.</strong> If an object could override <code>getClass()</code> and pretend to be a String when it's not, it would break debugging, security, and type safety. The JVM guarantees this method tells the truth.</p>
+
+<p>Under the hood, <code>getClass()</code> is extremely efficient — it's essentially a single pointer dereference (load the type information from the object header). One instruction.</p>
+
+<h4>2. It Returns the Runtime Type (Not the Declared Type)</h4>
+
+<pre><code>Object o = <span class="str">"hello"</span>;      <span class="cm">// declared type: Object; runtime type: String</span>
+Class c = o.getClass();
+System.out.println(c);   <span class="cm">// prints: class java.lang.String</span></code><span class="code-label">JAVA</span></pre>
+
+<p>Even though <code>o</code> is declared as <code>Object</code>, it's actually a <code>String</code> at runtime. <code>getClass()</code> tells you the <em>real</em> type.</p>
+
+<h4>Generic Type Erasure</h4>
+
+<p>There's a limitation. Java uses <strong>type erasure</strong> for generics — generic type parameters exist only at compile time and are <em>erased</em> at runtime:</p>
+
+<pre><code>List&lt;String&gt; a = <span class="kw">new</span> ArrayList&lt;&gt;();
+List&lt;Integer&gt; b = <span class="kw">new</span> ArrayList&lt;&gt;();
+
+<span class="cm">// At runtime, Java sees both as just "ArrayList"</span>
+a.getClass() == b.getClass()   <span class="cm">// TRUE! Same class.</span>
+
+<span class="cm">// getClass() returns ArrayList, not ArrayList&lt;String&gt;</span>
+System.out.println(a.getClass());   <span class="cm">// class java.util.ArrayList</span></code><span class="code-label">JAVA</span></pre>
+
+<p>Why? Generics were added to Java after the language was created. For backward compatibility with older code, the JVM doesn't need to know about generic type parameters at runtime. So <code>getClass()</code> can only return the <strong>raw class</strong> (e.g., <code>ArrayList</code>), not the full generic type (e.g., <code>ArrayList&lt;String&gt;</code>).</p>
+
+<h3 id="finalize"><code>finalize()</code> — Deprecated</h3>
+
+<pre><code><span class="kw">protected void</span> <span class="fn">finalize</span>() <span class="kw">throws</span> Throwable</code><span class="code-label">JAVA</span></pre>
+
+<p>This is the opposite of a constructor: it runs just <strong>before an object is garbage collected</strong> (removed from memory). The idea was that you could use it for cleanup — closing file descriptors, releasing external resources, etc.</p>
+
+<p><strong>It has been deprecated</strong> (officially discouraged). Here's why:</p>
+
+<div class="steps">
+  <div class="step"><strong>Performance</strong> — The garbage collector has to check every object for a <code>finalize()</code> method before collecting it. If it has one, the GC must run it first, adding significant overhead.</div>
+  <div class="step"><strong>Unpredictable timing</strong> — Garbage collection happens whenever the JVM decides. Your finalizer might run immediately, 10 seconds later, or never. You can't rely on it for time-sensitive cleanup.</div>
+  <div class="step"><strong>Object resurrection</strong> — A finalize method could store <code>this</code> in a global variable (<code>GlobalStore.obj = this</code>), preventing the object from being collected! This creates bizarre bugs and security issues.</div>
+</div>
+
+<h3 id="clone"><code>clone()</code> — Copy an Object</h3>
+
+<pre><code><span class="kw">protected</span> Object <span class="fn">clone</span>() <span class="kw">throws</span> CloneNotSupportedException</code><span class="code-label">JAVA</span></pre>
+
+<p>Creates a <strong>copy</strong> of an object — same data, different memory location. You can modify the copy without affecting the original.</p>
+
+<pre><code>Person p1 = <span class="kw">new</span> Person(<span class="str">"Alice"</span>);
+Person p2 = (Person) p1.clone();  <span class="cm">// p1 and p2 are different objects</span>
+<span class="cm">// p1 != p2, but they contain the same data</span></code><span class="code-label">JAVA</span></pre>
+
+<p>Important details:</p>
+
+<p><strong>Cloning is opt-in.</strong> By default, <code>clone()</code> throws <code>CloneNotSupportedException</code>. To allow cloning, your class must implement the <code>Cloneable</code> interface:</p>
+
+<pre><code><span class="kw">class</span> Person <span class="kw">implements</span> Cloneable { ... }</code><span class="code-label">JAVA</span></pre>
+
+<p><strong>Cloning can be dangerous.</strong> The default <code>clone()</code> does a <strong>shallow copy</strong> — it copies the object's fields, but if those fields are references to other objects, both the original and the clone will point to the <em>same</em> inner objects. Modifying the inner object through one will affect the other.</p>
+
+<div class="callout info">
+  <div class="callout-title">Thinking Question (from the professor)</div>
+  <p>Why would some objects sometimes want to be cloned and sometimes not? And why is this method at the very top of the hierarchy?</p>
+  <p style="margin-top:8px">Think about objects that represent unique resources (like a database connection or a lock). Cloning them would create two references to the same underlying resource, which could cause conflicts. By putting <code>clone()</code> in <code>Object</code> and making it opt-in, Java lets every class make this decision for itself.</p>
+</div>
+
+<div class="quiz" id="quiz7">
+  <div class="quiz-label">✦ Check Your Understanding</div>
+  <p class="quiz-q">Why is <code>getClass()</code> declared as <code>final</code>?</p>
+  <ul class="quiz-options" data-correct="2">
+    <li onclick="handleQuiz(this, false, 'quiz7')">Because it's too simple to be worth overriding</li>
+    <li onclick="handleQuiz(this, false, 'quiz7')">Because it accesses private JVM internals</li>
+    <li onclick="handleQuiz(this, true, 'quiz7')">So objects cannot lie about their type — no "imposter" objects</li>
+    <li onclick="handleQuiz(this, false, 'quiz7')">Because the return type (Class) is also final</li>
+  </ul>
+  <div class="quiz-explanation" id="quiz7-exp">
+    <strong>Correct!</strong> If <code>getClass()</code> could be overridden, a subclass could return a fake Class object, pretending to be a type it's not. This would break debugging, type safety, and the <code>instanceof</code> check. Making it final ensures the JVM always reports the true runtime type, efficiently (just one pointer dereference).
+  </div>
+</div>
+
+<hr>
+
+<div class="callout purple" style="margin-top:50px">
+  <div class="callout-title">Lecture 10 — Wrap-Up</div>
+  <p style="margin-bottom:10px">Here's how everything connects:</p>
+  <p style="margin-bottom:8px"><strong>The JMM flaw</strong> showed us that even language designers make mistakes — the error/fault/failure chain applies to them too. The flaw was an <em>error</em> in the JMM design, which became a <em>fault</em> in any program that published <code>this</code> during construction, which became a <em>failure</em> when threads saw garbage memory.</p>
+  <p style="margin-bottom:8px"><strong>The five approaches to errors</strong> are fundamentally about trade-offs: reliability vs. flexibility, performance vs. safety. Java's design philosophy is heavily weighted toward safety (static checking, checked exceptions, no undefined behavior), while C/C++ prioritize performance (undefined behavior, preconditions, manual everything).</p>
+  <p><strong>Java's <code>Object</code> class</strong> embodies these design choices: <code>equals</code>/<code>hashCode</code> have a consistency requirement you must follow (precondition-style), <code>getClass</code> is final for safety, <code>finalize</code> was deprecated because it traded too much performance for too little benefit, and <code>clone</code> is opt-in to prevent dangerous copies.</p>
+</div>
+
+</main>
+
+<script>
+// Quiz handler
+function handleQuiz(el, correct, quizId) {
+  const quiz = document.getElementById(quizId);
+  const options = quiz.querySelectorAll('.quiz-options li');
+  options.forEach(opt => {
+    if (opt !== el) opt.classList.add('disabled');
+  });
+  if (correct) {
+    el.classList.add('correct');
+    el.innerHTML = '✓ ' + el.innerHTML;
+  } else {
+    el.classList.add('incorrect');
+    el.innerHTML = '✗ ' + el.innerHTML;
+    // highlight correct one
+    const correctIdx = parseInt(quiz.querySelector('.quiz-options').dataset.correct);
+    const correctEl = options[correctIdx];
+    correctEl.classList.add('correct');
+    correctEl.innerHTML = '✓ ' + correctEl.innerHTML;
+  }
+  document.getElementById(quizId + '-exp').classList.add('show');
+}
+
+// Reveal sections
+document.querySelectorAll('.reveal-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const content = btn.nextElementSibling;
+    content.classList.toggle('show');
+    btn.textContent = content.classList.contains('show') ? '▼ Hide' : btn.dataset.label;
+  });
+});
+
+// Progress bar
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+});
+
+// Close sidebar on link click
+document.querySelectorAll('.sidebar a').forEach(a => {
+  a.addEventListener('click', () => {
+    document.querySelector('.sidebar').classList.remove('open');
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 3 — Interactive Textbook</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf8f4;
+  --bg-warm: #f5f0e8;
+  --text: #2a2520;
+  --text-muted: #6b6560;
+  --accent: #c0510a;
+  --accent-light: #e8833a;
+  --accent-bg: #fef3eb;
+  --code-bg: #1e1e2e;
+  --code-text: #cdd6f4;
+  --code-keyword: #cba6f7;
+  --code-string: #a6e3a1;
+  --code-comment: #6c7086;
+  --code-type: #89b4fa;
+  --code-func: #f9e2af;
+  --code-op: #fab387;
+  --border: #d9d0c4;
+  --shadow: 0 2px 20px rgba(42,37,32,0.06);
+  --green: #2d8a4e;
+  --green-bg: #edf7f0;
+  --red: #c53030;
+  --red-bg: #fef0f0;
+  --blue: #2563eb;
+  --blue-bg: #eff4ff;
+  --purple: #7c3aed;
+  --purple-bg: #f3effe;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Source Serif 4', Georgia, serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.75;
+  font-size: 17.5px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── NAV SIDEBAR ── */
+.nav-toggle {
+  position: fixed; top: 20px; left: 20px; z-index: 1001;
+  width: 44px; height: 44px; border-radius: 12px;
+  background: var(--bg); border: 1px solid var(--border);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow); transition: all .2s;
+}
+.nav-toggle:hover { background: var(--bg-warm); }
+.nav-toggle span { display: block; width: 18px; height: 2px; background: var(--text); position: relative; transition: all .3s; }
+.nav-toggle span::before, .nav-toggle span::after {
+  content: ''; position: absolute; width: 18px; height: 2px; background: var(--text); transition: all .3s;
+}
+.nav-toggle span::before { top: -6px; }
+.nav-toggle span::after { top: 6px; }
+.nav-toggle.open span { background: transparent; }
+.nav-toggle.open span::before { transform: rotate(45deg); top: 0; }
+.nav-toggle.open span::after { transform: rotate(-45deg); top: 0; }
+
+.sidebar {
+  position: fixed; top: 0; left: -320px; width: 300px; height: 100vh;
+  background: var(--bg); border-right: 1px solid var(--border);
+  z-index: 1000; transition: left .35s cubic-bezier(.4,0,.2,1);
+  overflow-y: auto; padding: 80px 24px 40px;
+  box-shadow: 4px 0 30px rgba(0,0,0,0.05);
+}
+.sidebar.open { left: 0; }
+
+.sidebar-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--text-muted);
+  margin-bottom: 12px; padding-left: 12px;
+}
+.sidebar a {
+  display: block; padding: 8px 12px; border-radius: 8px;
+  font-family: 'DM Sans', sans-serif; font-size: 14px;
+  color: var(--text-muted); text-decoration: none; transition: all .15s;
+  margin-bottom: 2px; line-height: 1.5;
+}
+.sidebar a:hover { background: var(--bg-warm); color: var(--text); }
+.sidebar a.sub { padding-left: 28px; font-size: 13px; }
+.sidebar .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+/* ── MAIN CONTENT ── */
+.container {
+  max-width: 740px; margin: 0 auto; padding: 60px 28px 120px;
+}
+
+/* ── HERO ── */
+.hero {
+  text-align: center; padding: 80px 0 60px;
+  border-bottom: 1px solid var(--border); margin-bottom: 60px;
+}
+.hero-eyebrow {
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+  letter-spacing: 2px; text-transform: uppercase; color: var(--accent);
+  margin-bottom: 16px;
+}
+.hero h1 {
+  font-size: clamp(32px, 5vw, 48px); font-weight: 700;
+  line-height: 1.15; margin-bottom: 20px; color: var(--text);
+}
+.hero-sub {
+  font-size: 18px; color: var(--text-muted); max-width: 520px;
+  margin: 0 auto; line-height: 1.7;
+}
+
+/* ── SECTION HEADERS ── */
+.part-header {
+  margin: 80px 0 40px; padding: 32px 0; border-top: 3px solid var(--accent);
+}
+.part-number {
+  font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase; color: var(--accent);
+  margin-bottom: 8px;
+}
+.part-header h2 {
+  font-size: clamp(26px, 4vw, 36px); font-weight: 700; line-height: 1.2;
+}
+
+h3 {
+  font-size: 22px; font-weight: 600; margin: 48px 0 16px;
+  color: var(--text); line-height: 1.3;
+}
+h4 {
+  font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 700;
+  margin: 32px 0 12px; color: var(--text);
+}
+
+p { margin-bottom: 18px; }
+
+/* ── CODE BLOCKS ── */
+pre {
+  background: var(--code-bg); color: var(--code-text);
+  border-radius: 12px; padding: 20px 24px; margin: 20px 0 24px;
+  overflow-x: auto; font-family: 'JetBrains Mono', monospace;
+  font-size: 14px; line-height: 1.7; position: relative;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+pre .label {
+  position: absolute; top: 10px; right: 14px;
+  font-size: 10px; font-weight: 600; letter-spacing: 1px;
+  text-transform: uppercase; color: #585b70; font-family: 'DM Sans', sans-serif;
+}
+code {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.88em;
+  background: var(--bg-warm); padding: 2px 7px; border-radius: 5px;
+  color: var(--accent);
+}
+pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+.kw { color: var(--code-keyword); font-weight: 500; }
+.str { color: var(--code-string); }
+.cm { color: var(--code-comment); font-style: italic; }
+.tp { color: var(--code-type); }
+.fn { color: var(--code-func); }
+.op { color: var(--code-op); }
+.nb { color: #f38ba8; }
+
+/* ── CALLOUT BOXES ── */
+.callout {
+  border-radius: 12px; padding: 20px 24px; margin: 24px 0;
+  position: relative; border-left: 4px solid;
+}
+.callout-title {
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700;
+  letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px;
+}
+.callout p:last-child { margin-bottom: 0; }
+
+.callout.concept { background: var(--blue-bg); border-color: var(--blue); }
+.callout.concept .callout-title { color: var(--blue); }
+
+.callout.warning { background: var(--red-bg); border-color: var(--red); }
+.callout.warning .callout-title { color: var(--red); }
+
+.callout.tip { background: var(--green-bg); border-color: var(--green); }
+.callout.tip .callout-title { color: var(--green); }
+
+.callout.insight { background: var(--purple-bg); border-color: var(--purple); }
+.callout.insight .callout-title { color: var(--purple); }
+
+.callout.big-idea { background: var(--accent-bg); border-color: var(--accent); }
+.callout.big-idea .callout-title { color: var(--accent); }
+
+/* ── INTERACTIVE QUIZ ── */
+.quiz {
+  background: var(--bg-warm); border-radius: 14px; padding: 28px;
+  margin: 32px 0; border: 1px solid var(--border);
+}
+.quiz-header {
+  font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent);
+  margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+}
+.quiz-header::before { content: '✦'; }
+.quiz-question {
+  font-weight: 600; font-size: 17px; margin-bottom: 16px; line-height: 1.6;
+}
+.quiz-options { display: flex; flex-direction: column; gap: 8px; }
+.quiz-option {
+  padding: 12px 16px; border-radius: 10px; border: 2px solid var(--border);
+  cursor: pointer; transition: all .2s; font-family: 'DM Sans', sans-serif;
+  font-size: 15px; background: var(--bg); user-select: none;
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.quiz-option:hover { border-color: var(--accent-light); background: #fff; }
+.quiz-option.selected { border-color: var(--accent); background: var(--accent-bg); }
+.quiz-option.correct { border-color: var(--green); background: var(--green-bg); }
+.quiz-option.incorrect { border-color: var(--red); background: var(--red-bg); }
+.quiz-option .marker {
+  width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border);
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; margin-top: 1px; transition: all .2s;
+}
+.quiz-option.selected .marker { border-color: var(--accent); background: var(--accent); color: #fff; }
+.quiz-option.correct .marker { border-color: var(--green); background: var(--green); color: #fff; }
+.quiz-option.incorrect .marker { border-color: var(--red); background: var(--red); color: #fff; }
+
+.quiz-btn {
+  margin-top: 16px; padding: 10px 28px; border-radius: 10px;
+  border: none; background: var(--accent); color: #fff;
+  font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all .2s;
+}
+.quiz-btn:hover { background: var(--accent-light); }
+.quiz-btn:disabled { opacity: 0.5; cursor: default; }
+
+.quiz-explanation {
+  margin-top: 16px; padding: 16px; border-radius: 10px;
+  font-size: 15px; line-height: 1.65; display: none;
+}
+.quiz-explanation.show { display: block; }
+.quiz-explanation.correct-exp { background: var(--green-bg); border: 1px solid #b4dfc4; }
+.quiz-explanation.incorrect-exp { background: var(--red-bg); border: 1px solid #f5c6c6; }
+
+/* ── DIAGRAM / FIGURE ── */
+.figure {
+  margin: 28px 0; text-align: center;
+}
+.figure-box {
+  display: inline-block; background: #fff; border: 1px solid var(--border);
+  border-radius: 12px; padding: 24px 32px; box-shadow: var(--shadow);
+}
+.figure-caption {
+  margin-top: 10px; font-family: 'DM Sans', sans-serif;
+  font-size: 13px; color: var(--text-muted);
+}
+
+/* ── EXPANDABLE SECTIONS ── */
+details {
+  margin: 20px 0; border: 1px solid var(--border); border-radius: 12px;
+  overflow: hidden;
+}
+summary {
+  padding: 14px 20px; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  font-weight: 600; font-size: 15px; background: var(--bg-warm);
+  user-select: none; list-style: none; display: flex; align-items: center; gap: 10px;
+}
+summary::before { content: '▸'; transition: transform .2s; display: inline-block; color: var(--accent); }
+details[open] summary::before { transform: rotate(90deg); }
+summary::-webkit-details-marker { display: none; }
+.details-body { padding: 20px; }
+
+/* ── PROGRESS BAR ── */
+.progress-bar {
+  position: fixed; top: 0; left: 0; width: 0%; height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-light));
+  z-index: 2000; transition: width .1s;
+}
+
+/* ── CONNECTOR LINES ── */
+.flow-step {
+  padding-left: 32px; position: relative; margin-bottom: 24px;
+}
+.flow-step::before {
+  content: ''; position: absolute; left: 10px; top: 32px; bottom: -24px;
+  width: 2px; background: var(--border);
+}
+.flow-step:last-child::before { display: none; }
+.flow-step .step-num {
+  position: absolute; left: 0; top: 4px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ── TABLE ── */
+.compare-table {
+  width: 100%; border-collapse: collapse; margin: 20px 0;
+  font-family: 'DM Sans', sans-serif; font-size: 14.5px;
+}
+.compare-table th {
+  background: var(--bg-warm); padding: 10px 14px; text-align: left;
+  font-weight: 700; border-bottom: 2px solid var(--border);
+  font-size: 13px; letter-spacing: 0.5px; text-transform: uppercase;
+}
+.compare-table td {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.compare-table tr:last-child td { border-bottom: none; }
+
+/* ── ANIMATED REVEAL ── */
+.reveal { opacity: 0; transform: translateY(18px); transition: all .5s cubic-bezier(.4,0,.2,1); }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 600px) {
+  .container { padding: 40px 18px 100px; }
+  pre { padding: 16px 14px; font-size: 13px; }
+  .hero { padding: 60px 0 40px; }
+  .quiz { padding: 20px; }
+}
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+  <span></span>
+</button>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-label">Lecture 3</div>
+  <a href="#part1">Part I — Currying</a>
+  <a href="#why-currying" class="sub">Why Currying Exists</a>
+  <a href="#cons-function" class="sub">The Cons Function</a>
+  <a href="#quiz-currying" class="sub">↳ Check Yourself</a>
+  <div class="divider"></div>
+  <a href="#part2">Part II — Pattern Matching</a>
+  <a href="#car-problem" class="sub">The Car Problem</a>
+  <a href="#match-expressions" class="sub">Match Expressions</a>
+  <a href="#pattern-catalog" class="sub">Pattern Catalog</a>
+  <a href="#quiz-patterns" class="sub">↳ Check Yourself</a>
+  <a href="#no-selectors" class="sub">Why Not Hd / Tl</a>
+  <div class="divider"></div>
+  <a href="#part3">Part III — Recursion</a>
+  <a href="#let-rec" class="sub">let rec</a>
+  <a href="#lastint" class="sub">lastint Example</a>
+  <a href="#rev-slow" class="sub">Reversing a List (Slow)</a>
+  <a href="#rev-fast" class="sub">Reversing a List (Fast)</a>
+  <a href="#closures" class="sub">Closures &amp; Local Storage</a>
+  <a href="#quiz-recursion" class="sub">↳ Check Yourself</a>
+  <div class="divider"></div>
+  <a href="#part4">Part IV — Syntax</a>
+  <a href="#syntax-vs-semantics" class="sub">Syntax vs Semantics</a>
+  <a href="#syntax-goals" class="sub">Goals of Syntax Design</a>
+  <a href="#quiz-syntax" class="sub">↳ Check Yourself</a>
+  <div class="divider"></div>
+  <a href="#part5">Part V — Tokenization</a>
+  <a href="#what-tokens" class="sub">What Are Tokens?</a>
+  <a href="#greedy-tokenizer" class="sub">Greedy Tokenizers</a>
+  <a href="#comments" class="sub">Comments &amp; Trouble</a>
+  <a href="#reserved-words" class="sub">Reserved Words vs Keywords</a>
+  <a href="#parse-trees" class="sub">Parse Trees</a>
+  <a href="#quiz-tokens" class="sub">↳ Check Yourself</a>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════════════════ HERO ═══════════════════════ -->
+<header class="hero reveal">
+  <div class="hero-eyebrow">CS 131 · Programming Languages</div>
+  <h1>Patterns, Recursion &amp; the Anatomy of Syntax</h1>
+  <p class="hero-sub">An interactive guide to Lecture 3 — covering currying, pattern matching, efficient recursion, and how compilers begin to read your code.</p>
+</header>
+
+<!-- ═══════════════════════ PART I ═══════════════════════ -->
+<section id="part1" class="reveal">
+<div class="part-header">
+  <div class="part-number">Part I</div>
+  <h2>Currying — One Argument at a Time</h2>
+</div>
+
+<h3 id="why-currying">Why Does Currying Exist?</h3>
+
+<p>Before we dive into pattern matching and all the fun stuff, we need to understand a foundational idea in OCaml (and in functional programming generally): <strong>currying</strong>.</p>
+
+<p>Here is the core principle: <em>in OCaml, every function takes exactly one argument.</em> That's it. Not two, not three — just one. This might sound restrictive, but it's actually a deliberate design choice rooted in mathematics.</p>
+
+<p>The idea is named after <strong>Haskell Curry</strong>, a logician working in the 1940s. He was writing academic papers full of functions, and every time a function had multiple arguments, he needed subscripts for them. Typesetting subscripts was painful and error-prone. So he had a clever realization: if every function only takes <em>one</em> argument, you never need subscripts at all. And if you need a function that "seems" to take two arguments? You just make the first function <em>return another function</em> that takes the second argument.</p>
+
+<div class="callout concept">
+  <div class="callout-title">Key Concept — Currying</div>
+  <p>A <strong>curried function</strong> is a function that appears to take multiple arguments, but actually takes them one at a time. It takes the first argument and returns a <em>new function</em>. That new function takes the second argument and produces the result. You lose no power — it's just a different way to organize things.</p>
+</div>
+
+<h3 id="cons-function">Example: The <code>cons</code> Function</h3>
+
+<p>Let's see this in action. In the previous lecture, we saw the <code>cons</code> function, which prepends an element to the front of a list:</p>
+
+<pre><code><span class="kw">let</span> <span class="fn">cons</span> x y = x <span class="op">::</span> y</code></pre>
+
+<p>This <em>looks</em> like <code>cons</code> takes two arguments (<code>x</code> and <code>y</code>), but here's what's really happening under the hood:</p>
+
+<div class="flow-step">
+  <div class="step-num">1</div>
+  <p>You call <code>cons</code> with a value, say <code>"a"</code>. This doesn't produce a list yet — it produces a <strong>new function</strong> that is waiting for a list to prepend <code>"a"</code> onto.</p>
+</div>
+<div class="flow-step">
+  <div class="step-num">2</div>
+  <p>You then pass that returned function a list, like <code>["bc"; "def"]</code>. <em>Now</em> it builds the result: <code>["a"; "bc"; "def"]</code>.</p>
+</div>
+
+<p>The type OCaml infers for <code>cons</code> tells the whole story:</p>
+
+<pre><code><span class="tp">'a</span> <span class="op">-></span> <span class="tp">'a list</span> <span class="op">-></span> <span class="tp">'a list</span></code></pre>
+
+<p>Read this as: "give me a value of any type <code>'a</code>, and I will give you back a function. That function takes a list of <code>'a</code> and returns a list of <code>'a</code>." The implied parentheses are:</p>
+
+<pre><code><span class="tp">'a</span> <span class="op">-></span> (<span class="tp">'a list</span> <span class="op">-></span> <span class="tp">'a list</span>)</code></pre>
+
+<p>The arrow <code>-></code> is <strong>right-associative</strong>, so these parentheses are invisible — but they're always there. This is what makes it a curried function: it's a chain of single-argument functions.</p>
+
+<div class="callout tip">
+  <div class="callout-title">Why This Matters Later</div>
+  <p>Currying isn't just a curiosity. Later in this lecture, you'll see that it lets us do something powerful: <strong>partially apply</strong> a function to create a new, specialized function. For example, we'll define <code>rev</code> (list reverse) simply by calling <code>apprev []</code> — giving <code>apprev</code> its first argument and getting back a perfectly good reverse function. No extra code needed.</p>
+</div>
+
+<div class="quiz" id="quiz-currying">
+  <div class="quiz-header">Check Your Understanding</div>
+  <div class="quiz-question">What is the type of <code>cons "hello"</code> (i.e., <code>cons</code> applied to just one argument)?</div>
+  <div class="quiz-options" data-quiz="q1">
+    <div class="quiz-option" data-answer="a"><div class="marker">A</div><div><code>string</code></div></div>
+    <div class="quiz-option" data-answer="b"><div class="marker">B</div><div><code>string list -> string list</code></div></div>
+    <div class="quiz-option" data-answer="c"><div class="marker">C</div><div><code>string -> string list</code></div></div>
+    <div class="quiz-option" data-answer="d"><div class="marker">D</div><div><code>'a list -> 'a list</code></div></div>
+  </div>
+  <button class="quiz-btn" onclick="checkQuiz('q1','b')">Check Answer</button>
+  <div class="quiz-explanation" data-quiz-exp="q1">
+    <strong>Correct!</strong> Since <code>cons</code> has type <code>'a -> 'a list -> 'a list</code>, when we apply it to <code>"hello"</code> (a <code>string</code>), the <code>'a</code> becomes <code>string</code>. We've consumed the first argument, so what remains is <code>string list -> string list</code> — a function that takes a string list and returns a string list. This is currying in action: we got back a function, not a final result.
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════ PART II ═══════════════════════ -->
+<section id="part2" class="reveal">
+<div class="part-header">
+  <div class="part-number">Part II</div>
+  <h2>Pattern Matching — Taking Data Apart</h2>
+</div>
+
+<p>Now we arrive at one of OCaml's most powerful features: <strong>pattern matching</strong>. Think of a pattern as a <em>template</em> that you slide over a piece of data to see if it fits. If it fits, any named holes in the template get filled in with the corresponding pieces of the data.</p>
+
+<p>Pattern matching is how you inspect and decompose data structures in OCaml. It replaces the need for accessor functions like "get the first element" or "get the length" and makes your code safer and more readable in the process.</p>
+
+<h3 id="car-problem">The <code>car</code> Problem — Why Pattern Matching Matters</h3>
+
+<p>In Lisp-family languages, there's a classic function called <code>car</code> that returns the first element (the "head") of a list. Let's try to write it in OCaml:</p>
+
+<pre><code><span class="kw">let</span> <span class="fn">car</span> (x<span class="op">::</span>y) = x</code></pre>
+
+<p>This <em>looks</em> reasonable: we have a list whose head is <code>x</code> and whose tail is <code>y</code>, and we return <code>x</code>. OCaml accepts this code — but it gives us a <strong>warning</strong>.</p>
+
+<div class="callout warning">
+  <div class="callout-title">Compiler Warning — Partial Match</div>
+  <p>OCaml warns us that our pattern doesn't cover all possible inputs. The pattern <code>x::y</code> matches any list of length 1 or more, but it does <strong>not</strong> match the empty list <code>[]</code>. If someone calls <code>car []</code>, the program crashes at runtime with a "match failure."</p>
+</div>
+
+<p>This is a <strong>partial function</strong> — it only works on <em>some</em> inputs. And in OCaml, partial functions are considered dangerous. The whole philosophy of OCaml is: <em>if your code compiles without warnings, it should not crash at runtime.</em></p>
+
+<h4>What's Actually Happening? Syntactic Sugar</h4>
+
+<p>That shorthand <code>let car (x::y) = x</code> is actually syntactic sugar (a convenient shortcut) for a longer form using a <strong>match expression</strong>:</p>
+
+<pre><code><span class="kw">let</span> <span class="fn">car</span> = <span class="kw">fun</span> l <span class="op">-></span> <span class="kw">match</span> l <span class="kw">with</span>
+  <span class="op">|</span> x<span class="op">::</span>y <span class="op">-></span> x</code></pre>
+
+<p>Reading this: "car is a function that takes a list <code>l</code>, and then tries to match <code>l</code> against the pattern <code>x::y</code>. If it matches (the list is non-empty), bind <code>x</code> to the head and <code>y</code> to the tail, then return <code>x</code>."</p>
+
+<p>The problem is clear in this expanded form: there's only <strong>one</strong> pattern branch. If <code>l</code> is <code>[]</code>, no branch matches, and the program dies.</p>
+
+<h3 id="match-expressions">Match Expressions — The Full Story</h3>
+
+<p>A <strong>match expression</strong> is the core mechanism. Its general form is:</p>
+
+<pre><code><span class="kw">match</span> <em>expression</em> <span class="kw">with</span>
+  <span class="op">|</span> <em>pattern₁</em> <span class="op">-></span> <em>result₁</em>
+  <span class="op">|</span> <em>pattern₂</em> <span class="op">-></span> <em>result₂</em>
+  <span class="op">|</span> <em>pattern₃</em> <span class="op">-></span> <em>result₃</em></code></pre>
+
+<p>OCaml evaluates the expression, then tries each pattern from top to bottom. The first pattern that matches "wins," and the corresponding result is evaluated and returned. If <em>no</em> pattern matches, you get a runtime crash.</p>
+
+<p>The first <code>|</code> (vertical bar) at the top is optional — it's just there to make the patterns line up nicely. Many OCaml programmers include it for readability.</p>
+
+<h4>Fixing <code>car</code> — but with a Trade-off</h4>
+
+<p>We can eliminate the warning by handling the empty list:</p>
+
+<pre><code><span class="kw">let</span> <span class="fn">car</span> = <span class="kw">fun</span> l <span class="op">-></span> <span class="kw">match</span> l <span class="kw">with</span>
+  <span class="op">|</span> x<span class="op">::</span>y <span class="op">-></span> x
+  <span class="op">|</span> [] <span class="op">-></span> 0</code></pre>
+
+<p>No more warning! But there's a problem: this function's type is now:</p>
+
+<pre><code><span class="tp">int list</span> <span class="op">-></span> <span class="tp">int</span></code></pre>
+
+<p>It's no longer generic — it <em>only</em> works on integer lists! Why? Because we wrote <code>0</code> on the right-hand side. OCaml sees that <code>0</code> is an <code>int</code>, and since all branches of a match must return the <strong>same type</strong>, it infers that <code>x</code> must also be an <code>int</code>. Therefore the list must be an <code>int list</code>.</p>
+
+<div class="callout insight">
+  <div class="callout-title">Type Inference in Action</div>
+  <p>OCaml doesn't require you to write type annotations. It <strong>infers</strong> all types automatically. But it's strict: every branch of a match must produce the same type. If even one branch introduces a concrete type like <code>int</code>, the whole function becomes specialized. The original <code>car</code> (without the <code>[]</code> branch) had type <code>'a list -> 'a</code> — polymorphic, working on any list type.</p>
+</div>
+
+<h3 id="pattern-catalog">The Pattern Catalog</h3>
+
+<p>Let's now systematically learn every kind of pattern you can write. Think of these as the building blocks — they can all be nested inside each other recursively.</p>
+
+<h4>1. Constants</h4>
+
+<p>A constant pattern matches only <strong>itself</strong>. Examples: <code>0</code>, <code>42</code>, <code>[]</code>, <code>true</code>, <code>"hello"</code>.</p>
+
+<pre><code><span class="kw">match</span> x <span class="kw">with</span>
+  <span class="op">|</span> 0 <span class="op">-></span> <span class="str">"zero"</span>
+  <span class="op">|</span> 1 <span class="op">-></span> <span class="str">"one"</span>
+  <span class="op">|</span> _ <span class="op">-></span> <span class="str">"something else"</span></code></pre>
+
+<h4>2. Variables</h4>
+
+<p>A variable like <code>x</code> matches <strong>anything</strong> — but as a side-effect, it <strong>binds</strong> (assigns) the matched value to that name. Think of it as a local variable that exists only inside that match branch.</p>
+
+<pre><code><span class="kw">match</span> my_list <span class="kw">with</span>
+  <span class="op">|</span> x<span class="op">::</span>y <span class="op">-></span> x      <span class="cm">(* x = head, y = tail *)</span>
+  <span class="op">|</span> x <span class="op">-></span> 0          <span class="cm">(* x = the whole list — a different x! *)</span></code></pre>
+
+<div class="callout warning">
+  <div class="callout-title">Scope Matters</div>
+  <p>Each branch of a match expression is its own scope. The <code>x</code> in the first branch and the <code>x</code> in the second branch are <strong>completely different variables</strong>. They just happen to share a name. Each is local to its own branch.</p>
+</div>
+
+<h4>3. Underscore (Wildcard)</h4>
+
+<p>The underscore <code>_</code> matches <strong>anything</strong>, just like a variable — but it <strong>discards</strong> the value. It's OCaml's way of saying "I don't care what this is, and I'm not going to use it."</p>
+
+<pre><code><span class="kw">let</span> <span class="fn">car</span> = <span class="kw">fun</span> l <span class="op">-></span> <span class="kw">match</span> l <span class="kw">with</span>
+  <span class="op">|</span> x<span class="op">::</span>_ <span class="op">-></span> x     <span class="cm">(* we don't need the tail *)</span>
+  <span class="op">|</span> _ <span class="op">-></span> 0         <span class="cm">(* we don't need the empty list itself *)</span></code></pre>
+
+<div class="callout tip">
+  <div class="callout-title">Style Rule</div>
+  <p>It is considered <strong>good style</strong> in OCaml to use <code>_</code> whenever you don't plan to use a variable. This convention originated in ML and has since spread to many other languages (Python, Rust, Swift, etc.).</p>
+</div>
+
+<h4>4. List Cons Pattern: <code>P1 :: P2</code></h4>
+
+<p>This matches any <strong>non-empty list</strong> where the head matches <code>P1</code> and the tail matches <code>P2</code>. Since <code>::</code> is right-associative, you can chain them:</p>
+
+<pre><code>x <span class="op">::</span> y <span class="op">::</span> z     <span class="cm">(* means: x :: (y :: z) *)</span></code></pre>
+
+<p>This matches a list of length ≥ 2, where <code>x</code> is the first element, <code>y</code> is the second element, and <code>z</code> is the rest of the list (which could be empty).</p>
+
+<h4>5. List Literal Pattern: <code>[P1; P2; P3]</code></h4>
+
+<p>This matches a list of exactly that many elements. For example, <code>[h]</code> matches a list of exactly length 1 (a singleton). This is rarely used because most list processing is recursive — you usually only care about "empty vs. non-empty."</p>
+
+<h4>6. Tuple Pattern: <code>(P1, P2, P3)</code></h4>
+
+<p>Matches a tuple of exactly that many elements. Unlike lists, tuples are <strong>heterogeneous</strong> (elements can have different types), so <code>P1</code> could match an <code>int</code>, <code>P2</code> a <code>string</code>, etc. But you must always match <em>all</em> elements — there's no way to match "the first element of a tuple" without specifying placeholders for the rest.</p>
+
+<pre><code><span class="kw">match</span> my_triple <span class="kw">with</span>
+  <span class="op">|</span> (a, _, _) <span class="op">-></span> a     <span class="cm">(* only want the first element *)</span></code></pre>
+
+<p>You must know the tuple's size (the number of commas) to write a pattern for it.</p>
+
+<h4>What is NOT a Pattern</h4>
+
+<p>You <strong>cannot</strong> write <code>P1 P2</code> as a pattern (two patterns side by side, like a function call). Patterns only match <em>data</em> — they don't match <em>programs</em> or function applications. You can only use patterns to take data apart, never to put things together or analyze code.</p>
+
+<div class="callout concept">
+  <div class="callout-title">The <code>function</code> Keyword Shorthand</div>
+  <p>If your function takes one argument and immediately matches it, there's a shorter way to write it. Instead of:</p>
+  <pre><code><span class="kw">let</span> <span class="fn">f</span> = <span class="kw">fun</span> l <span class="op">-></span> <span class="kw">match</span> l <span class="kw">with</span>
+  <span class="op">|</span> ... <span class="op">-></span> ...</code></pre>
+  <p>You can write:</p>
+  <pre><code><span class="kw">let</span> <span class="fn">f</span> = <span class="kw">function</span>
+  <span class="op">|</span> ... <span class="op">-></span> ...</code></pre>
+  <p>The <code>function</code> keyword means: "I'm a function, and all I do is pattern-match on my argument." The argument doesn't even need a name.</p>
+</div>
+
+<div class="quiz" id="quiz-patterns">
+  <div class="quiz-header">Check Your Understanding</div>
+  <div class="quiz-question">Given the pattern <code>_ :: h :: t</code>, which of the following does it match?</div>
+  <div class="quiz-options" data-quiz="q2">
+    <div class="quiz-option" data-answer="a"><div class="marker">A</div><div>Any list of length exactly 2</div></div>
+    <div class="quiz-option" data-answer="b"><div class="marker">B</div><div>Any list of length 2 or more, binding the <em>second</em> element to <code>h</code></div></div>
+    <div class="quiz-option" data-answer="c"><div class="marker">C</div><div>Any list of length 3 or more</div></div>
+    <div class="quiz-option" data-answer="d"><div class="marker">D</div><div>This is not a valid pattern</div></div>
+  </div>
+  <button class="quiz-btn" onclick="checkQuiz('q2','b')">Check Answer</button>
+  <div class="quiz-explanation" data-quiz-exp="q2">
+    <strong>Correct!</strong> Breaking it down: <code>_ :: (h :: t)</code>. The outer <code>::</code> says "the list has at least one element" (which we discard with <code>_</code>). The inner <code>h :: t</code> says "the tail has at least one element" (bound to <code>h</code>), with <code>t</code> being the rest. So the whole list has length ≥ 2. <code>h</code> is the second element, and <code>t</code> is everything after it (which could be empty).
+  </div>
+</div>
+
+<h3 id="no-selectors">Don't Use <code>hd</code> or <code>tl</code> — Use Pattern Matching</h3>
+
+<p>OCaml's standard library has functions <code>List.hd</code> (head) and <code>List.tl</code> (tail) that extract the first element or the rest of a list. <strong>Don't use them.</strong></p>
+
+<p>These are "selector functions" — they work on non-empty lists but crash on empty ones. That crash is a <em>runtime error</em>, exactly the kind of thing OCaml is designed to prevent.</p>
+
+<p>Instead, use pattern matching. When you match a list against <code>h::t</code> and <code>[]</code>, the compiler <em>guarantees</em> you've handled all cases. If you accidentally miss a case, the compiler warns you at <strong>compile time</strong> — long before your program ever runs.</p>
+
+<div class="callout big-idea">
+  <div class="callout-title">The Big Idea</div>
+  <p>One of the core reasons we use OCaml in this course is to write programs where <strong>if it compiles without warnings, it won't crash.</strong> Pattern matching is the primary tool that makes this possible. Every match expression with exhaustive patterns is a promise: "no matter what input you give me, I have an answer."</p>
+</div>
+
+</section>
+
+<!-- ═══════════════════════ PART III ═══════════════════════ -->
+<section id="part3" class="reveal">
+<div class="part-header">
+  <div class="part-number">Part III</div>
+  <h2>Recursion in OCaml</h2>
+</div>
+
+<h3 id="let-rec">Why You Need <code>let rec</code></h3>
+
+<p>In most languages (C, Python, Java), you can call a function from within its own body without any special syntax — that's just recursion. But in OCaml, you have to <em>explicitly</em> tell the compiler that a function is recursive by writing <code>let <strong>rec</strong></code> instead of just <code>let</code>.</p>
+
+<p>Why? Because OCaml has a strict philosophical rule: <strong>you should never define something in terms of itself</strong>, because that usually leads to nonsense. Consider this in C:</p>
+
+<pre><code><span class="label">C</span><span class="tp">int</span> x = x;          <span class="cm">// undefined behavior — using uninitialized variable</span>
+<span class="tp">int</span> x = x + 1;      <span class="cm">// even worse — no possible value works</span></code></pre>
+
+<p>Self-referential definitions are philosophically dangerous. But recursive <em>functions</em> are the one safe exception: when you write <code>let rec f = ...</code>, you're not using <code>f</code>'s <em>value</em> right now. You're just noting that later, when <code>f</code> gets called, it should be able to call itself. The actual execution is <strong>delayed</strong>, which is what makes it safe.</p>
+
+<p>The <code>rec</code> keyword is your way of telling the compiler: "I know this is self-referential, and I'm a competent programmer who understands recursion. Trust me."</p>
+
+<h3 id="lastint">Example: Finding the Last Element</h3>
+
+<p>Let's build a function that finds the last element of an integer list, returning <code>-1</code> if the list is empty (a cheat, but fine for now):</p>
+
+<pre><code><span class="kw">let rec</span> <span class="fn">lastint</span> = <span class="kw">function</span>
+  <span class="op">|</span> []    <span class="op">-></span> <span class="op">-</span>1
+  <span class="op">|</span> [h]   <span class="op">-></span> h
+  <span class="op">|</span> _<span class="op">::</span>t  <span class="op">-></span> lastint t</code></pre>
+
+<p>Let's walk through each branch:</p>
+
+<div class="flow-step">
+  <div class="step-num">1</div>
+  <p><code>[]</code> — the empty list. No last element exists, so we return <code>-1</code>.</p>
+</div>
+<div class="flow-step">
+  <div class="step-num">2</div>
+  <p><code>[h]</code> — a singleton list (length exactly 1). The only element <em>is</em> the last element, so return <code>h</code>.</p>
+</div>
+<div class="flow-step">
+  <div class="step-num">3</div>
+  <p><code>_::t</code> — a list of length ≥ 1. But we already caught length-1 lists in branch 2! So this branch only fires for lists of length ≥ 2. We discard the head (don't need it), and recurse on the tail <code>t</code>. Since <code>t</code> has length ≥ 1, the recursion makes progress toward the base case.</p>
+</div>
+
+<p>Notice a subtle and clever thing about the third branch: the pattern <code>_::t</code> would normally match any non-empty list (including singletons). But because OCaml tries patterns <strong>top to bottom</strong>, singletons are already caught by <code>[h]</code>. So by the time we reach <code>_::t</code>, the list must have length ≥ 2, which means <code>t</code> has length ≥ 1.</p>
+
+<details>
+<summary>Expand: The desugared (long) version</summary>
+<div class="details-body">
+<p>Remember, <code>function</code> is shorthand. The long version is:</p>
+<pre><code><span class="kw">let rec</span> <span class="fn">lastint</span> = <span class="kw">fun</span> l <span class="op">-></span> <span class="kw">match</span> l <span class="kw">with</span>
+  <span class="op">|</span> []    <span class="op">-></span> <span class="op">-</span>1
+  <span class="op">|</span> [h]   <span class="op">-></span> h
+  <span class="op">|</span> _<span class="op">::</span>t  <span class="op">-></span> lastint t</code></pre>
+<p>They mean exactly the same thing.</p>
+</div>
+</details>
+
+<h3 id="rev-slow">Reversing a List — The Naive (Slow) Way</h3>
+
+<p>Here's a classic exercise: reverse a list. A first attempt:</p>
+
+<pre><code><span class="kw">let rec</span> <span class="fn">rev</span> l = <span class="kw">match</span> l <span class="kw">with</span>
+  <span class="op">|</span> []    <span class="op">-></span> []
+  <span class="op">|</span> h<span class="op">::</span>t  <span class="op">-></span> (rev t) <span class="op">@</span> h</code></pre>
+
+<p>The professor initially wrote this and OCaml reported a surprising type:</p>
+
+<pre><code><span class="kw">val</span> rev : <span class="tp">'a list list</span> <span class="op">-></span> <span class="tp">'a list</span></code></pre>
+
+<p>That's not what we wanted! We wanted <code>'a list -> 'a list</code>, not something that takes a list of lists. What's the bug?</p>
+
+<div class="callout big-idea">
+  <div class="callout-title">Debugging Without Running — The Power of Types</div>
+  <p>This was a pivotal moment. The professor realized: <strong>I can debug my code without running it, just by looking at the type.</strong> If the type is wrong, the function is wrong — guaranteed. This is a massive advantage over languages like C++, where you might only discover the bug after running a specific test case.</p>
+</div>
+
+<p>The bug: <code>@</code> (the append operator) requires <strong>both</strong> arguments to be lists. Writing <code>(rev t) @ h</code> means <code>h</code> must be a list. Since <code>h</code> is the head of the input list, the input list must be a list of lists — hence the type <code>'a list list -> 'a list</code>.</p>
+
+<p>The fix: wrap <code>h</code> in a singleton list:</p>
+
+<pre><code><span class="kw">let rec</span> <span class="fn">rev</span> l = <span class="kw">match</span> l <span class="kw">with</span>
+  <span class="op">|</span> []    <span class="op">-></span> []
+  <span class="op">|</span> h<span class="op">::</span>t  <span class="op">-></span> (rev t) <span class="op">@</span> [h]</code></pre>
+
+<p>Now the type is <code>'a list -> 'a list</code>. Correct! But this function is <strong>O(n²)</strong>. Why? The <code>@</code> operator must copy the entire left-hand list to build the result. Since <code>rev t</code> returns a list of length roughly <code>n-1</code>, and we do this <code>n</code> times, the total work is roughly <code>n + (n-1) + (n-2) + ... + 1 = n²/2</code>.</p>
+
+<h3 id="rev-fast">Reversing a List — The Smart (Fast) Way</h3>
+
+<p>The key insight: <strong>solve a harder problem more efficiently, then use it to solve the original.</strong></p>
+
+<p>Instead of just reversing a list, define a more general function <code>apprev</code> that reverses a list <em>and appends something to the end</em>:</p>
+
+<pre><code><span class="cm">(* apprev a l  =  (reverse of l) appended with a *)</span>
+<span class="kw">let rec</span> <span class="fn">apprev</span> a = <span class="kw">function</span>
+  <span class="op">|</span> []    <span class="op">-></span> a
+  <span class="op">|</span> h<span class="op">::</span>t  <span class="op">-></span> apprev (h<span class="op">::</span>a) t</code></pre>
+
+<p>Let's trace through <code>apprev [] [3; 5; 9]</code>:</p>
+
+<div class="flow-step">
+  <div class="step-num">1</div>
+  <p><code>apprev [] [3; 5; 9]</code> → list is non-empty, <code>h=3</code>, <code>t=[5;9]</code> → call <code>apprev [3] [5; 9]</code></p>
+</div>
+<div class="flow-step">
+  <div class="step-num">2</div>
+  <p><code>apprev [3] [5; 9]</code> → <code>h=5</code>, <code>t=[9]</code> → call <code>apprev [5; 3] [9]</code></p>
+</div>
+<div class="flow-step">
+  <div class="step-num">3</div>
+  <p><code>apprev [5; 3] [9]</code> → <code>h=9</code>, <code>t=[]</code> → call <code>apprev [9; 5; 3] []</code></p>
+</div>
+<div class="flow-step">
+  <div class="step-num">4</div>
+  <p><code>apprev [9; 5; 3] []</code> → list is empty → return <code>[9; 5; 3]</code>  ✓</p>
+</div>
+
+<p>Each step does O(1) work (just a <code>::</code> cons), and there are <code>n</code> steps. Total: <strong>O(n)</strong>. Now we define <code>rev</code> using currying:</p>
+
+<pre><code><span class="kw">let</span> <span class="fn">rev</span> = apprev []</code></pre>
+
+<p>This is a beautiful example of <strong>partial application</strong>: we call <code>apprev</code> with its first argument (<code>[]</code>) and get back a function — that function <em>is</em> our <code>rev</code>. Its type is <code>'a list -> 'a list</code>, exactly what we want.</p>
+
+<pre><code><span class="kw">val</span> apprev : <span class="tp">'a list</span> <span class="op">-></span> <span class="tp">'a list</span> <span class="op">-></span> <span class="tp">'a list</span>
+<span class="kw">val</span> rev    : <span class="tp">'a list</span> <span class="op">-></span> <span class="tp">'a list</span></code></pre>
+
+<h3 id="closures">Closures — Why Local Storage Doesn't Disappear</h3>
+
+<p>When we write <code>let rev = apprev []</code>, the function <code>apprev</code> is called with <code>a = []</code> and it <em>returns</em>. In C or C++, when a function returns, its local variables are destroyed — the stack frame is popped.</p>
+
+<p>But here, the function returned… and yet later, when someone calls <code>rev [3; 5; 9]</code>, the code inside <code>apprev</code> runs and needs to know that <code>a</code> is <code>[]</code>. How does it remember?</p>
+
+<div class="callout concept">
+  <div class="callout-title">Closures</div>
+  <p>In OCaml (and any language that supports currying / first-class functions), a returned function can "capture" variables from its enclosing scope. These captured variables <strong>persist</strong> even after the outer function returns. This combination of a function plus its captured environment is called a <strong>closure</strong>.</p>
+  <p>The practical upshot: in OCaml, local storage does <strong>not</strong> automatically go away when a function returns. If a returned function might still need those locals, they stick around. The garbage collector will eventually clean them up — but only once nobody needs them anymore.</p>
+</div>
+
+<p>This is fundamentally different from C/C++, where the rule is simple: function returns → stack pops → locals are gone. OCaml's rule is more nuanced: the "stack" is really a more complex data structure that keeps values alive as long as they're needed. This is slightly slower than a raw stack, but it enables the powerful higher-order functional programming we just used.</p>
+
+<div class="quiz" id="quiz-recursion">
+  <div class="quiz-header">Check Your Understanding</div>
+  <div class="quiz-question">Why is the naive <code>rev</code> function O(n²) while <code>apprev</code>-based <code>rev</code> is O(n)?</div>
+  <div class="quiz-options" data-quiz="q3">
+    <div class="quiz-option" data-answer="a"><div class="marker">A</div><div>The naive version uses <code>@</code> which copies the left list on every recursive call, leading to 1 + 2 + … + n total cons operations</div></div>
+    <div class="quiz-option" data-answer="b"><div class="marker">B</div><div>The naive version makes more recursive calls</div></div>
+    <div class="quiz-option" data-answer="c"><div class="marker">C</div><div>Pattern matching is slower than using <code>function</code></div></div>
+    <div class="quiz-option" data-answer="d"><div class="marker">D</div><div><code>apprev</code> uses tail recursion, which the compiler optimizes into a loop</div></div>
+  </div>
+  <button class="quiz-btn" onclick="checkQuiz('q3','a')">Check Answer</button>
+  <div class="quiz-explanation" data-quiz-exp="q3">
+    <strong>Correct!</strong> Both versions make <code>n</code> recursive calls. The difference is the cost <em>per call</em>. The naive version calls <code>@</code> (append), which must copy the entire left-hand list — and that list grows from length 0 to length n-1 across the calls. Total copies: 0 + 1 + 2 + … + (n-1) = n(n-1)/2 = O(n²). The <code>apprev</code> version uses only <code>::</code> (cons), which is O(1) per call. So n calls × O(1) each = O(n).
+  </div>
+</div>
+
+</section>
+
+<!-- ═══════════════════════ PART IV ═══════════════════════ -->
+<section id="part4" class="reveal">
+<div class="part-header">
+  <div class="part-number">Part IV</div>
+  <h2>Syntax — Form vs. Meaning</h2>
+</div>
+
+<h3 id="syntax-vs-semantics">Syntax vs. Semantics</h3>
+
+<p>When we talk about a programming language (or a natural language), we divide the discussion into two pieces:</p>
+
+<table class="compare-table">
+  <tr><th>Syntax (Form)</th><th>Semantics (Meaning)</th></tr>
+  <tr><td>What does the sentence/code <em>look like</em>? What's its structure?</td><td>What does the sentence/code <em>mean</em>? What does it do?</td></tr>
+  <tr><td>The "easy" part (mechanically checkable)</td><td>The "hard" part (requires understanding intent)</td></tr>
+</table>
+
+<p>This distinction seems clean, but in practice it gets fuzzy. Let's see three famous examples that illustrate the boundary.</p>
+
+<h4>Example 1: Perfect Syntax, Bogus Meaning</h4>
+<p>Noam Chomsky's famous 1950s sentence: "Colorless green ideas sleep furiously." The grammar is perfect — adjective, adjective, noun, verb, adverb — all in the right places. But the meaning is nonsensical: ideas have no color, they don't sleep, and sleeping can't be furious. This is <strong>form without meaning</strong>.</p>
+
+<h4>Example 2: Questionable Syntax, Clear Meaning</h4>
+<p>Consider: "Ireland has leprechauns galore." Every English speaker understands this — Ireland is overrun with leprechauns. But what is "galore" doing there? It's in the position of an adverb, yet it's an adjective. And you can't say "Ireland has galore leprechauns" — it <em>must</em> come after the noun. (We borrowed it from Irish, and brought a bit of Irish grammar along.) This is <strong>meaning without clean form</strong>.</p>
+
+<h4>Example 3: Ambiguity in Both</h4>
+<p>"Time flies." This could mean "time passes quickly" (noun + verb) or "go measure how fast the flies move" (imperative verb + noun/direct object). Both interpretations are syntactically and semantically valid. This is <strong>ambiguity</strong> — and it's the thing programming languages must avoid at all costs.</p>
+
+<div class="callout warning">
+  <div class="callout-title">Ambiguity is the Enemy</div>
+  <p>In natural language, ambiguity can be a feature — diplomats and poets exploit it deliberately. In programming languages, it's a disaster. You never want your program to mean different things on different machines. A major goal of language syntax design is to <strong>eliminate ambiguity</strong>.</p>
+</div>
+
+<h3 id="syntax-goals">Goals When Designing Syntax</h3>
+
+<p>Programming languages are <em>designed</em> (unlike natural languages, which evolve organically). When designing the syntax, the language creator balances several competing goals:</p>
+
+<h4>1. Familiarity</h4>
+<p>Use syntax people already know. Most people write <code>3 + 4 * 5</code> (infix notation). PostScript uses postfix: <code>3 4 5 * +</code>. Lisp uses prefix: <code>(+ 3 (* 4 5))</code>. PostScript and Lisp fans argue their notation is superior — no precedence rules needed! — but most people find infix familiar and comfortable.</p>
+
+<h4>2. Simplicity</h4>
+<p>PostScript and Lisp are arguably <em>simpler</em>: you never have to memorize that <code>*</code> binds tighter than <code>+</code>. The cost is unfamiliarity. Simplicity and familiarity often compete.</p>
+
+<h4>3. Intuitiveness</h4>
+<p>A practical tip from the legendary programmer Val Shaw (credited with inventing goto-free programming): <strong>never use <code>></code></strong>. Always write comparisons so that smaller values appear on the left: <code>0 <= i</code> and <code>i < n</code>, not <code>i >= 0</code>. This way, the textual order on the page mirrors the number line — making code easier to read intuitively.</p>
+
+<h4>4. Unambiguity</h4>
+<p>A program should have exactly one interpretation. Period.</p>
+
+<h4>5. Redundancy (Error Detection)</h4>
+<p>Redundancy seems wasteful, but it <em>catches mistakes</em>. In infix notation, if you forget a closing parenthesis, the compiler catches it. In PostScript's postfix notation, almost any sequence of symbols is a valid program — it's very hard to make a <em>syntactically</em> invalid program, but very easy to make a <em>wrong</em> one. Lisp, with parentheses everywhere, catches even more errors. Some redundancy is a feature, not a bug.</p>
+
+<h4>6. Writeability &amp; Readability</h4>
+<p>You want code to be fast to write <em>and</em> easy to read. These goals often conflict. APL is famously writeable — you can implement Conway's Game of Life in one line of symbols — but nearly impossible to read six months later. Python's indentation rules make code more readable at the cost of some writeability constraints.</p>
+
+<h4>7. Extensibility</h4>
+<p>Can the syntax evolve? The original Bourne shell author (Steve Bourne) loved Algol 68's syntax so much that he used C preprocessor macros to redefine C's syntax: <code>#define IF if(</code>, <code>#define THEN ){</code>, etc. His successors hated it and eventually rewrote the shell from scratch (giving us Bash). Extensibility is powerful but dangerous.</p>
+
+<div class="quiz" id="quiz-syntax">
+  <div class="quiz-header">Check Your Understanding</div>
+  <div class="quiz-question">Why might a language designer <em>want</em> some redundancy in the syntax, even though it means more typing?</div>
+  <div class="quiz-options" data-quiz="q4">
+    <div class="quiz-option" data-answer="a"><div class="marker">A</div><div>Redundancy makes programs run faster</div></div>
+    <div class="quiz-option" data-answer="b"><div class="marker">B</div><div>Redundancy helps the compiler catch mistakes that would otherwise silently produce wrong programs</div></div>
+    <div class="quiz-option" data-answer="c"><div class="marker">C</div><div>Redundancy is required by international standards</div></div>
+    <div class="quiz-option" data-answer="d"><div class="marker">D</div><div>Redundancy makes the language more extensible</div></div>
+  </div>
+  <button class="quiz-btn" onclick="checkQuiz('q4','b')">Check Answer</button>
+  <div class="quiz-explanation" data-quiz-exp="q4">
+    <strong>Correct!</strong> Consider: in PostScript (no redundancy), almost any token sequence is "valid." You can accidentally write the wrong program and the compiler won't stop you. With parentheses and braces (redundancy), a forgotten <code>)</code> or <code>}</code> is immediately flagged as a syntax error. The extra structure acts as a safety net.
+  </div>
+</div>
+
+</section>
+
+<!-- ═══════════════════════ PART V ═══════════════════════ -->
+<section id="part5" class="reveal">
+<div class="part-header">
+  <div class="part-number">Part V</div>
+  <h2>Tokenization — The First Step of Compilation</h2>
+</div>
+
+<p>We've been writing programs and thinking about their meaning. But how does a <em>compiler</em> see your code? It starts at the very bottom: your source code is nothing but a sequence of bytes in a file. The first job is to make sense of those bytes. That process is called <strong>tokenization</strong> (also called <strong>lexical analysis</strong>).</p>
+
+<h3 id="what-tokens">What Are Tokens?</h3>
+
+<p>A <strong>token</strong> is a meaningful unit — the smallest chunk of your program that carries semantic weight. Think of tokens as the "words" of a programming language.</p>
+
+<p>Consider this C program:</p>
+
+<pre><code><span class="label">C</span><span class="tp">int</span> <span class="fn">main</span>() { <span class="kw">return</span> !getchar(); }</code></pre>
+
+<p>The tokenizer converts this byte string into a stream of tokens:</p>
+
+<table class="compare-table">
+  <tr><th>Token Type</th><th>Extra Info</th><th>Source Text</th></tr>
+  <tr><td>INT (keyword)</td><td>—</td><td><code>int</code></td></tr>
+  <tr><td>ID (identifier)</td><td>"main"</td><td><code>main</code></td></tr>
+  <tr><td>LPAREN</td><td>—</td><td><code>(</code></td></tr>
+  <tr><td>RPAREN</td><td>—</td><td><code>)</code></td></tr>
+  <tr><td>LBRACE</td><td>—</td><td><code>{</code></td></tr>
+  <tr><td>RETURN (keyword)</td><td>—</td><td><code>return</code></td></tr>
+  <tr><td>BANG (operator)</td><td>—</td><td><code>!</code></td></tr>
+  <tr><td>ID (identifier)</td><td>"getchar"</td><td><code>getchar</code></td></tr>
+  <tr><td>LPAREN</td><td>—</td><td><code>(</code></td></tr>
+  <tr><td>RPAREN</td><td>—</td><td><code>)</code></td></tr>
+  <tr><td>SEMICOLON</td><td>—</td><td><code>;</code></td></tr>
+  <tr><td>RBRACE</td><td>—</td><td><code>}</code></td></tr>
+</table>
+
+<p>Notice what's <strong>discarded</strong>: whitespace, newlines, and the <code>#include</code> directive's content (which gets expanded into many more tokens first). What's <strong>kept</strong>: the token type, plus any extra information needed. For identifiers, we need the name. For integer constants, we need the value.</p>
+
+<div class="callout concept">
+  <div class="callout-title">Tokens vs. Lexemes</div>
+  <p>A <strong>token</strong> is the abstract category: "this is an identifier" or "this is an integer constant." A <strong>lexeme</strong> is the token plus its extra information: "this is the identifier spelled <code>main</code>" or "this is the integer constant with value <code>42</code>." Some languages also track source position (line number, column) in the lexeme for error reporting.</p>
+</div>
+
+<h3 id="greedy-tokenizer">Greedy Tokenization</h3>
+
+<p>Tokenizers are designed to be <strong>fast</strong>. They read the source left to right and are <strong>greedy</strong>: at each point, they grab as many characters as possible that form a valid token. Once the next character can't extend the current token, the token ends.</p>
+
+<p>This greedy rule can cause surprises. Consider this C expression:</p>
+
+<pre><code><span class="label">C</span><span class="kw">return</span> a<span class="op">++</span> <span class="op">+</span> <span class="op">++</span>b;</code></pre>
+
+<p>That works — the tokenizer sees <code>a</code>, then <code>++</code>, then <code>+</code>, then <code>++</code>, then <code>b</code>. But what about:</p>
+
+<pre><code><span class="label">C</span><span class="kw">return</span> a<span class="op">+++</span><span class="op">++</span>b;   <span class="cm">/* no spaces! */</span></code></pre>
+
+<p>The greedy tokenizer sees <code>a</code>, then greedily grabs <code>+++</code>… wait, <code>+++</code> isn't a valid token. So it backs up: <code>++</code> is valid. Token: <code>a</code>, <code>++</code>. Then it sees <code>+++b</code>. It grabs <code>++</code>. Token: <code>++</code>. Then <code>+b</code>: token <code>+</code>, then <code>b</code>. Result: <code>a ++ ++ + b</code>. But you can't apply <code>++</code> to the result of <code>++</code> (it needs an lvalue, not a value). <strong>Compilation error.</strong></p>
+
+<p>The fix? Add a space: <code>a++ + ++b</code>. Whitespace is "just" a token separator, but sometimes it's essential.</p>
+
+<h3 id="comments">Comments — More Trouble Than You'd Think</h3>
+
+<p>Comments are generally treated like whitespace — they separate tokens but carry no meaning to the compiler. But they have their own pitfalls.</p>
+
+<h4>Nesting</h4>
+
+<p>In C, comments <code>/* ... */</code> do <strong>not</strong> nest. If you try to comment out a block of code that already contains a comment, the first <code>*/</code> inside ends the outer comment, and the rest becomes a syntax error. Supporting nested comments makes the tokenizer more complex (it needs a depth counter), but some languages do it.</p>
+
+<h4>Trigraphs — A Cautionary Tale</h4>
+
+<p>The professor told a story about a colleague who wrote an expressive comment containing a sequence that the C compiler secretly interpreted as a <strong>trigraph</strong>. Trigraphs were a feature (removed in C23) where sequences like <code>??/</code> meant backslash (<code>\</code>). Danish keyboards mapped certain ASCII characters to Danish letters, so Danish programmers couldn't type <code>\</code> or <code>#</code> directly — trigraphs were the workaround.</p>
+
+<p>In C, a backslash before a newline <em>merges</em> the two lines. So a comment that accidentally contained <code>??/</code> at the end of a line would cause the <em>next</em> line to be swallowed into the comment — silently removing code. The lesson: <strong>be very careful about comment syntax and edge cases</strong> in any language you use.</p>
+
+<h3 id="reserved-words">Reserved Words vs. Keywords</h3>
+
+<p>When the tokenizer sees the letters <code>i</code>, <code>f</code>, it needs to decide: is this the start of an identifier (like <code>iffy</code>) or is it the keyword <code>if</code>? It looks at the next character. If it's a letter, digit, or underscore, it's part of an identifier. Otherwise, it's the keyword <code>if</code>.</p>
+
+<div class="callout concept">
+  <div class="callout-title">Reserved Words vs. Keywords</div>
+  <p>A <strong>reserved word</strong> is a keyword that <em>cannot</em> be used as an identifier. In C, <code>if</code> is reserved — you cannot have a variable named <code>if</code>. This makes the tokenizer's job simple but can cause trouble when extending the language. (If C++ adds a new keyword like <code>class</code>, old C code using <code>class</code> as a variable name breaks.)</p>
+  <p>A <strong>keyword</strong> (non-reserved) is recognized as special in certain syntactic positions, but can still be used as an identifier elsewhere. In PL/I, you can write <code>IF IF(3) = IF(5) THEN ...</code> where the first <code>IF</code> starts a conditional and <code>IF(3)</code> accesses an array named <code>IF</code>. This is more flexible but makes parsing harder.</p>
+</div>
+
+<h3 id="parse-trees">Parse Trees — The Next Level Up</h3>
+
+<p>Once we have a stream of tokens, the next step is to organize them into a <strong>parse tree</strong> (also called a syntax tree). A parse tree reveals the <em>structure</em> of the program: which tokens combine with which, and in what order.</p>
+
+<p>For example, the expression <code>x + 1</code> becomes a tree where <code>+</code> is the root node, with <code>x</code> and <code>1</code> as its children. A full program is a tree of declarations (function definitions, variable definitions, etc.).</p>
+
+<div class="figure">
+  <div class="figure-box">
+    <svg width="180" height="120" viewBox="0 0 180 120" style="display:block; margin:0 auto;">
+      <text x="90" y="30" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="18" font-weight="600" fill="#c0510a">+</text>
+      <line x1="80" y1="36" x2="50" y2="80" stroke="#d9d0c4" stroke-width="2"/>
+      <line x1="100" y1="36" x2="130" y2="80" stroke="#d9d0c4" stroke-width="2"/>
+      <text x="50" y="100" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="16" fill="#2a2520">x</text>
+      <text x="130" y="100" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="16" fill="#2a2520">1</text>
+    </svg>
+  </div>
+  <div class="figure-caption">Parse tree for <code>x + 1</code>. Leaves are tokens; the internal node is the operator.</div>
+</div>
+
+<p>Parsing happens <em>after</em> tokenization. The tokenizer converts bytes into tokens; the parser converts tokens into a tree. We'll explore parsing in detail in the next lecture.</p>
+
+<div class="quiz" id="quiz-tokens">
+  <div class="quiz-header">Check Your Understanding</div>
+  <div class="quiz-question">A greedy tokenizer processes <code>a+++b</code> in C. Which tokenization does it produce?</div>
+  <div class="quiz-options" data-quiz="q5">
+    <div class="quiz-option" data-answer="a"><div class="marker">A</div><div><code>a</code> <code>+</code> <code>+</code> <code>+</code> <code>b</code></div></div>
+    <div class="quiz-option" data-answer="b"><div class="marker">B</div><div><code>a</code> <code>++</code> <code>+</code> <code>b</code></div></div>
+    <div class="quiz-option" data-answer="c"><div class="marker">C</div><div><code>a</code> <code>+</code> <code>++</code> <code>b</code></div></div>
+    <div class="quiz-option" data-answer="d"><div class="marker">D</div><div>Compilation error — the tokenizer cannot decide</div></div>
+  </div>
+  <button class="quiz-btn" onclick="checkQuiz('q5','b')">Check Answer</button>
+  <div class="quiz-explanation" data-quiz-exp="q5">
+    <strong>Correct!</strong> The greedy tokenizer reads left to right. It sees <code>a</code> (identifier), then <code>+</code>. Can it extend? <code>++</code> is a valid token — yes. Can it extend further? <code>+++</code> is not a valid token — stop. So it emits <code>++</code>. Then it sees <code>+</code> (valid token, next char is <code>b</code> which can't extend it). Then <code>b</code> (identifier). Result: <code>a</code>, <code>++</code>, <code>+</code>, <code>b</code>. This means <code>(a++) + b</code>, which is valid C!
+  </div>
+</div>
+
+</section>
+
+<!-- ═══════════════════════ SUMMARY ═══════════════════════ -->
+<section class="reveal" style="margin-top: 80px; padding-top: 40px; border-top: 1px solid var(--border);">
+<h2 style="font-size: 28px; margin-bottom: 24px;">Putting It All Together</h2>
+
+<p>This lecture covered a lot of ground. Here's how everything connects:</p>
+
+<p><strong>Currying</strong> is the foundation of how functions work in OCaml — every function takes one argument, and multi-argument functions are chains of single-argument functions. This isn't just an academic curiosity: it enables <strong>partial application</strong>, which we used to elegantly define <code>rev</code> from <code>apprev</code>.</p>
+
+<p><strong>Pattern matching</strong> is how you safely decompose data in OCaml. It replaces accessor functions (<code>hd</code>, <code>tl</code>) with a mechanism that the compiler can verify: if all your patterns cover all cases, you'll never get a runtime match failure. This is the key to OCaml's promise of "if it compiles, it works."</p>
+
+<p><strong>Types</strong> are inferred automatically and serve as a powerful debugging tool. The professor's story about <code>rev</code> having type <code>'a list list -> 'a list</code> instead of <code>'a list -> 'a list</code> shows how wrong types instantly reveal wrong code — without running a single test.</p>
+
+<p><strong>Recursion</strong> with <code>let rec</code> is the standard way to process lists. The naive O(n²) reverse vs. the clever O(n) <code>apprev</code> version demonstrates a general technique: solve a harder, more general problem efficiently, then specialize it.</p>
+
+<p>Finally, <strong>syntax and tokenization</strong> are the bridge from raw text to structured programs. Tokenizers are greedy and simple; their design choices (reserved words, comment nesting, whitespace handling) have real consequences for how you write and debug code.</p>
+
+<div class="callout tip" style="margin-top: 32px;">
+  <div class="callout-title">What's Next</div>
+  <p>The next lecture will go deeper into <strong>parsing</strong> — how the token stream gets organized into parse trees. We'll explore grammars, precedence, associativity, and how languages avoid the ambiguity problem we discussed today.</p>
+</div>
+</section>
+
+</div><!-- /.container -->
+
+<script>
+// ── NAV TOGGLE ──
+const navToggle = document.getElementById('navToggle');
+const sidebar = document.getElementById('sidebar');
+navToggle.addEventListener('click', () => {
+  navToggle.classList.toggle('open');
+  sidebar.classList.toggle('open');
+});
+sidebar.querySelectorAll('a').forEach(a => {
+  a.addEventListener('click', () => {
+    navToggle.classList.remove('open');
+    sidebar.classList.remove('open');
+  });
+});
+
+// ── PROGRESS BAR ──
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+});
+
+// ── REVEAL ON SCROLL ──
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+// ── QUIZ LOGIC ──
+function checkQuiz(quizId, correctAnswer) {
+  const container = document.querySelector(`[data-quiz="${quizId}"]`);
+  const options = container.querySelectorAll('.quiz-option');
+  const expEl = document.querySelector(`[data-quiz-exp="${quizId}"]`);
+  let selected = null;
+  options.forEach(o => { if (o.classList.contains('selected')) selected = o; });
+  if (!selected) return;
+  const answer = selected.dataset.answer;
+  options.forEach(o => {
+    o.style.pointerEvents = 'none';
+    if (o.dataset.answer === correctAnswer) o.classList.add('correct');
+    else if (o.classList.contains('selected')) o.classList.add('incorrect');
+  });
+  expEl.classList.add('show');
+  if (answer === correctAnswer) {
+    expEl.classList.add('correct-exp');
+  } else {
+    expEl.classList.add('incorrect-exp');
+  }
+}
+document.querySelectorAll('.quiz-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    if (opt.style.pointerEvents === 'none') return;
+    const siblings = opt.parentElement.querySelectorAll('.quiz-option');
+    siblings.forEach(s => s.classList.remove('selected'));
+    opt.classList.add('selected');
+  });
+});
+</script>
+</body>
+</html>
