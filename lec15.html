@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 15 — Interactive Textbook</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,300;0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf8f4;
+  --bg-code: #1e1e2e;
+  --text: #2c2a28;
+  --text-muted: #6b6560;
+  --accent: #c0392b;
+  --accent-soft: #e8d5cf;
+  --accent2: #2471a3;
+  --accent2-soft: #d4e6f1;
+  --border: #d6d0c8;
+  --card-bg: #fff;
+  --success: #27ae60;
+  --warning: #e67e22;
+  --error: #c0392b;
+  --code-green: #a6e3a1;
+  --code-blue: #89b4fa;
+  --code-mauve: #cba6f7;
+  --code-yellow: #f9e2af;
+  --code-peach: #fab387;
+  --code-text: #cdd6f4;
+  --code-comment: #6c7086;
+  --sidebar-w: 260px;
+  --chapter-indicator: #c0392b;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Source Serif 4', Georgia, serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.75;
+  font-size: 17px;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  position: fixed;
+  top: 0; left: 0;
+  width: var(--sidebar-w);
+  height: 100vh;
+  background: #2c2a28;
+  color: #e8e4df;
+  overflow-y: auto;
+  z-index: 100;
+  padding: 28px 0;
+  transition: transform 0.3s ease;
+}
+.sidebar-title {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #a09890;
+  padding: 0 24px 16px;
+  border-bottom: 1px solid #444;
+  margin-bottom: 12px;
+}
+.sidebar nav a {
+  display: block;
+  padding: 7px 24px 7px 24px;
+  color: #c8c0b8;
+  text-decoration: none;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 13.5px;
+  line-height: 1.5;
+  transition: all 0.15s;
+  border-left: 3px solid transparent;
+}
+.sidebar nav a:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.05);
+}
+.sidebar nav a.active {
+  color: #fff;
+  border-left-color: var(--accent);
+  background: rgba(255,255,255,0.08);
+}
+.sidebar nav .ch-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #807870;
+  padding: 18px 24px 6px;
+}
+
+/* ── MAIN ── */
+.main {
+  margin-left: var(--sidebar-w);
+  max-width: 780px;
+  padding: 60px 48px 120px;
+}
+
+/* ── HAMBURGER (mobile) ── */
+.hamburger {
+  display: none;
+  position: fixed;
+  top: 16px; left: 16px;
+  z-index: 200;
+  width: 40px; height: 40px;
+  background: var(--text);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.hamburger span {
+  display: block; width: 20px; height: 2px; background: #fff; border-radius: 2px;
+}
+
+@media (max-width: 860px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .hamburger { display: flex; }
+  .main { margin-left: 0; padding: 60px 24px 100px; }
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 99; }
+  .overlay.show { display: block; }
+}
+
+/* ── TYPOGRAPHY ── */
+h1 {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1.15;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+.subtitle {
+  font-size: 18px;
+  color: var(--text-muted);
+  margin-bottom: 48px;
+  font-style: italic;
+}
+h2 {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  margin-top: 64px;
+  margin-bottom: 20px;
+  padding-top: 20px;
+  border-top: 2px solid var(--border);
+  color: var(--text);
+}
+h3 {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 21px;
+  font-weight: 600;
+  margin-top: 40px;
+  margin-bottom: 14px;
+  color: var(--accent);
+}
+p { margin-bottom: 16px; }
+
+/* ── CODE ── */
+pre {
+  background: var(--bg-code);
+  border-radius: 10px;
+  padding: 20px 24px;
+  overflow-x: auto;
+  margin: 20px 0 24px;
+  line-height: 1.6;
+  font-size: 14.5px;
+}
+pre code {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--code-text);
+}
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.88em;
+  background: #ede8e2;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--accent);
+}
+pre code { background: none; padding: 0; }
+
+.kw { color: var(--code-mauve); }
+.fn { color: var(--code-blue); }
+.str { color: var(--code-green); }
+.num { color: var(--code-peach); }
+.cmt { color: var(--code-comment); font-style: italic; }
+.var { color: var(--code-yellow); }
+
+/* ── CALLOUT BOXES ── */
+.callout {
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin: 24px 0;
+  border-left: 4px solid;
+}
+.callout.idea {
+  background: #fef9e7;
+  border-color: #f1c40f;
+}
+.callout.important {
+  background: #fdedec;
+  border-color: var(--accent);
+}
+.callout.connection {
+  background: #eaf2f8;
+  border-color: var(--accent2);
+}
+.callout.definition {
+  background: #f0faf0;
+  border-color: var(--success);
+}
+.callout-label {
+  font-family: 'Instrument Sans', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+.callout.idea .callout-label { color: #b7950b; }
+.callout.important .callout-label { color: var(--accent); }
+.callout.connection .callout-label { color: var(--accent2); }
+.callout.definition .callout-label { color: var(--success); }
+
+/* ── QUIZ ── */
+.quiz {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  margin: 28px 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.quiz-title {
+  font-family: 'Instrument Sans', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--accent2);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.quiz p { margin-bottom: 12px; font-weight: 500; }
+.quiz-options { list-style: none; }
+.quiz-options li {
+  padding: 10px 16px;
+  margin: 6px 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 15.5px;
+}
+.quiz-options li:hover {
+  border-color: var(--accent2);
+  background: var(--accent2-soft);
+}
+.quiz-options li.correct {
+  border-color: var(--success);
+  background: #d5f5e3;
+  cursor: default;
+}
+.quiz-options li.incorrect {
+  border-color: var(--error);
+  background: #fadbd8;
+  cursor: default;
+}
+.quiz-explanation {
+  margin-top: 14px;
+  padding: 14px 18px;
+  background: #f7f5f0;
+  border-radius: 8px;
+  font-size: 15px;
+  display: none;
+  line-height: 1.65;
+}
+.quiz-explanation.show { display: block; }
+
+/* ── INTERACTIVE TRACE ── */
+.trace-container {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 28px 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.trace-header {
+  background: #2c2a28;
+  color: #fff;
+  padding: 14px 20px;
+  font-family: 'Instrument Sans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.trace-body {
+  padding: 20px;
+}
+.trace-step {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+.trace-step.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.trace-nav {
+  display: flex;
+  gap: 8px;
+}
+.trace-nav button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+.trace-nav button:hover { background: #a93226; }
+.trace-nav button:disabled { background: #ccc; cursor: default; }
+.step-counter {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.trace-state {
+  background: var(--bg-code);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-top: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13.5px;
+  color: var(--code-text);
+  line-height: 1.6;
+}
+
+/* ── TABLE ── */
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0 28px;
+  font-size: 15px;
+}
+.comparison-table th {
+  font-family: 'Instrument Sans', sans-serif;
+  background: #2c2a28;
+  color: #fff;
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+}
+.comparison-table td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.comparison-table tr:nth-child(even) td { background: #f7f5f0; }
+.pro { color: var(--success); font-weight: 600; }
+.con { color: var(--error); font-weight: 600; }
+
+/* ── DIAGRAM ── */
+.diagram-box {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 24px 0;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.diagram-box svg { max-width: 100%; height: auto; }
+.diagram-caption {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 10px;
+}
+
+/* ── PROGRESS BAR ── */
+.progress-bar {
+  position: fixed;
+  top: 0; left: 0;
+  width: 0;
+  height: 3px;
+  background: var(--accent);
+  z-index: 999;
+  transition: width 0.1s;
+}
+
+/* ── ANALOGY BOX ── */
+.analogy {
+  background: linear-gradient(135deg, #fdfcfb 0%, #f5f0e8 100%);
+  border: 1px solid #d6cfc4;
+  border-radius: 12px;
+  padding: 22px 26px;
+  margin: 24px 0;
+  position: relative;
+}
+.analogy::before {
+  content: '💡';
+  position: absolute;
+  top: -12px;
+  left: 20px;
+  font-size: 22px;
+  background: var(--bg);
+  padding: 0 6px;
+}
+.analogy-title {
+  font-family: 'Instrument Sans', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--warning);
+  margin-bottom: 6px;
+}
+
+/* ── COLLAPSIBLE ── */
+details {
+  margin: 16px 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+details summary {
+  padding: 14px 20px;
+  background: #f7f5f0;
+  cursor: pointer;
+  font-family: 'Instrument Sans', sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text);
+  list-style: none;
+}
+details summary::-webkit-details-marker { display: none; }
+details summary::before { content: '▸ '; color: var(--accent); }
+details[open] summary::before { content: '▾ '; }
+details[open] summary { border-bottom: 1px solid var(--border); }
+details .details-body { padding: 18px 20px; }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<button class="hamburger" id="hamburger" aria-label="Menu">
+  <span></span><span></span><span></span>
+</button>
+<div class="overlay" id="overlay"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-title">Lecture 15 Textbook</div>
+  <nav>
+    <span class="ch-label">Part I — Continuations</span>
+    <a href="#ch1">1. The Big Picture</a>
+    <a href="#ch2">2. Scheme Foundations Recap</a>
+    <a href="#ch3">3. What is call/cc?</a>
+    <a href="#ch4">4. Example: Product of a List</a>
+    <a href="#ch5">5. Green Threads</a>
+    <a href="#ch6">6. How Continuations Work Internally</a>
+    <span class="ch-label">Part II — CPS</span>
+    <a href="#ch7">7. Continuation Passing Style</a>
+    <a href="#ch8">8. CPS Product Example</a>
+    <a href="#ch9">9. CPS & Your Homework</a>
+    <span class="ch-label">Part III — Tail Recursion</span>
+    <a href="#ch10">10. Proper Tail Recursion</a>
+    <a href="#ch11">11. Where Tail Position Lives</a>
+    <span class="ch-label">Part IV — Memory</span>
+    <a href="#ch12">12. What Goes in Memory?</a>
+    <a href="#ch13">13. Static Allocation (Fortran)</a>
+    <a href="#ch14">14. Stack Allocation (Algol 60)</a>
+    <a href="#ch15">15. C's Compromise</a>
+    <a href="#ch16">16. Activation Records</a>
+    <a href="#ch17">17. Nested Functions & Chains</a>
+  </nav>
+</aside>
+
+<main class="main">
+
+<!-- ═══════════════════════════════════════════ -->
+<h1>Lecture 15</h1>
+<p class="subtitle">Continuations in practice, continuation passing style, proper tail recursion, and the foundations of memory management.</p>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="ch1">1. The Big Picture: Why This Lecture Matters</h2>
+
+<p>This lecture sits at a crucial crossroads in your programming languages course. You've been learning Scheme — a language built around a beautifully simple core: lambdas (anonymous functions) and function calls. The philosophy of Scheme is that <em>everything complex can be explained in terms of these simple building blocks</em>.</p>
+
+<p>Today's lecture extends that philosophy in three directions:</p>
+
+<p><strong>First</strong>, we finally see <em>why</em> continuations (introduced in the previous lecture) are useful. Last time, you learned the <em>mechanism</em> — how <code>call/cc</code> captures the current state of execution. Now you'll see the <em>purpose</em>: using them to jump out of deep computations, and even to build a cooperative threading system from scratch.</p>
+
+<p><strong>Second</strong>, we learn that continuations aren't magic. Through <em>Continuation Passing Style</em> (CPS), we can achieve the same power using nothing but lambdas and function calls — the core primitives you already know. This is the Scheme philosophy in action: every fancy feature can be reduced to the basics.</p>
+
+<p><strong>Third</strong>, we shift gears entirely into <em>memory management</em> — the nuts and bolts of how programming languages actually store all the data structures, return addresses, and variables your programs create. This sets the stage for understanding why different languages make different tradeoffs.</p>
+
+<div class="callout connection">
+  <div class="callout-label">How it all connects</div>
+  <p>Continuations → Green Threads → Memory Management forms a beautiful arc. Continuations require the runtime to keep old activation records alive (rather than throwing them away when functions return). That's a memory management challenge! So understanding <em>how</em> continuations work leads naturally to asking <em>how do we manage all this memory?</em></p>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="ch2">2. Quick Scheme Foundations Recap</h2>
+
+<p>Before diving in, let's make sure you're solid on the Scheme features this lecture uses heavily. If you already know these, this section will be quick. If anything is fuzzy, this is your chance to lock it in.</p>
+
+<h3>Functions (Lambdas)</h3>
+
+<p>In Scheme, you create an anonymous function with <code>lambda</code>. A function is a first-class value — you can pass it around, store it in a variable, or call it like any other value.</p>
+
+<pre><code><span class="cmt">;; A function that takes x and returns x + 1</span>
+(<span class="kw">lambda</span> (<span class="var">x</span>) (+ <span class="var">x</span> <span class="num">1</span>))
+
+<span class="cmt">;; Give it a name</span>
+(<span class="kw">define</span> <span class="fn">add1</span> (<span class="kw">lambda</span> (<span class="var">x</span>) (+ <span class="var">x</span> <span class="num">1</span>)))
+
+<span class="cmt">;; Shorthand: define with parameter list</span>
+(<span class="kw">define</span> (<span class="fn">add1</span> <span class="var">x</span>) (+ <span class="var">x</span> <span class="num">1</span>))
+
+<span class="cmt">;; Call it</span>
+(<span class="fn">add1</span> <span class="num">5</span>)  <span class="cmt">; → 6</span></code></pre>
+
+<h3>Lists and their operations</h3>
+
+<p>Scheme's fundamental data structure is the linked list. You manipulate lists with three core operations:</p>
+
+<pre><code><span class="cmt">;; car — get the first element</span>
+(<span class="fn">car</span> '(<span class="num">10 20 30</span>))  <span class="cmt">; → 10</span>
+
+<span class="cmt">;; cdr — get everything except the first element</span>
+(<span class="fn">cdr</span> '(<span class="num">10 20 30</span>))  <span class="cmt">; → (20 30)</span>
+
+<span class="cmt">;; null? — check if a list is empty</span>
+(<span class="fn">null?</span> '())        <span class="cmt">; → #t (true)</span>
+(<span class="fn">null?</span> '(<span class="num">1</span>))       <span class="cmt">; → #f (false)</span></code></pre>
+
+<h3>Named let (Internal Recursive Functions)</h3>
+
+<p>This is used extensively in this lecture. A <em>named let</em> defines a local recursive function and immediately calls it:</p>
+
+<pre><code><span class="cmt">;; Count from 0 to 4</span>
+(<span class="kw">let</span> <span class="fn">loop</span> ((<span class="var">i</span> <span class="num">0</span>))
+  (<span class="kw">when</span> (&lt; <span class="var">i</span> <span class="num">5</span>)
+    (<span class="fn">display</span> <span class="var">i</span>)
+    (<span class="fn">loop</span> (+ <span class="var">i</span> <span class="num">1</span>))))</code></pre>
+
+<p>Here's how to read it: <code>let loop ((i 0))</code> means "define a function called <code>loop</code> that takes one parameter <code>i</code>, and immediately call it with <code>i = 0</code>." Inside the body, <code>loop</code> can call itself recursively.</p>
+
+<h3>cond (Multi-way If)</h3>
+
+<p><code>cond</code> is Scheme's if-then-else-if chain. It's cleaner than nesting <code>if</code> statements:</p>
+
+<pre><code>(<span class="kw">cond</span>
+  ((&lt; <span class="var">x</span> <span class="num">0</span>)  <span class="str">"negative"</span>)   <span class="cmt">; if x < 0, return "negative"</span>
+  ((= <span class="var">x</span> <span class="num">0</span>)  <span class="str">"zero"</span>)       <span class="cmt">; else if x = 0, return "zero"</span>
+  (<span class="kw">else</span>      <span class="str">"positive"</span>))  <span class="cmt">; else return "positive"</span></code></pre>
+
+<h3>set! (Mutation / Assignment)</h3>
+
+<p><code>set!</code> (pronounced "set bang") is Scheme's assignment operator. It destructively changes a variable's value — this is <em>not</em> functional programming!</p>
+
+<pre><code>(<span class="kw">define</span> <span class="var">x</span> <span class="num">10</span>)
+(<span class="fn">set!</span> <span class="var">x</span> <span class="num">20</span>)  <span class="cmt">; x is now 20</span></code></pre>
+
+<h3>begin (Sequencing)</h3>
+
+<p><code>begin</code> evaluates multiple expressions in order and returns the value of the last one:</p>
+
+<pre><code>(<span class="kw">begin</span>
+  (<span class="fn">display</span> <span class="str">"hello"</span>)  <span class="cmt">; side effect, value thrown away</span>
+  (<span class="fn">display</span> <span class="str">"world"</span>)  <span class="cmt">; side effect, value thrown away</span>
+  <span class="num">42</span>)                <span class="cmt">; → returns 42</span></code></pre>
+
+<div class="quiz" data-answer="2">
+  <div class="quiz-title">Check your understanding</div>
+  <p>What does <code>(car (cdr '(3 7 11 15)))</code> return?</p>
+  <ul class="quiz-options">
+    <li onclick="checkQuiz(this, false)">3</li>
+    <li onclick="checkQuiz(this, true)">7</li>
+    <li onclick="checkQuiz(this, false)">(7 11 15)</li>
+    <li onclick="checkQuiz(this, false)">(11 15)</li>
+  </ul>
+  <div class="quiz-explanation"><code>cdr</code> of <code>(3 7 11 15)</code> gives <code>(7 11 15)</code>. Then <code>car</code> of that gives <code>7</code> — the second element of the original list.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="ch3">3. What is <code>call/cc</code>?</h2>
+
+<p>Now let's talk about the star of the show: <code>call/cc</code>, which stands for <strong>"call with current continuation."</strong></p>
+
+<p>To understand <code>call/cc</code>, you first need to understand what a <em>continuation</em> is. Think of it this way:</p>
+
+<div class="analogy">
+  <div class="analogy-title">Real-world analogy</div>
+  <p>Imagine you're reading a book. You're on page 147, halfway through a sentence. Your <strong>continuation</strong> is everything you're about to do next: finish the sentence, read the rest of the page, read all remaining pages, close the book, put it on the shelf. It's the "rest of the computation" that follows from where you currently are.</p>
+  <p>Now imagine you could take a <em>photograph</em> of your reading state — the page, the line, the word you're on — and tuck it in your pocket. You go do something completely different. Later, you pull out the photo, and <em>snap</em> — you're back on page 147, continuing right where you left off.</p>
+  <p>That photograph is a <strong>continuation object</strong>. And <code>call/cc</code> is the camera that takes the photo.</p>
+</div>
+
+<h3>The Formal Mechanics</h3>
+
+<p>Here's exactly what <code>call/cc</code> does, step by step:</p>
+
+<p><strong>Step 1:</strong> <code>call/cc</code> captures the current continuation — a snapshot of "what will happen next after this <code>call/cc</code> expression finishes."</p>
+
+<p><strong>Step 2:</strong> It wraps that continuation up into a special function. We'll call it <code>k</code>.</p>
+
+<p><strong>Step 3:</strong> It takes the function you gave it (the argument to <code>call/cc</code>) and calls that function, passing <code>k</code> as an argument.</p>
+
+<p><strong>Step 4:</strong> If the code <em>never</em> calls <code>k</code>, then <code>call/cc</code> just returns normally — whatever the function returns becomes the value of the <code>call/cc</code> expression.</p>
+
+<p><strong>Step 5:</strong> If the code <em>does</em> call <code>k</code> with some value (like <code>(k 42)</code>), then execution <em>immediately jumps</em> back to where the <code>call/cc</code> was, and the <code>call/cc</code> expression evaluates to that value (<code>42</code>). All the intermediate computation is abandoned.</p>
+
+<pre><code><span class="cmt">;; Basic pattern</span>
+(<span class="kw">call/cc</span>
+  (<span class="kw">lambda</span> (<span class="var">k</span>)          <span class="cmt">; k = the continuation</span>
+    <span class="cmt">;; ... do stuff ...</span>
+    <span class="cmt">;; if we call (k value), jump out!</span>
+    <span class="cmt">;; if we never call k, return normally</span>
+    ))</code></pre>
+
+<div class="callout idea">
+  <div class="callout-label">Key insight</div>
+  <p>Calling a continuation is like a "non-local goto" — it doesn't just return from the <em>current</em> function. It can jump all the way back to wherever the continuation was created, no matter how deeply nested the code currently is. This is far more powerful than a regular <code>return</code> statement.</p>
+</div>
+
+<div class="quiz" data-answer="1">
+  <div class="quiz-title">Check your understanding</div>
+  <p>What does this expression evaluate to?</p>
+  <pre><code>(+ <span class="num">1</span> (<span class="kw">call/cc</span> (<span class="kw">lambda</span> (<span class="var">k</span>) (+ <span class="num">2</span> (<span class="var">k</span> <span class="num">10</span>)))))</code></pre>
+  <ul class="quiz-options">
+    <li onclick="checkQuiz(this, true)">11</li>
+    <li onclick="checkQuiz(this, false)">13</li>
+    <li onclick="checkQuiz(this, false)">10</li>
+    <li onclick="checkQuiz(this, false)">3</li>
+  </ul>
+  <div class="quiz-explanation">When <code>(k 10)</code> is called, execution jumps back to the <code>call/cc</code>, which "returns" 10. The <code>(+ 2 ...)</code> around the <code>(k 10)</code> is never completed — it gets abandoned. So the expression becomes <code>(+ 1 10)</code> = <code>11</code>. The <code>+ 2</code> is just skipped!</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="ch4">4. Example: Efficient Product of a List</h2>
+
+<p>Now let's see <code>call/cc</code> solve a real (if somewhat artificial) problem. The professor uses this as a gentle first example before the more impressive green threads example.</p>
+
+<h3>The Problem</h3>
+
+<p>We have a list of integers, like <code>(3 5 0 7 2 4)</code>, and we want to compute the product of all integers in the list. The twist: we're told that <strong>multiplication is expensive</strong> (imagine these are huge numbers with thousands of digits — multiplying them takes a long time). So we want to avoid multiplying when we don't have to.</p>
+
+<p>If we spot a <strong>zero</strong> anywhere in the list, the entire product is zero. So we'd love to bail out immediately without doing any multiplications at all.</p>
+
+<h3>The Naive Approach (Without call/cc)</h3>
+
+<p>In C++ or Python, you might do two passes: first scan for zeros, then multiply. That works but scans the list twice. Or you could multiply as you go and check for zero each time, but you'd still do all the multiplications up to the zero.</p>
+
+<h3>The call/cc Approach: One Pass, Zero Multiplications if Zero Found</h3>
+
+<p>Here's the code — read the comments carefully:</p>
+
+<pre><code>(<span class="kw">define</span> (<span class="fn">prod</span> <span class="var">ls</span>)
+  (<span class="kw">call/cc</span>                        <span class="cmt">; Step 1: capture continuation</span>
+    (<span class="kw">lambda</span> (<span class="var">k</span>)                  <span class="cmt">; k = "return from prod"</span>
+      (<span class="kw">let</span> <span class="fn">pr</span> ((<span class="var">items</span> <span class="var">ls</span>))      <span class="cmt">; Step 2: recursive helper</span>
+        (<span class="kw">cond</span>
+          ((<span class="fn">null?</span> <span class="var">items</span>) <span class="num">1</span>)      <span class="cmt">; empty list → product is 1</span>
+          ((= (<span class="fn">car</span> <span class="var">items</span>) <span class="num">0</span>)     <span class="cmt">; found a zero!</span>
+           (<span class="var">k</span> <span class="num">0</span>))                 <span class="cmt">; → JUMP OUT, return 0 immediately</span>
+          (<span class="kw">else</span>                    <span class="cmt">; normal case:</span>
+           (* (<span class="fn">car</span> <span class="var">items</span>)         <span class="cmt">; multiply first element</span>
+              (<span class="fn">pr</span> (<span class="fn">cdr</span> <span class="var">items</span>))))  <span class="cmt">; × product of the rest</span>
+          )))))</code></pre>
+
+<h3>Walking Through the Code</h3>
+
+<p>Let's trace through <code>(prod '(3 5 0 7))</code>:</p>
+
+<div class="trace-container" id="trace-prod">
+  <div class="trace-header">
+    <span>Step-by-step trace: <code>(prod '(3 5 0 7))</code></span>
+    <div class="trace-nav">
+      <button onclick="traceStep('trace-prod', -1)">← Prev</button>
+      <span class="step-counter">1 / 6</span>
+      <button onclick="traceStep('trace-prod', 1)">Next →</button>
+    </div>
+  </div>
+  <div class="trace-body">
+    <div class="trace-step active">
+      <p><strong>Step 1:</strong> <code>call/cc</code> captures a continuation <code>k</code>. This continuation represents "whatever happens after <code>prod</code> returns." If we call <code>(k 0)</code>, execution will jump here and <code>prod</code> will return <code>0</code>.</p>
+      <div class="trace-state">Continuation k → points to "return from prod"<br>Now entering the lambda with k bound.</div>
+    </div>
+    <div class="trace-step">
+      <p><strong>Step 2:</strong> The named <code>let</code> creates an internal function <code>pr</code> and calls it with <code>items = (3 5 0 7)</code>. The list isn't empty, and 3 ≠ 0, so we go to the <code>else</code> branch.</p>
+      <div class="trace-state">pr called: items = (3 5 0 7)<br>car = 3, not null, not zero → else branch<br>Need to compute: (* 3 (pr '(5 0 7)))</div>
+    </div>
+    <div class="trace-step">
+      <p><strong>Step 3:</strong> <code>pr</code> calls itself recursively with <code>(5 0 7)</code>. Again, 5 ≠ 0, so we go to <code>else</code>. But notice: the multiply <code>(* 3 ...)</code> from Step 2 is <em>waiting</em> on the stack.</p>
+      <div class="trace-state">pr called: items = (5 0 7)<br>car = 5, not null, not zero → else branch<br>Stack: (* 3 (* 5 (pr '(0 7))))<br>⚠ Two multiplications waiting...</div>
+    </div>
+    <div class="trace-step">
+      <p><strong>Step 4:</strong> <code>pr</code> calls itself with <code>(0 7)</code>. The first element is <strong>0</strong>! We hit the second <code>cond</code> branch: <code>(k 0)</code>.</p>
+      <div class="trace-state">pr called: items = (0 7)<br>car = 0! → FOUND ZERO<br>Calling (k 0)...</div>
+    </div>
+    <div class="trace-step">
+      <p><strong>Step 5:</strong> <code>(k 0)</code> fires! Execution <em>immediately jumps</em> all the way back to where <code>call/cc</code> was. The two pending multiplications <code>(* 3 ...)</code> and <code>(* 5 ...)</code> are <strong>abandoned</strong>. They never execute. The <code>call/cc</code> expression returns <code>0</code>.</p>
+      <div class="trace-state">💥 JUMP! k fires with value 0<br>All pending (* 3 (* 5 ...)) → ABANDONED<br>call/cc returns 0<br>prod returns 0</div>
+    </div>
+    <div class="trace-step">
+      <p><strong>Result:</strong> <code>prod</code> returns <code>0</code>. Zero multiplications were performed! If the list had a million elements, and the zero was element #3, we'd skip 999,997 expensive multiplications.</p>
+      <div class="trace-state">✓ Result: 0<br>✓ Multiplications performed: 0<br>✓ Elements examined: 3 out of 4</div>
+    </div>
+  </div>
+</div>
+
+<h3>Why is this interesting?</h3>
+
+<p>The key observation is that <code>pr</code> is <strong>not tail-recursive</strong>. When <code>pr</code> calls itself in the <code>else</code> branch, there's still work to do afterward — the multiplication <code>(* (car items) ...)</code>. So normally, all those pending multiplications would be sitting on the stack, waiting.</p>
+
+<p>But <code>(k 0)</code> bypasses all of that. It's a "non-local goto" — it doesn't just return from the current <code>pr</code> call; it jumps all the way out to the top level. The pending multiplications on the stack are simply abandoned.</p>
+
+<div class="callout connection">
+  <div class="callout-label">Connection to other languages</div>
+  <p>This is similar to <code>try/catch</code> in C++ or Python. You could wrap the multiplication loop in a <code>try</code>, and <code>throw</code> when you find a zero. The <code>catch</code> at the top level would return zero. Continuations are more general than exceptions (as we're about to see), but for this example, they serve a similar purpose.</p>
+</div>
+
+<div class="quiz">
+  <div class="quiz-title">Check your understanding</div>
+  <p>If we call <code>(prod '(2 3 4 5))</code> — a list with no zeros — what happens?</p>
+  <ul class="quiz-options">
+    <li onclick="checkQuiz(this, false)">k is called with 120</li>
+    <li onclick="checkQuiz(this, true)">k is never called; pr returns 120 normally through recursion and multiplication</li>
+    <li onclick="checkQuiz(this, false)">An error occurs because k must be called</li>
+    <li onclick="checkQuiz(this, false)">pr returns 1 and the multiplications happen in call/cc</li>
+  </ul>
+  <div class="quiz-explanation">With no zeros, the second <code>cond</code> branch is never triggered, so <code>k</code> is never called. <code>pr</code> recurses to the end of the list, returns <code>1</code>, then unwinds the recursion: <code>1 × 5 = 5</code>, <code>5 × 4 = 20</code>, <code>20 × 3 = 60</code>, <code>60 × 2 = 120</code>. The <code>lambda</code> given to <code>call/cc</code> returns 120, and <code>call/cc</code> returns that value normally.</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="ch5">5. Green Threads: The Real Power of Continuations</h2>
+
+<p>The product example was a warm-up. Now we see something truly powerful: <strong>continuations that outlive the function that created them</strong>. This is what makes Scheme's continuations more powerful than <code>try/catch</code>.</p>
+
+<h3>What Are Green Threads?</h3>
+
+<div class="callout definition">
+  <div class="callout-label">Definition</div>
+  <p><strong>Green threads</strong> are threads managed entirely by user-level code (not the operating system). Only one thread runs at a time on a single CPU core. Threads voluntarily give up control to let other threads run. This is called <em>cooperative multithreading</em>.</p>
+</div>
+
+<div class="analogy">
+  <div class="analogy-title">Real-world analogy</div>
+  <p>Think of a group of friends sharing one microphone at karaoke. Only one person can sing at a time. When they finish a verse, they voluntarily hand the mic to the next person. Nobody is forced to give up the mic — it's cooperative. If someone hogs it (infinite loop), nobody else gets to sing.</p>
+  <p>Compare this to OS threads (preemptive multithreading), where a bouncer (the OS scheduler) can yank the mic away from you after a set time.</p>
+</div>
+
+<p><strong>Advantages of green threads:</strong> No race conditions! Since only one thread runs at a time, two threads can never access the same memory simultaneously. Programming is much simpler. Node.js is a famous example of this model.</p>
+
+<p><strong>Disadvantages:</strong> You can't use multiple CPU cores. And if one thread infinite-loops, everything freezes.</p>
+
+<h3>Building Green Threads from Scratch</h3>
+
+<p>We're going to build an entire cooperative threading system using nothing but <code>call/cc</code> and lists. No operating system help. Here are the four components:</p>
+
+<h3>Component 1: The Thread List</h3>
+
+<pre><code>(<span class="kw">define</span> <span class="var">thr-list</span> '())</code></pre>
+
+<p>This is just a list. It holds all the threads that <em>want to run</em> but aren't currently running. Think of it as a waiting queue.</p>
+
+<h3>Component 2: Creating a Thread — <code>thr</code></h3>
+
+<pre><code>(<span class="kw">define</span> (<span class="fn">thr</span> <span class="var">thunk</span>)
+  (<span class="fn">set!</span> <span class="var">thr-list</span> (<span class="fn">append</span> <span class="var">thr-list</span> (<span class="fn">list</span> <span class="var">thunk</span>))))</code></pre>
+
+<p>What's a <strong>thunk</strong>? It's a function that takes <em>no arguments</em> and is executed purely for its side effects (like printing). The term comes from compiler theory. A thunk is a piece of code you want to run later.</p>
+
+<p><code>thr</code> takes a thunk and appends it to the end of the thread list. It doesn't run the thunk — it just registers it as "I want to run."</p>
+
+<h3>Component 3: Starting Execution — <code>start</code></h3>
+
+<pre><code>(<span class="kw">define</span> (<span class="fn">start</span>)
+  (<span class="kw">let</span> ((<span class="var">thunk</span> (<span class="fn">car</span> <span class="var">thr-list</span>)))   <span class="cmt">; grab first thread</span>
+    (<span class="fn">set!</span> <span class="var">thr-list</span> (<span class="fn">cdr</span> <span class="var">thr-list</span>))  <span class="cmt">; remove it from list</span>
+    (<span class="var">thunk</span>)))                        <span class="cmt">; RUN it!</span></code></pre>
+
+<p><code>start</code> takes the first thread off the waiting list and runs it. At this point, we've left our "kernel" — we're now executing whatever code that thread contains. We won't come back until the thunk finishes or yields.</p>
+
+<h3>Component 4: Yielding Control — <code>yield</code></h3>
+
+<p>This is the magic part. When a running thread wants to let someone else run, it calls <code>yield</code>:</p>
+
+<pre><code>(<span class="kw">define</span> (<span class="fn">yield</span>)
+  (<span class="kw">call/cc</span>
+    (<span class="kw">lambda</span> (<span class="var">k</span>)
+      (<span class="fn">thr</span> (<span class="kw">lambda</span> () (<span class="var">k</span> <span class="num">42</span>)))  <span class="cmt">; save our position, add to queue</span>
+      (<span class="fn">start</span>))))</code></pre>
+
+<p>Let's break this down piece by piece:</p>
+
+<p><strong>1.</strong> <code>call/cc</code> creates a continuation <code>k</code> that represents "where to resume this thread after yield returns."</p>
+
+<p><strong>2.</strong> <code>(thr (lambda () (k 42)))</code> — This is crucial. We create a new thunk (a zero-argument function) that, when called, will invoke the continuation <code>k</code> with the value 42. This thunk gets appended to the end of the thread list. The <code>(lambda () ...)</code> wrapper is necessary because <code>k</code> requires an argument (continuations always need a "return value"), but thunks take no arguments. So we wrap it.</p>
+
+<p><strong>3.</strong> <code>(start)</code> — Now we call <code>start</code>, which grabs the <em>next</em> thread from the front of the list and starts running it. Our current thread is no longer running — it's been saved as a continuation in the queue.</p>
+
+<div class="callout important">
+  <div class="callout-label">Why (lambda () (k 42))?</div>
+  <p>The professor pointed out a subtle bug: if you wrote <code>(thr k)</code> instead of <code>(thr (lambda () (k 42)))</code>, it wouldn't work! <code>k</code> is a continuation that needs an argument. But <code>thr</code> expects a thunk (zero-argument function). The wrapper <code>(lambda () (k 42))</code> converts a one-argument continuation into a zero-argument thunk. The value <code>42</code> is arbitrary — it becomes the return value of <code>yield</code>, but we throw it away anyway.</p>
+</div>
+
+<h3>Putting It All Together: The "hi" Example</h3>
+
+<pre><code>(<span class="kw">begin</span>
+  (<span class="fn">thr</span> (<span class="kw">lambda</span> () (<span class="kw">let</span> <span class="fn">f</span> () (<span class="fn">display</span> <span class="str">"h"</span>) (<span class="fn">yield</span>) (<span class="fn">f</span>))))
+  (<span class="fn">thr</span> (<span class="kw">lambda</span> () (<span class="kw">let</span> <span class="fn">f</span> () (<span class="fn">display</span> <span class="str">"i"</span>) (<span class="fn">yield</span>) (<span class="fn">f</span>))))
+  (<span class="fn">thr</span> (<span class="kw">lambda</span> () (<span class="kw">let</span> <span class="fn">f</span> () (<span class="fn">newline</span>) (<span class="fn">yield</span>) (<span class="fn">f</span>))))
+  (<span class="fn">start</span>))</code></pre>
+
+<p>Three threads are created, each in an infinite loop. The first prints "h", the second prints "i", the third prints a newline. Each one calls <code>yield</code> after its action to let the next thread go.</p>
+
+<div class="trace-container" id="trace-green">
+  <div class="trace-header">
+    <span>Step-by-step trace: Green Threads "hi" example</span>
+    <div class="trace-nav">
+      <button onclick="traceStep('trace-green', -1)">← Prev</button>
+      <span class="step-counter">1 / 10</span>
+      <button onclick="traceStep('trace-green', 1)">Next →</button>
+    </div>
+  </div>
+  <div class="trace-body">
+    <div class="trace-step active">
+      <p><strong>Setup:</strong> Three <code>thr</code> calls register three thunks. No code runs yet.</p>
+      <div class="trace-state">thr-list: [Thread-H, Thread-I, Thread-NL]<br>Output: (nothing yet)</div>
+    </div>
+    <div class="trace-step">
+      <p><strong>start:</strong> Grabs Thread-H from the front of the list. Removes it. Calls the thunk.</p>
+      <div class="trace-state">thr-list: [Thread-I, Thread-NL]<br>Running: Thread-H<br>Output: (nothing yet)</div>
+    </div>
+    <div class="trace-step">
+      <p><strong>Thread-H runs:</strong> Displays "h". Then calls <code>yield</code>.</p>
+      <div class="trace-state">thr-list: [Thread-I, Thread-NL]<br>Running: Thread-H<br>Output: h</div>
+    </div>
+    <div class="trace-step">
+      <p><strong>yield (inside Thread-H):</strong> <code>call/cc</code> creates continuation K<sub>H</sub> — which represents "resume Thread-H right after yield returns." A thunk wrapping K<sub>H</sub> is appended to the list. Then <code>start</code> is called.</p>
+      <div class="trace-state">thr-list: [Thread-I, Thread-NL, K<sub>H</sub>-thunk]<br>Output: h</div>
+    </div>
+    <div class="trace-step">
+      <p><strong>start:</strong> Grabs Thread-I from the front. Runs it. Thread-I displays "i", then calls <code>yield</code>.</p>
+      <div class="trace-state">thr-list: [Thread-NL, K<sub>H</sub>-thunk]<br>Running: Thread-I<br>Output: hi</div>
+    </div>
+    <div class="trace-step">
+      <p><strong>yield (inside Thread-I):</strong> Creates K<sub>I</sub>, appends it. Calls <code>start</code>.</p>
+      <div class="trace-state">thr-list: [K<sub>H</sub>-thunk, K<sub>I</sub>-thunk]<br>Running: Thread-NL<br>Output: hi\n</div>
+    </div>
+    <div class="trace-step">
+      <p><strong>Thread-NL runs:</strong> Outputs a newline, yields. K<sub>NL</sub> appended. <code>start</code> called.</p>
+      <div class="trace-state">thr-list: [K<sub>I</sub>-thunk, K<sub>NL</sub>-thunk]<br>Next up: K<sub>H</sub>-thunk<br>Output: hi\n</div>
+    </div>
+    <div class="trace-step">
+      <p><strong>K<sub>H</sub>-thunk runs:</strong> This invokes continuation K<sub>H</sub>, which resumes Thread-H right after <code>yield</code> returned. Thread-H calls <code>f</code> (loops), displays "h" again, yields again.</p>
+      <div class="trace-state">thr-list: [K<sub>NL</sub>-thunk, K<sub>H</sub>-thunk(new)]<br>Output: hi\nh</div>
+    </div>
+    <div class="trace-step">
+      <p><strong>Cycle continues:</strong> K<sub>I</sub> runs → prints "i" → yields. K<sub>NL</sub> runs → prints newline → yields. The pattern repeats.</p>
+      <div class="trace-state">Output: hi\nhi\nhi\nhi\n...<br>(repeats forever)</div>
+    </div>
+    <div class="trace-step">
+      <p><strong>Key insight:</strong> Continuations <em>survive</em> the return of <code>yield</code>! When <code>yield</code> was called, it "returned" (via <code>start</code>) into a completely different thread. But the continuation K<sub>H</sub> still holds the state of Thread-H. Later, when K<sub>H</sub> is invoked, Thread-H picks up exactly where it left off. The activation records are <em>frozen</em> by the garbage collector, not reclaimed.</p>
+      <div class="trace-state">This is what makes scheme continuations more powerful than try/catch:<br>→ Continuations can jump BACK INTO a function that already "returned"<br>→ try/catch can only jump OUT</div>
+    </div>
+  </div>
+</div>
+
+<div class="quiz">
+  <div class="quiz-title">Check your understanding</div>
+  <p>What would happen if one thread enters an infinite loop without ever calling <code>yield</code>?</p>
+  <ul class="quiz-options">
+    <li onclick="checkQuiz(this, false)">The OS preempts it and runs other threads</li>
+    <li onclick="checkQuiz(this, true)">That thread runs forever; no other thread ever gets to execute</li>
+    <li onclick="checkQuiz(this, false)">Scheme automatically yields after a timeout</li>
+    <li onclick="checkQuiz(this, false)">An error is raised</li>
+  </ul>
+  <div class="quiz-explanation">This is <em>cooperative</em> multithreading. The system relies on threads voluntarily yielding. If a thread doesn't cooperate (never calls <code>yield</code>), it hogs the CPU forever. This is the main downside of green threads — there's no preemption.</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="ch6">6. How Continuations Work Internally</h2>
+
+<p>To really understand what's happening, let's peek inside the Scheme interpreter.</p>
+
+<h3>Activation Records as a Linked List</h3>
+
+<p>When your program runs, the Scheme interpreter maintains a chain of <strong>activation records</strong> (stack frames). Each one contains an <strong>instruction pointer (IP)</strong> — what code to execute — and an <strong>environment pointer (EP)</strong> — a pointer to the next activation record (the caller's frame).</p>
+
+<p>This chain is your <strong>continuation</strong>. It's the list of "things left to do":</p>
+
+<div class="diagram-box">
+<svg viewBox="0 0 600 180" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2c2a28"/>
+    </marker>
+  </defs>
+  <rect x="20" y="40" width="120" height="70" rx="6" fill="#fff" stroke="#2c2a28" stroke-width="2"/>
+  <text x="80" y="65" text-anchor="middle" font-family="Instrument Sans" font-size="12" fill="#c0392b" font-weight="700">Frame 3 (current)</text>
+  <text x="80" y="85" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#555">IP: code addr</text>
+  <text x="80" y="100" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#555">EP: →</text>
+
+  <line x1="140" y1="75" x2="180" y2="75" stroke="#2c2a28" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="185" y="40" width="120" height="70" rx="6" fill="#f7f5f0" stroke="#2c2a28" stroke-width="2"/>
+  <text x="245" y="65" text-anchor="middle" font-family="Instrument Sans" font-size="12" fill="#555" font-weight="600">Frame 2 (caller)</text>
+  <text x="245" y="85" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#555">IP: return addr</text>
+  <text x="245" y="100" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#555">EP: →</text>
+
+  <line x1="305" y1="75" x2="350" y2="75" stroke="#2c2a28" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="355" y="40" width="120" height="70" rx="6" fill="#f7f5f0" stroke="#2c2a28" stroke-width="2"/>
+  <text x="415" y="65" text-anchor="middle" font-family="Instrument Sans" font-size="12" fill="#555" font-weight="600">Frame 1 (main)</text>
+  <text x="415" y="85" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#555">IP: return addr</text>
+  <text x="415" y="100" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#555">EP: ∅</text>
+
+  <text x="300" y="150" text-anchor="middle" font-family="Source Serif 4" font-size="13" fill="#6b6560" font-style="italic">Each arrow is the EP (environment pointer) linking frames together</text>
+</svg>
+<div class="diagram-caption">A continuation is a linked list of activation records</div>
+</div>
+
+<h3>What <code>call/cc</code> Does at This Level</h3>
+
+<p>When <code>call/cc</code> executes, it creates a reference (a pointer) to the current IP/EP pair. This reference <em>keeps those activation records alive</em> — even if the function that created them returns. In a language with garbage collection (like Scheme), the garbage collector says: "Someone still has a pointer to this data, so I can't reclaim it."</p>
+
+<p>When you later invoke the continuation <code>(k value)</code>, the interpreter restores the IP and EP to those saved values. It's as if you teleported back in time to that exact execution state.</p>
+
+<div class="callout connection">
+  <div class="callout-label">Why this matters for memory management</div>
+  <p>In C, when a function returns, its stack frame is gone — deallocated. You can't go back to it. But in Scheme with continuations, the "stack frames" (activation records) might need to live on the <em>heap</em>, kept alive by the garbage collector. This is one reason why Scheme needs garbage collection and C doesn't (for this purpose). We'll explore this more in the memory management section.</p>
+</div>
+
+<h3>C's Failed Attempt: ucontext.h</h3>
+
+<p>C tried to have something similar with <code>getcontext</code> and <code>setcontext</code> from <code>&lt;ucontext.h&gt;</code>. These save and restore the CPU registers (instruction pointer, etc.). But there's a critical problem: C uses stack-based storage. If the function that called <code>getcontext</code> has returned, its stack frame has been overwritten. Calling <code>setcontext</code> to restore that context points you at <em>garbage</em>.</p>
+
+<p>These functions were so dangerous and rarely used that they were <strong>removed from POSIX</strong>. Scheme's garbage collector solves this problem — but C's manual memory management can't.</p>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="ch7">7. Continuation Passing Style (CPS)</h2>
+
+<p>Here's a profound idea: you don't <em>need</em> <code>call/cc</code> at all. You can get the same power using only lambdas and function calls — the most basic features of Scheme. The technique is called <strong>Continuation Passing Style (CPS)</strong>.</p>
+
+<h3>The Core Idea</h3>
+
+<p>In CPS, every function takes <strong>one extra argument</strong>: its continuation. Instead of <em>returning</em> a value, a function <em>calls its continuation</em> with the value.</p>
+
+<div class="analogy">
+  <div class="analogy-title">Real-world analogy</div>
+  <p>Normal style: You ask your assistant to compute something. They compute it and hand you the answer. You then decide what to do with it.</p>
+  <p>CPS: You ask your assistant to compute something, <em>and</em> you hand them an envelope with instructions for what to do with the answer. They compute it, then follow the instructions in the envelope. They never "return" to you — they just pass the result forward to whatever the envelope says.</p>
+</div>
+
+<p>Here's a simple comparison:</p>
+
+<pre><code><span class="cmt">;; Normal style: function returns a value</span>
+(<span class="kw">define</span> (<span class="fn">add</span> <span class="var">a</span> <span class="var">b</span>)
+  (+ <span class="var">a</span> <span class="var">b</span>))
+
+<span class="cmt">;; CPS style: function calls continuation with the value</span>
+(<span class="kw">define</span> (<span class="fn">add-cps</span> <span class="var">a</span> <span class="var">b</span> <span class="var">k</span>)
+  (<span class="var">k</span> (+ <span class="var">a</span> <span class="var">b</span>)))
+
+<span class="cmt">;; Using normal style:</span>
+(<span class="fn">display</span> (<span class="fn">add</span> <span class="num">3</span> <span class="num">4</span>))            <span class="cmt">; prints 7</span>
+
+<span class="cmt">;; Using CPS:</span>
+(<span class="fn">add-cps</span> <span class="num">3</span> <span class="num">4</span> <span class="fn">display</span>)           <span class="cmt">; prints 7</span></code></pre>
+
+<p>In the CPS version, <code>add-cps</code> never "returns" in the normal sense. It calls <code>k</code> (the continuation) with the result, and <code>k</code> decides what happens next. If <code>k</code> is <code>display</code>, the result gets printed.</p>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="ch8">8. CPS Product Example</h2>
+
+<p>Let's rewrite our product function in CPS — no <code>call/cc</code> needed:</p>
+
+<pre><code>(<span class="kw">define</span> (<span class="fn">prod</span> <span class="var">ls</span> <span class="var">break</span>)     <span class="cmt">; break = top-level continuation</span>
+  (<span class="kw">let</span> <span class="fn">pr</span> ((<span class="var">ls</span> <span class="var">ls</span>)           <span class="cmt">; list to process</span>
+           (<span class="var">k</span> <span class="var">break</span>))         <span class="cmt">; k = current continuation</span>
+    (<span class="kw">cond</span>
+      ((<span class="fn">null?</span> <span class="var">ls</span>) (<span class="var">k</span> <span class="num">1</span>))      <span class="cmt">; empty → call continuation with 1</span>
+      ((<span class="fn">zero?</span> (<span class="fn">car</span> <span class="var">ls</span>))      <span class="cmt">; found zero!</span>
+       (<span class="var">break</span> <span class="num">0</span>))             <span class="cmt">; call TOP-LEVEL continuation with 0</span>
+      (<span class="kw">#t</span>                      <span class="cmt">; normal case</span>
+       (<span class="fn">pr</span> (<span class="fn">cdr</span> <span class="var">ls</span>)           <span class="cmt">; recurse with rest of list</span>
+           (<span class="kw">lambda</span> (<span class="var">v</span>)        <span class="cmt">; new continuation:</span>
+             (<span class="var">k</span> (* <span class="var">v</span> (<span class="fn">car</span> <span class="var">ls</span>))))))  <span class="cmt">; multiply, pass to our k</span>
+      )))</code></pre>
+
+<p>Notice the differences from the <code>call/cc</code> version:</p>
+
+<p><strong>Extra arguments:</strong> <code>prod</code> takes <code>break</code> (the top-level continuation). <code>pr</code> takes <code>k</code> (the current continuation — initially set to <code>break</code>).</p>
+
+<p><strong>No returns:</strong> Instead of returning <code>1</code>, we call <code>(k 1)</code>. Instead of returning the multiplication result, we call <code>(k (* v (car ls)))</code>.</p>
+
+<p><strong>The "break" escape:</strong> When we find zero, we call <code>(break 0)</code> — the top-level continuation. This is equivalent to <code>(k 0)</code> in the <code>call/cc</code> version. It "returns" 0 to whoever called <code>prod</code>, skipping all pending multiplications.</p>
+
+<p><strong>The lambda continuation:</strong> In the normal case, instead of doing <code>(* (car ls) (pr (cdr ls)))</code>, we call <code>pr</code> with a <em>new continuation</em>: <code>(lambda (v) (k (* v (car ls))))</code>. This says "when you get the product of the rest of the list (<code>v</code>), multiply it by my first element, then pass the result to <em>my</em> continuation." This is how the multiplication gets "deferred" — it's captured in the continuation, not waiting on the stack.</p>
+
+<div class="callout idea">
+  <div class="callout-label">Key difference from call/cc version</div>
+  <p>In the <code>call/cc</code> version, the pending multiplications pile up on the call stack. In the CPS version, there are <em>no</em> pending operations on the stack. The "what to do next" information is entirely in the continuation argument <code>k</code>. Each recursive call to <code>pr</code> is actually <em>tail-recursive</em> — there's nothing left to do after it. The continuations replace the stack.</p>
+</div>
+
+<div class="quiz">
+  <div class="quiz-title">Check your understanding</div>
+  <p>In CPS, when a function wants to "return" a value, what does it do?</p>
+  <ul class="quiz-options">
+    <li onclick="checkQuiz(this, false)">Uses the return keyword</li>
+    <li onclick="checkQuiz(this, true)">Calls its continuation argument with the value</li>
+    <li onclick="checkQuiz(this, false)">Sets a global variable</li>
+    <li onclick="checkQuiz(this, false)">Throws an exception</li>
+  </ul>
+  <div class="quiz-explanation">In CPS, functions never "return" in the traditional sense. Instead, they call their continuation — a function passed as an extra argument — with the computed value. The continuation decides what happens with that value.</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="ch9">9. CPS and Your Homework</h2>
+
+<p>Here's a connection the professor emphasized: <strong>you've already used CPS in your homework!</strong> The parser homework used an "acceptor" function — that acceptor was really a continuation.</p>
+
+<p>In those assignments, your parser functions took an extra argument (the acceptor), and instead of returning a result, they called the acceptor with the result. The acceptor decided whether to accept or reject the parse, and what to do next. That's exactly the CPS pattern.</p>
+
+<p>So CPS isn't something new — it's a formalization of a pattern you've already practiced. If you wanted, you could rewrite that homework in Scheme using <code>call/cc</code> instead of explicit continuations, and have one fewer argument in each function.</p>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="ch10">10. Proper Tail Recursion</h2>
+
+<p>Scheme makes a language-level guarantee that other languages don't: if a function call is in <strong>tail position</strong>, the compiler <em>must</em> optimize it so that it doesn't consume extra stack space. This is called <strong>proper tail recursion</strong>, and it's mandatory in Scheme.</p>
+
+<h3>What is Tail Position?</h3>
+
+<p>A function call is in <strong>tail position</strong> if it's the very last thing a function does — there's no more work after it returns. When a call is in tail position, there's no reason to keep the caller's stack frame around; the caller has nothing left to do except return whatever the callee returns.</p>
+
+<pre><code><span class="cmt">;; Tail-recursive: the recursive call is the LAST thing</span>
+(<span class="kw">define</span> (<span class="fn">factorial-tail</span> <span class="var">n</span> <span class="var">acc</span>)
+  (<span class="kw">if</span> (= <span class="var">n</span> <span class="num">0</span>)
+      <span class="var">acc</span>
+      (<span class="fn">factorial-tail</span> (- <span class="var">n</span> <span class="num">1</span>) (* <span class="var">n</span> <span class="var">acc</span>))))
+
+<span class="cmt">;; NOT tail-recursive: multiplication happens AFTER the recursive call</span>
+(<span class="kw">define</span> (<span class="fn">factorial</span> <span class="var">n</span>)
+  (<span class="kw">if</span> (= <span class="var">n</span> <span class="num">0</span>)
+      <span class="num">1</span>
+      (* <span class="var">n</span> (<span class="fn">factorial</span> (- <span class="var">n</span> <span class="num">1</span>)))))</code></pre>
+
+<p>In <code>factorial-tail</code>, the recursive call is the last operation — the function just returns whatever the recursive call returns. The compiler can reuse the current stack frame. This is equivalent to a loop and uses O(1) stack space.</p>
+
+<p>In plain <code>factorial</code>, after the recursive call returns, we still need to multiply by <code>n</code>. So the stack frame must be kept alive. This uses O(n) stack space.</p>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="ch11">11. Where Exactly is Tail Position?</h2>
+
+<p>Scheme formally defines which positions are "proper tail positions." Here's the map — the boxed/checked items are tail positions:</p>
+
+<table class="comparison-table">
+  <tr><th>Construct</th><th>What's in Tail Position?</th><th>What's NOT?</th></tr>
+  <tr><td><code>(lambda (...) e1 e2 ... <strong>en</strong>)</code></td><td>The <em>last</em> expression <code>en</code> ✓</td><td>All earlier expressions</td></tr>
+  <tr><td><code>(if test <strong>then</strong> <strong>else</strong>)</code></td><td>Both <code>then</code> and <code>else</code> ✓</td><td>The <code>test</code> expression</td></tr>
+  <tr><td><code>(cond (c1 <strong>e1</strong>) (c2 <strong>e2</strong>) ... (else <strong>en</strong>))</code></td><td>Each result expression ✓</td><td>The condition expressions</td></tr>
+  <tr><td><code>(and e1 e2 ... <strong>en</strong>)</code></td><td>Only the <em>last</em> expression ✓</td><td>All earlier expressions (might short-circuit)</td></tr>
+  <tr><td><code>(or e1 e2 ... <strong>en</strong>)</code></td><td>Only the <em>last</em> expression ✓</td><td>All earlier expressions (might short-circuit)</td></tr>
+  <tr><td><code>(begin e1 e2 ... <strong>en</strong>)</code></td><td>The last expression ✓</td><td>All earlier expressions</td></tr>
+  <tr><td><code>(let (...) e1 e2 ... <strong>en</strong>)</code></td><td>The last expression ✓</td><td>All earlier expressions + bindings</td></tr>
+</table>
+
+<p>The pattern is consistent: <strong>the last expression</strong> (or the branches you commit to) are in tail position. Expressions that still have work to do afterward — like conditions that might branch, or earlier expressions in a sequence — are not.</p>
+
+<div class="callout idea">
+  <div class="callout-label">Why "proper"?</div>
+  <p>"Proper" tail recursion means the standard formally defines where tail optimization is <em>required</em>. A smart compiler might optimize other cases too (like recognizing that <code>(if (p x) #t #t)</code> is equivalent to <code>(p x)</code>), but that's <em>optional</em>. The "proper" positions are the ones the programmer can rely on. If it's in the list above, the compiler <strong>must</strong> optimize it.</p>
+</div>
+
+<div class="quiz">
+  <div class="quiz-title">Check your understanding</div>
+  <p>In this code, is the call to <code>g</code> in tail position?</p>
+  <pre><code>(<span class="kw">define</span> (<span class="fn">f</span> <span class="var">x</span>)
+  (+ <span class="num">1</span> (<span class="fn">g</span> <span class="var">x</span>)))</code></pre>
+  <ul class="quiz-options">
+    <li onclick="checkQuiz(this, false)">Yes — it's the last function call</li>
+    <li onclick="checkQuiz(this, true)">No — there's still the addition of 1 to do after g returns</li>
+  </ul>
+  <div class="quiz-explanation">Even though <code>(g x)</code> appears last syntactically, the <code>+</code> still needs to add <code>1</code> to <code>g</code>'s result. So <code>f</code> can't throw away its stack frame before calling <code>g</code> — it needs to stick around to do the addition. The call to <code>g</code> is NOT in tail position.</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="ch12">12. What Goes in Memory?</h2>
+
+<p>Now we shift to a completely different topic: <strong>memory management</strong>. This is about the practical reality of how programming languages work on real hardware with finite RAM.</p>
+
+<p>Before discussing <em>how</em> to manage memory, let's catalog <em>what</em> needs to live in memory:</p>
+
+<p><strong>1. Contents of variables.</strong> Even in functional languages, once you have enough variables, their values need to be stored somewhere in RAM.</p>
+
+<p><strong>2. Return addresses (saved instruction pointers).</strong> When function A calls function B, we need to remember where in A to resume after B finishes.</p>
+
+<p><strong>3. Saved environment pointers.</strong> The pointer to the caller's activation record, so we can restore the calling environment.</p>
+
+<p><strong>4. Temps.</strong> Values the compiler invents names for. For example, in <code>(f (g 1) (h 2) (i 3))</code>, after calling <code>g(1)</code>, the result needs to be stored somewhere while we call <code>h(2)</code>. These temporary storage slots are "temps."</p>
+
+<p><strong>5. Code.</strong> Instruction pointers point to actual machine instructions, which are also stored in memory.</p>
+
+<p><strong>6. Constants.</strong> String literals like <code>"hello world"</code> in C are stored in memory. They're not variables, but they need space.</p>
+
+<p><strong>7. I/O buffers.</strong> When you call <code>getc(f)</code> in C, the file's input stream is buffered in memory. These buffers need space.</p>
+
+<p><strong>8. Heap objects.</strong> Anything created with <code>malloc</code> (C), <code>new</code> (C++/Java), or the equivalent. These are objects not tied to any particular variable or stack frame.</p>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="ch13">13. Static Allocation: The Fortran 58 Approach</h2>
+
+<p>The very first successful programming language, <strong>Fortran (circa 1958)</strong>, used the simplest memory management possible: <em>everything</em> was statically allocated.</p>
+
+<h3>What "Static Allocation" Means</h3>
+
+<p>Every single piece of memory — every variable, every return address, every array, every constant — had a fixed location determined at compile time. The compiler and linker assigned exact addresses before the program ever ran.</p>
+
+<p>If you declared an array of 100 integers, 100 words of memory were reserved at a specific address. The return address for function <code>foo</code> was always stored at the same memory location, no matter how many times <code>foo</code> was called.</p>
+
+<table class="comparison-table">
+  <tr><th>Pros</th><th>Cons</th></tr>
+  <tr><td class="pro">Extremely simple to implement</td><td class="con">No recursion possible</td></tr>
+  <tr><td class="pro">Predictable memory usage — you know exactly how much RAM the program needs before running</td><td class="con">Over-allocation is common (arrays sized for worst case)</td></tr>
+  <tr><td class="pro">No stack overflow possible</td><td class="con">Easy to attack (predictable memory layout)</td></tr>
+  <tr><td class="pro">Very fast — no allocation/deallocation overhead at runtime</td><td class="con">No shared libraries (each executable needs its own copy of library code)</td></tr>
+</table>
+
+<div class="callout important">
+  <div class="callout-label">Why no recursion?</div>
+  <p>This is the critical flaw. If function <code>f</code> has a single static slot for its return address, what happens when <code>f</code> calls itself? The inner call to <code>f</code> overwrites the return address that the outer call needs to get back to <em>its</em> caller. When the inner call finishes and tries to return, it has the wrong return address. Same problem for local variables and parameters — there's only one copy of each, shared by all calls to the function.</p>
+  <p>Fortran 58 dealt with this by saying: if your function calls itself (directly or indirectly), behavior is undefined. Recursion was simply illegal.</p>
+</div>
+
+<div class="quiz">
+  <div class="quiz-title">Check your understanding</div>
+  <p>Why can Fortran 58 guarantee that a program will never run out of memory at runtime?</p>
+  <ul class="quiz-options">
+    <li onclick="checkQuiz(this, true)">Because all memory is allocated at compile time, so you know the total before running</li>
+    <li onclick="checkQuiz(this, false)">Because Fortran programs are small</li>
+    <li onclick="checkQuiz(this, false)">Because the OS provides unlimited memory</li>
+    <li onclick="checkQuiz(this, false)">Because Fortran has a garbage collector</li>
+  </ul>
+  <div class="quiz-explanation">With static allocation, the total memory a program will ever use is determined at compile/link time. If you have enough RAM to load the program, it will never ask for more. There's no dynamic allocation to fail. This is a significant advantage for embedded systems and safety-critical applications.</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="ch14">14. Stack Allocation: Algol 60</h2>
+
+<p>Just two years after Fortran, <strong>Algol 60</strong> introduced the stack — and with it, recursion.</p>
+
+<h3>How the Stack Solves Recursion</h3>
+
+<p>Instead of having one fixed slot for each function's variables, Algol 60 pushes a new <strong>activation record</strong> (stack frame) onto the stack every time a function is called. Each call gets its own copy of local variables, parameters, and return address. When the function returns, its frame is popped off.</p>
+
+<p>Now <code>f</code> can call itself 1000 times, and each call gets its own separate storage. Recursion works!</p>
+
+<h3>Algol 60 Also Added: Variable-Size Locals</h3>
+
+<p>Algol 60 allowed arrays whose size was determined at runtime. Something like (in C-like syntax):</p>
+
+<pre><code><span class="kw">void</span> <span class="fn">f</span>(<span class="kw">int</span> <span class="var">n</span>) {
+    <span class="kw">int</span> <span class="var">a</span>[<span class="var">n</span>];  <span class="cmt">// array of size n, on the stack</span>
+}</code></pre>
+
+<p>This reduces over-allocation: you allocate exactly the space you need at runtime.</p>
+
+<h3>The Downsides</h3>
+
+<p>Stack allocation introduces new problems: <strong>stack overflow</strong> (recursive calls can exhaust the stack), the runtime overhead of pushing/popping frames (though modern CPUs make this very fast), and potential for negative-size array attacks (where the stack shrinks instead of grows, corrupting the caller's data).</p>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="ch15">15. C's Compromise (1972)</h2>
+
+<p>C took the Algol 60 approach and stripped it down for safety and speed:</p>
+
+<p><strong>Keep:</strong> Stack-based allocation with recursion.</p>
+
+<p><strong>Remove:</strong> Variable-length local arrays. In (original) C, all local variables have sizes known at compile time. This means the compiler knows exactly how big each stack frame will be — it can allocate it with a single instruction (subtract a constant from the stack pointer).</p>
+
+<p><strong>Add:</strong> <code>malloc</code> / <code>free</code> for heap allocation. This gives programmers flexible, any-order allocation when they need it, while keeping stack allocation fast and predictable.</p>
+
+<h3>The Three (or Four) Kinds of Storage</h3>
+
+<table class="comparison-table">
+  <tr><th>Kind</th><th>Lifetime</th><th>Allocation Order</th><th>Example</th></tr>
+  <tr><td><strong>Static</strong></td><td>Entire program</td><td>Before program starts</td><td>Global variables, string literals</td></tr>
+  <tr><td><strong>Stack</strong></td><td>Duration of function call</td><td>LIFO (last in, first out)</td><td>Local variables, parameters</td></tr>
+  <tr><td><strong>Heap</strong></td><td>Until explicitly freed (or GC'd)</td><td>Any order</td><td><code>malloc</code>, <code>new</code></td></tr>
+  <tr><td><strong>(Persistent)</strong></td><td>Across program runs</td><td>Varies</td><td>Database values, serialized state</td></tr>
+</table>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="ch16">16. Activation Records in Detail</h2>
+
+<p>An activation record (frame) for a single function call contains:</p>
+
+<p><strong>Local variables</strong> (including parameters) — the values the function is working with.</p>
+
+<p><strong>Return address</strong> — the instruction pointer (IP) indicating where to resume in the caller after this function finishes.</p>
+
+<p><strong>[Optional] Saved environment pointer</strong> — a pointer to the caller's frame. On some systems, this can be computed from the stack pointer rather than stored explicitly.</p>
+
+<p><strong>Temps</strong> — compiler-generated slots for intermediate values.</p>
+
+<p>In practice, much of this is <strong>cached in CPU registers</strong> for the currently executing function. The activation record may have slots reserved, but they contain stale values while the real values live in registers. The values get "spilled" to the activation record only when the CPU runs out of registers or when calling another function.</p>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<h2 id="ch17">17. Nested Functions: Static Chain vs. Dynamic Chain</h2>
+
+<p>This section covers a subtle but important topic: what happens when functions are defined <em>inside</em> other functions, and the inner function accesses variables from the outer function.</p>
+
+<h3>The Problem</h3>
+
+<p>C and C++ don't allow nested function definitions (ignoring GCC extensions). But many languages do — Algol 60, Pascal, Scheme, Python, JavaScript. Consider:</p>
+
+<pre><code><span class="kw">int</span> <span class="fn">f</span>(<span class="kw">int</span> <span class="var">x</span>) {
+    <span class="kw">int</span> <span class="fn">g</span>(<span class="kw">int</span> <span class="var">y</span>) {
+        <span class="kw">return</span> <span class="var">x</span> + <span class="var">y</span>;  <span class="cmt">// accesses x from f!</span>
+    }
+    <span class="kw">return</span> <span class="fn">g</span>(<span class="num">10</span>);
+}</code></pre>
+
+<p>When <code>g</code> is executing, accessing <code>y</code> is easy — it's in <code>g</code>'s own activation record. But <code>x</code> is in <code>f</code>'s activation record. Where is that?</p>
+
+<p>If <code>f</code> is recursive, there might be multiple activation records for <code>f</code> on the stack. Which one has the right <code>x</code>?</p>
+
+<h3>Two Chains Through the Stack</h3>
+
+<p>The solution involves two separate linked lists threaded through the activation records:</p>
+
+<p><strong>Dynamic chain</strong> — each frame points to the frame of its <em>caller</em> (who called me?). This is the standard call stack, present in every language. It represents the <em>runtime</em> call sequence.</p>
+
+<p><strong>Static chain</strong> — each frame points to the frame of its <em>definer</em> (the function that <em>contains my definition</em> in the source code). This represents the <em>compile-time</em> nesting structure.</p>
+
+<div class="diagram-box">
+<svg viewBox="0 0 650 280" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrow2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2c2a28"/>
+    </marker>
+    <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#c0392b"/>
+    </marker>
+    <marker id="arrow-blue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2471a3"/>
+    </marker>
+  </defs>
+
+  <!-- Frames -->
+  <rect x="10" y="20" width="110" height="80" rx="6" fill="#f7f5f0" stroke="#2c2a28" stroke-width="2"/>
+  <text x="65" y="45" text-anchor="middle" font-family="Instrument Sans" font-size="13" fill="#2c2a28" font-weight="700">main</text>
+  <text x="65" y="65" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#666">top level</text>
+
+  <rect x="150" y="20" width="110" height="80" rx="6" fill="#fdedec" stroke="#c0392b" stroke-width="2"/>
+  <text x="205" y="45" text-anchor="middle" font-family="Instrument Sans" font-size="13" fill="#c0392b" font-weight="700">f (call 1)</text>
+  <text x="205" y="65" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#666">x = 5</text>
+
+  <rect x="290" y="20" width="110" height="80" rx="6" fill="#fdedec" stroke="#c0392b" stroke-width="2"/>
+  <text x="345" y="45" text-anchor="middle" font-family="Instrument Sans" font-size="13" fill="#c0392b" font-weight="700">f (call 2)</text>
+  <text x="345" y="65" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#666">x = 3</text>
+
+  <rect x="430" y="20" width="110" height="80" rx="6" fill="#eaf2f8" stroke="#2471a3" stroke-width="2"/>
+  <text x="485" y="45" text-anchor="middle" font-family="Instrument Sans" font-size="13" fill="#2471a3" font-weight="700">g</text>
+  <text x="485" y="65" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#666">y = 10</text>
+  <text x="485" y="80" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#666">needs: x from f</text>
+
+  <!-- Dynamic chain (bottom) -->
+  <text x="325" y="140" text-anchor="middle" font-family="Instrument Sans" font-size="12" fill="#2c2a28" font-weight="700">Dynamic Chain (who called me?)</text>
+  <line x1="430" y1="155" x2="400" y2="155" stroke="#2c2a28" stroke-width="2" marker-end="url(#arrow2)"/>
+  <rect x="370" y="148" width="30" height="14" rx="3" fill="#2c2a28"/>
+  <text x="385" y="159" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#fff">g</text>
+  <line x1="370" y1="155" x2="330" y2="155" stroke="#2c2a28" stroke-width="2" marker-end="url(#arrow2)"/>
+  <rect x="300" y="148" width="30" height="14" rx="3" fill="#2c2a28"/>
+  <text x="315" y="159" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#fff">f₂</text>
+  <line x1="300" y1="155" x2="260" y2="155" stroke="#2c2a28" stroke-width="2" marker-end="url(#arrow2)"/>
+  <rect x="230" y="148" width="30" height="14" rx="3" fill="#2c2a28"/>
+  <text x="245" y="159" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#fff">f₁</text>
+  <line x1="230" y1="155" x2="180" y2="155" stroke="#2c2a28" stroke-width="2" marker-end="url(#arrow2)"/>
+  <rect x="148" y="148" width="35" height="14" rx="3" fill="#2c2a28"/>
+  <text x="165" y="159" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#fff">main</text>
+
+  <!-- Static chain (bottom) -->
+  <text x="325" y="200" text-anchor="middle" font-family="Instrument Sans" font-size="12" fill="#c0392b" font-weight="700">Static Chain (who defined me?)</text>
+  <rect x="370" y="212" width="30" height="14" rx="3" fill="#c0392b"/>
+  <text x="385" y="223" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#fff">g</text>
+  <line x1="370" y1="219" x2="260" y2="219" stroke="#c0392b" stroke-width="2" stroke-dasharray="5 3" marker-end="url(#arrow-red)"/>
+  <rect x="230" y="212" width="30" height="14" rx="3" fill="#c0392b"/>
+  <text x="245" y="223" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#fff">f₁</text>
+
+  <text x="325" y="260" text-anchor="middle" font-family="Source Serif 4" font-size="12" fill="#666" font-style="italic">g's static chain skips f₂ and points to f₁ — its <tspan font-weight="bold">definer</tspan></text>
+</svg>
+<div class="diagram-caption">The static chain may skip activation records that the dynamic chain visits</div>
+</div>
+
+<p>The static chain's length at any point is bounded by the <em>nesting depth</em> in the source code — no matter how deep the recursion goes, the static chain stays short.</p>
+
+<h3>Function Pointers in Nested Languages</h3>
+
+<p>In C, a function pointer is just an instruction address — one pointer. But in languages with nested functions, a function value is a <strong>pair</strong>: (instruction pointer, environment pointer). The IP says what code to run. The EP says which activation record to use for accessing the definer's variables. This pair is sometimes called a <strong>closure</strong>.</p>
+
+<div class="callout connection">
+  <div class="callout-label">Full circle: closures and continuations</div>
+  <p>A closure is an (IP, EP) pair. A continuation is also an (IP, EP) pair — just pointing to a different place. They're the same data structure! This is why Scheme can implement continuations with the same machinery it uses for closures. And it's why C, which only has bare function pointers (no EP), can't safely support either closures or continuations. Everything in this lecture connects: continuations, closures, activation records, and memory management are all facets of the same underlying mechanism.</p>
+</div>
+
+<div class="quiz">
+  <div class="quiz-title">Final review</div>
+  <p>Why don't C and C++ need a static chain?</p>
+  <ul class="quiz-options">
+    <li onclick="checkQuiz(this, true)">Because C/C++ don't allow nested function definitions (in the standard)</li>
+    <li onclick="checkQuiz(this, false)">Because C/C++ use garbage collection</li>
+    <li onclick="checkQuiz(this, false)">Because C/C++ functions are always tail-recursive</li>
+    <li onclick="checkQuiz(this, false)">Because the static chain is the same as the dynamic chain in C</li>
+  </ul>
+  <div class="quiz-explanation">The static chain exists to let inner functions access variables from their enclosing (defining) function. Since C and C++ don't allow functions to be defined inside other functions (standard C, at least), there's never a need to "look up" a definer's frame. Every function is defined at the top level, so a function pointer is just a bare code address.</div>
+</div>
+
+<hr style="margin-top: 60px; border: none; border-top: 2px solid var(--border);">
+
+<div style="background: #f0faf0; border-radius: 12px; padding: 28px; margin-top: 32px;">
+  <h3 style="margin-top: 0; color: var(--success);">Summary: What You Learned</h3>
+  <p><strong>Continuations in action:</strong> <code>call/cc</code> captures "where we are" in execution. Calling a continuation jumps back to that point. Used for non-local exits (product example) and for implementing green threads (continuations that outlive their creating function).</p>
+  <p><strong>Green threads:</strong> Cooperative multithreading built from scratch using <code>call/cc</code>, a list, and four small functions (<code>thr-list</code>, <code>thr</code>, <code>start</code>, <code>yield</code>).</p>
+  <p><strong>CPS:</strong> Every function takes an extra continuation argument and calls it instead of returning. Achieves the same power as <code>call/cc</code> but with just lambdas.</p>
+  <p><strong>Proper tail recursion:</strong> Scheme mandates tail-call optimization in well-defined positions. Tail calls reuse stack frames; non-tail calls grow the stack.</p>
+  <p><strong>Memory management:</strong> Programs need memory for variables, return addresses, temps, code, constants, I/O buffers, and heap objects. Historical progression: Fortran's static allocation (simple, no recursion) → Algol 60's stack (recursion, but stack overflow) → C's compromise (fixed-size stack frames + heap).</p>
+  <p><strong>Activation records:</strong> Contain locals, return address, saved EP, temps. Nested functions require a static chain (pointer to definer's frame) in addition to the dynamic chain (pointer to caller's frame).</p>
+</div>
+
+</main>
+
+<script>
+// ── Progress Bar ──
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+});
+
+// ── Sidebar active link ──
+const sections = document.querySelectorAll('h2[id]');
+const navLinks = document.querySelectorAll('.sidebar nav a');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      navLinks.forEach(l => l.classList.remove('active'));
+      const a = document.querySelector(`.sidebar nav a[href="#${e.target.id}"]`);
+      if (a) a.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+sections.forEach(s => observer.observe(s));
+
+// ── Mobile sidebar ──
+const hamburger = document.getElementById('hamburger');
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('overlay');
+hamburger.addEventListener('click', () => {
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('show');
+});
+overlay.addEventListener('click', () => {
+  sidebar.classList.remove('open');
+  overlay.classList.remove('show');
+});
+document.querySelectorAll('.sidebar nav a').forEach(a => {
+  a.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+  });
+});
+
+// ── Quiz logic ──
+function checkQuiz(el, correct) {
+  const quiz = el.closest('.quiz');
+  if (quiz.classList.contains('answered')) return;
+  quiz.classList.add('answered');
+  const explanation = quiz.querySelector('.quiz-explanation');
+  if (correct) {
+    el.classList.add('correct');
+  } else {
+    el.classList.add('incorrect');
+    quiz.querySelectorAll('.quiz-options li').forEach(li => {
+      // not great but we mark correct answer
+    });
+  }
+  explanation.classList.add('show');
+}
+
+// ── Trace stepper ──
+function traceStep(containerId, dir) {
+  const container = document.getElementById(containerId);
+  const steps = container.querySelectorAll('.trace-step');
+  let current = -1;
+  steps.forEach((s, i) => { if (s.classList.contains('active')) current = i; });
+  const next = current + dir;
+  if (next < 0 || next >= steps.length) return;
+  steps[current].classList.remove('active');
+  steps[next].classList.add('active');
+  const counter = container.querySelector('.step-counter');
+  counter.textContent = `${next + 1} / ${steps.length}`;
+  const btns = container.querySelectorAll('.trace-nav button');
+  btns[0].disabled = next === 0;
+  btns[1].disabled = next === steps.length - 1;
+}
+// Init trace buttons
+document.querySelectorAll('.trace-container').forEach(c => {
+  const btns = c.querySelectorAll('.trace-nav button');
+  btns[0].disabled = true;
+});
+</script>
+</body>
+</html>

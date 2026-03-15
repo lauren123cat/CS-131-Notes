@@ -1,0 +1,1712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory Management & Closures — Interactive Textbook</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1a1a;
+  --paper: #faf8f4;
+  --cream: #f3f0e8;
+  --margin-note: #b8a88a;
+  --accent: #c0392b;
+  --accent-light: #e8d5d0;
+  --accent-bg: #fdf5f3;
+  --code-bg: #2d2d2d;
+  --code-fg: #f8f8f2;
+  --success: #27ae60;
+  --success-bg: #eafaf1;
+  --warning: #e67e22;
+  --warning-bg: #fef9e7;
+  --blue: #2980b9;
+  --blue-bg: #ebf5fb;
+  --chapter-line: #d4c5a9;
+  --shadow: rgba(0,0,0,0.06);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.75;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+/* === NAVIGATION === */
+.nav-sidebar {
+  position: fixed;
+  left: 0; top: 0;
+  width: 280px;
+  height: 100vh;
+  background: #2c2417;
+  color: #d4c5a9;
+  overflow-y: auto;
+  z-index: 100;
+  padding: 24px 0;
+  transform: translateX(-280px);
+  transition: transform 0.3s ease;
+  font-family: 'DM Sans', sans-serif;
+}
+.nav-sidebar.open { transform: translateX(0); }
+.nav-sidebar h2 {
+  font-family: 'Source Serif 4', serif;
+  font-size: 15px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #8a7a5e;
+  padding: 0 24px;
+  margin-bottom: 16px;
+}
+.nav-sidebar a {
+  display: block;
+  padding: 8px 24px;
+  color: #c4b596;
+  text-decoration: none;
+  font-size: 14px;
+  line-height: 1.4;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+}
+.nav-sidebar a:hover {
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+  border-left-color: var(--accent);
+}
+.nav-sidebar a.sub { padding-left: 40px; font-size: 13px; color: #9a8b6d; }
+.nav-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 99;
+  display: none;
+}
+.nav-overlay.show { display: block; }
+
+.nav-toggle {
+  position: fixed;
+  top: 20px; left: 20px;
+  z-index: 101;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: #2c2417;
+  color: #d4c5a9;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  transition: background 0.2s;
+}
+.nav-toggle:hover { background: #3d3226; }
+
+/* === MAIN CONTENT === */
+.content {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 60px 32px 120px;
+}
+
+/* === HERO === */
+.hero {
+  text-align: center;
+  padding: 80px 0 60px;
+  border-bottom: 1px solid var(--chapter-line);
+  margin-bottom: 60px;
+}
+.hero-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--margin-note);
+  margin-bottom: 20px;
+}
+.hero h1 {
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+}
+.hero .subtitle {
+  font-size: 20px;
+  color: #666;
+  font-style: italic;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* === CHAPTERS === */
+.chapter {
+  margin-bottom: 64px;
+  scroll-margin-top: 30px;
+}
+.chapter-number {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.chapter > h2 {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  line-height: 1.25;
+}
+.chapter > .chapter-subtitle {
+  font-size: 16px;
+  color: #888;
+  font-style: italic;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--chapter-line);
+}
+
+h3 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 40px 0 16px;
+  color: var(--ink);
+}
+h4 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent);
+  margin: 32px 0 12px;
+}
+
+p { margin-bottom: 18px; }
+
+/* === CALLOUT BOXES === */
+.callout {
+  padding: 24px 28px;
+  border-radius: 6px;
+  margin: 28px 0;
+  font-size: 16px;
+  line-height: 1.7;
+  position: relative;
+}
+.callout::before {
+  position: absolute;
+  left: 28px; top: -11px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 2px 10px;
+  border-radius: 3px;
+}
+.callout-idea {
+  background: var(--blue-bg);
+  border-left: 4px solid var(--blue);
+}
+.callout-idea::before { content: 'Key Idea'; background: var(--blue); color: #fff; }
+.callout-warn {
+  background: var(--warning-bg);
+  border-left: 4px solid var(--warning);
+}
+.callout-warn::before { content: 'Watch Out'; background: var(--warning); color: #fff; }
+.callout-connect {
+  background: #f5f0ff;
+  border-left: 4px solid #8e44ad;
+}
+.callout-connect::before { content: 'Connection'; background: #8e44ad; color: #fff; }
+.callout-why {
+  background: var(--accent-bg);
+  border-left: 4px solid var(--accent);
+}
+.callout-why::before { content: 'Why It Matters'; background: var(--accent); color: #fff; }
+
+/* === CODE === */
+pre {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  padding: 20px 24px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  line-height: 1.65;
+  margin: 20px 0;
+  position: relative;
+}
+pre .code-label {
+  position: absolute;
+  top: 8px; right: 12px;
+  font-size: 11px;
+  color: #888;
+  font-family: 'DM Sans', sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  background: var(--cream);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+pre code { background: none; padding: 0; font-size: 14px; }
+
+.kw { color: #c678dd; }
+.ty { color: #e5c07b; }
+.fn { color: #61afef; }
+.cm { color: #5c6370; font-style: italic; }
+.st { color: #98c379; }
+.num { color: #d19a66; }
+
+/* === DIAGRAMS === */
+.diagram {
+  background: #fff;
+  border: 1px solid #e0dcd4;
+  border-radius: 8px;
+  padding: 28px;
+  margin: 28px 0;
+  text-align: center;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  overflow-x: auto;
+}
+.diagram svg { max-width: 100%; height: auto; }
+.diagram-caption {
+  font-size: 13px;
+  color: #888;
+  margin-top: 12px;
+  font-style: italic;
+}
+
+/* === INTERACTIVE QUIZ === */
+.quiz {
+  background: #fff;
+  border: 2px solid var(--chapter-line);
+  border-radius: 8px;
+  padding: 28px;
+  margin: 32px 0;
+}
+.quiz-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+.quiz-question {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+.quiz-options { list-style: none; }
+.quiz-options li {
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border: 2px solid #e0dcd4;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+}
+.quiz-options li:hover { border-color: var(--blue); background: var(--blue-bg); }
+.quiz-options li.selected { border-color: var(--blue); background: var(--blue-bg); font-weight: 600; }
+.quiz-options li.correct { border-color: var(--success); background: var(--success-bg); }
+.quiz-options li.wrong { border-color: var(--accent); background: var(--accent-bg); opacity: 0.7; }
+
+.quiz-btn {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 10px 28px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.quiz-btn:hover { background: #a93226; }
+.quiz-btn:disabled { background: #ccc; cursor: default; }
+
+.quiz-feedback {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 6px;
+  font-size: 15px;
+  line-height: 1.6;
+  display: none;
+}
+.quiz-feedback.show { display: block; }
+.quiz-feedback.correct-fb { background: var(--success-bg); border-left: 4px solid var(--success); }
+.quiz-feedback.wrong-fb { background: var(--accent-bg); border-left: 4px solid var(--accent); }
+
+/* === INTERACTIVE EXPLORER === */
+.explorer {
+  background: #fff;
+  border: 2px solid var(--chapter-line);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 32px 0;
+}
+.explorer-header {
+  background: var(--cream);
+  padding: 14px 24px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--margin-note);
+  border-bottom: 1px solid var(--chapter-line);
+}
+.explorer-body { padding: 24px; }
+
+.step-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.step-btn {
+  padding: 8px 18px;
+  border: 2px solid var(--chapter-line);
+  border-radius: 5px;
+  background: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.step-btn:hover { border-color: var(--blue); }
+.step-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+.step-content {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+.step-content.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* === ANALOGY BOX === */
+.analogy {
+  background: linear-gradient(135deg, #faf8f4 0%, #f0ebe0 100%);
+  border: 1px solid var(--chapter-line);
+  border-radius: 8px;
+  padding: 24px 28px;
+  margin: 28px 0;
+  font-size: 16px;
+  position: relative;
+}
+.analogy::before {
+  content: '💡 Analogy';
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--margin-note);
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* === LISTS === */
+.content ul, .content ol {
+  margin: 12px 0 18px 24px;
+}
+.content li { margin-bottom: 6px; }
+
+/* === MISC === */
+strong { font-weight: 600; }
+em { font-style: italic; }
+.term { 
+  color: var(--accent); 
+  font-weight: 600;
+  cursor: help;
+  border-bottom: 1px dashed var(--accent);
+}
+.sep {
+  text-align: center;
+  margin: 48px 0;
+  color: var(--chapter-line);
+  font-size: 24px;
+  letter-spacing: 12px;
+}
+
+/* === PROGRESS BAR === */
+.progress-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--cream);
+  z-index: 200;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  width: 0%;
+  transition: width 0.1s;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 700px) {
+  .content { padding: 50px 18px 100px; }
+  .hero h1 { font-size: 30px; }
+  h3 { font-size: 20px; }
+  pre { font-size: 13px; padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+<button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">☰</button>
+<div class="nav-overlay" id="navOverlay"></div>
+<nav class="nav-sidebar" id="navSidebar">
+  <h2>Chapters</h2>
+  <a href="#ch1">1 — Closures</a>
+  <a href="#ch1-nested" class="sub">Nested Functions</a>
+  <a href="#ch1-fat" class="sub">Fat Pointers</a>
+  <a href="#ch1-manual" class="sub">Closures by Hand in C</a>
+  <a href="#ch1-currying" class="sub">Currying & Closures</a>
+  <a href="#ch1-quiz1" class="sub">✎ Check Understanding</a>
+  <a href="#ch2">2 — The Heap</a>
+  <a href="#ch2-why" class="sub">Why We Need a Heap</a>
+  <a href="#ch2-tracking" class="sub">Objects vs. Free Space</a>
+  <a href="#ch2-os" class="sub">Why Not the OS?</a>
+  <a href="#ch3">3 — Free Lists</a>
+  <a href="#ch3-basic" class="sub">The Free List Idea</a>
+  <a href="#ch3-self" class="sub">Self-Hosting Trick</a>
+  <a href="#ch3-alloc" class="sub">First-Fit Allocation</a>
+  <a href="#ch3-explorer" class="sub">⚡ Step-Through</a>
+  <a href="#ch4">4 — Fragmentation</a>
+  <a href="#ch4-external" class="sub">External Fragmentation</a>
+  <a href="#ch4-internal" class="sub">Internal Fragmentation</a>
+  <a href="#ch4-coalesce" class="sub">Coalescing</a>
+  <a href="#ch4-roving" class="sub">Roving Pointer</a>
+  <a href="#ch4-bestfit" class="sub">Best-Fit</a>
+  <a href="#ch5">5 — Quick Lists</a>
+  <a href="#ch5-idea" class="sub">The Idea</a>
+  <a href="#ch5-code" class="sub">Code Walkthrough</a>
+  <a href="#ch5-tradeoff" class="sub">Tradeoffs</a>
+  <a href="#ch6">6 — What Can Go Wrong</a>
+  <a href="#ch6-dangling" class="sub">Dangling Pointers</a>
+  <a href="#ch6-leaks" class="sub">Memory Leaks</a>
+  <a href="#ch6-which" class="sub">Which Is Worse?</a>
+  <a href="#ch7">7 — Garbage Collection</a>
+  <a href="#ch7-idea" class="sub">The Core Idea</a>
+  <a href="#ch7-roots" class="sub">Roots & Pointer Slots</a>
+  <a href="#ch7-marksweep" class="sub">Mark and Sweep</a>
+  <a href="#ch7-explorer" class="sub">⚡ Step-Through</a>
+  <a href="#ch7-limits" class="sub">Limitations</a>
+  <a href="#ch8">8 — Conservative GC</a>
+  <a href="#ch8-problem" class="sub">The C/C++ Problem</a>
+  <a href="#ch8-how" class="sub">How It Works</a>
+  <a href="#ch8-real" class="sub">Real-World Use</a>
+  <a href="#ch9">9 — Reference Counting</a>
+  <a href="#ch9-idea" class="sub">The Idea</a>
+  <a href="#ch9-assignment" class="sub">Assignment Cost</a>
+  <a href="#ch9-cycles" class="sub">The Cycle Problem</a>
+  <a href="#ch9-python" class="sub">Python's Hybrid</a>
+  <a href="#ch9-quiz" class="sub">✎ Final Quiz</a>
+</nav>
+
+<div class="content">
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="hero-label">CS Programming Languages</div>
+  <h1>Memory Management<br>& Closures</h1>
+  <p class="subtitle">From stack frames and nested functions to heap allocation and garbage collection</p>
+</div>
+
+<!-- ===== CHAPTER 1: CLOSURES ===== -->
+<div class="chapter" id="ch1">
+  <div class="chapter-number">Chapter 1</div>
+  <h2>Closures: Functions That Remember</h2>
+  <p class="chapter-subtitle">How nested functions access their surrounding environment — and how to build this yourself</p>
+
+  <div class="callout callout-why">
+    Before we can talk about memory management on the <em>heap</em>, we need to finish a crucial idea about memory on the <em>stack</em>: what happens when a function needs to access variables that belong to <strong>another function</strong> — one that defined it. This idea, called a <strong>closure</strong>, shows up everywhere in modern programming and directly motivates why we eventually need heaps.
+  </div>
+
+  <h3 id="ch1-nested">What Are Nested Functions?</h3>
+
+  <p>In many languages (like OCaml, Scheme, Python, JavaScript), you can define a function <em>inside</em> another function. The inner function can refer to variables from the outer function. Here's the concept in pseudocode:</p>
+
+<pre><code><span class="kw">function</span> <span class="fn">f</span>() {
+    <span class="kw">int</span> a = <span class="num">10</span>;
+    <span class="kw">int</span> b = <span class="num">20</span>;
+
+    <span class="kw">function</span> <span class="fn">g</span>() {
+        <span class="cm">// g is NESTED inside f</span>
+        <span class="cm">// g can refer to 'a' — a variable from f</span>
+        <span class="kw">return</span> a + <span class="num">1</span>;
+    }
+
+    <span class="kw">return</span> <span class="fn">g</span>();  <span class="cm">// calls g, which uses f's variable 'a'</span>
+}</code></pre>
+
+  <p>The function <code>g</code> is nested inside <code>f</code>. When <code>g</code> runs, it needs to read the variable <code>a</code>, but <code>a</code> doesn't belong to <code>g</code> — it belongs to <code>f</code>. We call <code>a</code> a <span class="term">non-local variable</span> from <code>g</code>'s perspective. The question is: <strong>how does <code>g</code> find <code>a</code>?</strong></p>
+
+  <p>Remember, when functions run, their local variables live on the stack in <strong>stack frames</strong> (also called activation records). So <code>a</code> lives in <code>f</code>'s stack frame. For <code>g</code> to access <code>a</code>, it needs to know where <code>f</code>'s stack frame is.</p>
+
+  <h3 id="ch1-fat">Fat Pointers: The IP/EP Pair</h3>
+
+  <p>Here's how most language implementations solve this. Instead of representing a function as just a single pointer to its machine code, they use <strong>two pointers</strong>:</p>
+
+  <ol>
+    <li><strong>IP (Instruction Pointer)</strong> — points to the function's machine code (the instructions to execute)</li>
+    <li><strong>EP (Environment Pointer)</strong> — points to the <strong>definer's stack frame</strong> (the frame of the function that <em>defined</em> this function)</li>
+  </ol>
+
+  <p>This two-pointer representation is called a <span class="term">fat pointer</span>. Together, the IP and EP form everything you need to call the function: the code to run, and the environment in which to run it.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 620 220" xmlns="http://www.w3.org/2000/svg">
+      <!-- f's frame -->
+      <rect x="40" y="30" width="160" height="150" rx="6" fill="#ebf5fb" stroke="#2980b9" stroke-width="2"/>
+      <text x="120" y="22" text-anchor="middle" font-family="DM Sans" font-size="13" font-weight="700" fill="#2980b9">f's stack frame</text>
+      <text x="60" y="65" font-family="JetBrains Mono" font-size="13" fill="#333">a = 10</text>
+      <text x="60" y="90" font-family="JetBrains Mono" font-size="13" fill="#333">b = 20</text>
+      <text x="60" y="120" font-family="JetBrains Mono" font-size="13" fill="#333">saved IP</text>
+      <text x="60" y="150" font-family="JetBrains Mono" font-size="13" fill="#333">saved EP</text>
+
+      <!-- g fat pointer -->
+      <rect x="320" y="60" width="120" height="70" rx="6" fill="#fef9e7" stroke="#e67e22" stroke-width="2"/>
+      <text x="380" y="52" text-anchor="middle" font-family="DM Sans" font-size="13" font-weight="700" fill="#e67e22">g (fat pointer)</text>
+      <text x="335" y="85" font-family="JetBrains Mono" font-size="12" fill="#333">IP →</text>
+      <text x="335" y="115" font-family="JetBrains Mono" font-size="12" fill="#333">EP →</text>
+
+      <!-- code -->
+      <rect x="490" y="50" width="100" height="30" rx="4" fill="#e8daef" stroke="#8e44ad" stroke-width="1.5"/>
+      <text x="540" y="70" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#333">g's code</text>
+
+      <!-- arrows -->
+      <line x1="408" y1="82" x2="490" y2="67" stroke="#8e44ad" stroke-width="1.5" marker-end="url(#arrow)"/>
+      <line x1="408" y1="112" x2="200" y2="80" stroke="#2980b9" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L8,3 L0,6Z" fill="#555"/>
+        </marker>
+      </defs>
+    </svg>
+    <div class="diagram-caption">A fat pointer for function g: the IP points to g's code, the EP points back to f's stack frame so g can access variable <em>a</em>.</div>
+  </div>
+
+  <p>When <code>g</code> runs and needs to read <code>a</code>, it follows the EP to find <code>f</code>'s stack frame, then looks at the right offset to find <code>a</code>.</p>
+
+  <p>This nesting can go <strong>multiple levels deep</strong>. If <code>f</code> defines <code>g</code>, and <code>g</code> defines <code>h</code>, then <code>h</code>'s EP points to <code>g</code>'s frame, and <code>g</code>'s saved EP points to <code>f</code>'s frame. To access a variable from <code>f</code> while inside <code>h</code>, the runtime follows two EP links — going up two levels of nesting.</p>
+
+  <h3 id="ch1-manual">Building Closures by Hand in C/C++</h3>
+
+  <p>C and C++ do <strong>not</strong> have nested functions. Every function is defined at the top level. So there's no automatic EP — function pointers are just a single pointer to machine code.</p>
+
+  <p>But the <em>concept</em> of a closure is so useful that C/C++ programmers recreate it manually. Here's the recipe:</p>
+
+  <h4>Step 1: Package the environment into a struct</h4>
+
+  <p>Instead of relying on the language to give you access to surrounding variables, you explicitly put those variables into a structure:</p>
+
+<pre><code><span class="kw">struct</span> <span class="ty">Env</span> {
+    <span class="kw">int</span> a;
+    <span class="kw">int</span> b;
+};
+<span class="cm">// Instead of just having local variables a and b,
+// we bundle them into a struct.</span></code></pre>
+
+  <h4>Step 2: Give the inner function an extra argument</h4>
+
+  <p>The "nested" function takes an explicit pointer to that struct — this is the environment pointer, done manually:</p>
+
+<pre><code><span class="kw">int</span> <span class="fn">g</span>(<span class="kw">struct</span> <span class="ty">Env</span> *env) {
+    <span class="cm">// Instead of just writing 'a', we write 'env->a'</span>
+    <span class="kw">return</span> env->a + <span class="num">1</span>;
+}
+
+<span class="kw">void</span> <span class="fn">f</span>() {
+    <span class="kw">struct</span> <span class="ty">Env</span> env;
+    env.a = <span class="num">10</span>;
+    env.b = <span class="num">20</span>;
+
+    <span class="cm">// Call g, passing the environment explicitly</span>
+    <span class="kw">int</span> result = <span class="fn">g</span>(&env);
+}</code></pre>
+
+  <p>Now the "closure" is the combination of two things: the function pointer <code>g</code> (the IP) and the environment pointer <code>&env</code> (the EP). Together, they are exactly equivalent to the fat pointer the language would create automatically.</p>
+
+  <div class="callout callout-idea">
+    A <strong>closure</strong> = a function + an environment to run the function in. It's a function that has been "closed over" its surrounding variables — it carries with it everything it needs to execute, even if the original context is gone.
+  </div>
+
+  <h4>The tradeoff of manual closures</h4>
+
+  <p>With automatic nested functions (like in OCaml or Scheme), closures happen for free — the compiler sets up the EP automatically. You get access to <em>all</em> of the definer's local variables.</p>
+
+  <p>With manual closures (like in C), you have more work to do, but you also get <strong>finer-grained control</strong>. You choose exactly which variables go into the environment struct. Maybe you only need <code>a</code>, not <code>b</code> — so you only put <code>a</code> in the struct. The closure is smaller and more efficient.</p>
+
+  <div class="callout callout-connect">
+    Another way to think about a closure: it's a <strong>tailored function</strong> — a specialization of a more general function. The general function <code>g(env)</code> can work with any environment. When you pair it with a specific environment, you get a specialized version that "knows" certain values.
+  </div>
+
+  <h3 id="ch1-currying">Currying Is Just Closures</h3>
+
+  <p>In languages like OCaml, <strong>currying</strong> is a common pattern: you write a function that returns another function, and the returned function refers to variables from the outer function's scope.</p>
+
+<pre><code><span class="cm">(* OCaml example *)</span>
+<span class="kw">let</span> <span class="fn">add</span> x = <span class="kw">fun</span> y -> x + y
+
+<span class="cm">(* add 3 returns a closure:
+   - IP: the code for "fun y -> x + y"
+   - EP: an environment where x = 3 *)</span>
+<span class="kw">let</span> add3 = <span class="fn">add</span> <span class="num">3</span>    <span class="cm">(* add3 is a closure *)</span>
+<span class="kw">let</span> result = add3 <span class="num">5</span>  <span class="cm">(* returns 8 *)</span></code></pre>
+
+  <p>When you call <code>add 3</code>, it returns a function. That returned function "remembers" that <code>x = 3</code> because it carries a closure — the function code plus the environment containing <code>x</code>. Currying is closures in action.</p>
+
+  <h4>Optimization note</h4>
+
+  <p>Languages with nested functions are smart about optimization. If a function <em>isn't</em> actually nested (doesn't access non-local variables), the compiler won't bother creating an EP at all. The fat pointer collapses to a regular pointer. So you don't pay the cost unless you actually use the feature.</p>
+
+  <!-- QUIZ 1 -->
+  <div class="quiz" id="ch1-quiz1">
+    <div class="quiz-label">Check Your Understanding</div>
+    <div class="quiz-question">In the fat-pointer representation of a nested function, what does the Environment Pointer (EP) point to?</div>
+    <ul class="quiz-options" data-quiz="q1">
+      <li data-answer="a">The machine code of the nested function</li>
+      <li data-answer="b">The definer's stack frame (the stack frame of the function that defined this function)</li>
+      <li data-answer="c">The heap, where all closures are stored</li>
+      <li data-answer="d">The operating system's memory manager</li>
+    </ul>
+    <button class="quiz-btn" onclick="checkQuiz('q1','b')">Check Answer</button>
+    <div class="quiz-feedback" data-quiz-fb="q1"></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-label">Check Your Understanding</div>
+    <div class="quiz-question">Why might you prefer manual closures (the C struct approach) over automatic nested functions?</div>
+    <ul class="quiz-options" data-quiz="q1b">
+      <li data-answer="a">They are always faster because C is a faster language</li>
+      <li data-answer="b">You get finer-grained control over exactly which variables are captured in the closure</li>
+      <li data-answer="c">Manual closures avoid using the stack entirely</li>
+      <li data-answer="d">Manual closures eliminate the need for function pointers</li>
+    </ul>
+    <button class="quiz-btn" onclick="checkQuiz('q1b','b')">Check Answer</button>
+    <div class="quiz-feedback" data-quiz-fb="q1b"></div>
+  </div>
+</div>
+
+<div class="sep">· · ·</div>
+
+<!-- ===== CHAPTER 2: THE HEAP ===== -->
+<div class="chapter" id="ch2">
+  <div class="chapter-number">Chapter 2</div>
+  <h2>Introducing the Heap</h2>
+  <p class="chapter-subtitle">When the stack isn't enough — why programs need dynamically allocated memory</p>
+
+  <h3 id="ch2-why">Why Do We Need a Heap?</h3>
+
+  <p>So far, all the memory we've discussed (stack frames, local variables, function arguments) lives on the <strong>stack</strong>. The stack is wonderful for automatic memory management — when a function returns, its frame is popped, and the memory is reclaimed instantly.</p>
+
+  <p>But what happens when you <strong>create an object inside a function and want that object to survive after the function returns</strong>? For example:</p>
+
+<pre><code><span class="cm">// You call a function that creates a new linked list node</span>
+<span class="ty">Node</span>* <span class="fn">createNode</span>(<span class="kw">int</span> value) {
+    <span class="ty">Node</span>* n = <span class="fn">malloc</span>(<span class="kw">sizeof</span>(<span class="ty">Node</span>));
+    n->value = value;
+    n->next = <span class="kw">NULL</span>;
+    <span class="kw">return</span> n;  <span class="cm">// The node must outlive this function!</span>
+}</code></pre>
+
+  <p>If we put that node on the stack, it would be destroyed when <code>createNode</code> returns. That's useless — the whole point is that other parts of the program will use this node. We need memory that persists independently of function calls and returns.</p>
+
+  <p>That's what the <strong>heap</strong> is: a region of memory where objects can live for as long as they're needed, regardless of which functions are currently on the call stack.</p>
+
+  <div class="callout callout-connect">
+    There's a deeper connection to closures here. With features like Scheme's <code>call/cc</code> (call with current continuation), you can <em>return into functions you've already exited from</em>. This means stack frames themselves might need to live on the heap! Even without <code>call/cc</code>, continuation-passing style requires heap-like behavior. So closures are one of the motivations for having a heap in the first place.
+  </div>
+
+  <h4>Heap operations in different languages</h4>
+
+  <p>Different languages provide different interfaces to the heap, but the underlying need is the same:</p>
+
+  <ul>
+    <li><strong>C:</strong> <code>malloc(size)</code> to allocate, <code>free(ptr)</code> to release</li>
+    <li><strong>C++:</strong> <code>new</code> to allocate, <code>delete</code> to release</li>
+    <li><strong>Java:</strong> <code>new</code> to allocate — but <em>no free/delete</em> (garbage collector handles it)</li>
+    <li><strong>Python:</strong> objects are created implicitly — the runtime handles everything</li>
+  </ul>
+
+  <p>All of these languages need a heap internally. The difference is in who is responsible for releasing memory: the programmer, or the system.</p>
+
+  <h3 id="ch2-tracking">The Two Kinds of Stuff in a Heap</h3>
+
+  <p>Think of the heap as a big arena of memory — like a large warehouse. Inside this warehouse, there are <strong>objects</strong> (things your program created and is using) and <strong>free space</strong> (empty space available for future objects).</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 640 100" xmlns="http://www.w3.org/2000/svg">
+      <rect x="20" y="20" width="600" height="60" rx="4" fill="#f5f5f5" stroke="#ccc" stroke-width="1.5"/>
+      <rect x="20" y="20" width="80" height="60" rx="4" fill="#d5f5e3" stroke="#27ae60" stroke-width="1.5"/>
+      <text x="60" y="55" text-anchor="middle" font-family="DM Sans" font-size="12" font-weight="600" fill="#1e8449">O₁</text>
+      <rect x="180" y="20" width="120" height="60" rx="4" fill="#d5f5e3" stroke="#27ae60" stroke-width="1.5"/>
+      <text x="240" y="55" text-anchor="middle" font-family="DM Sans" font-size="12" font-weight="600" fill="#1e8449">O₂</text>
+      <rect x="380" y="20" width="60" height="60" rx="4" fill="#d5f5e3" stroke="#27ae60" stroke-width="1.5"/>
+      <text x="410" y="55" text-anchor="middle" font-family="DM Sans" font-size="12" font-weight="600" fill="#1e8449">O₃</text>
+      <text x="130" y="55" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#999">free</text>
+      <text x="340" y="55" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#999">free</text>
+      <text x="510" y="55" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#999">free</text>
+    </svg>
+    <div class="diagram-caption">The heap arena: green blocks are objects in use; gray gaps are free space.</div>
+  </div>
+
+  <p>The heap manager needs to track two things:</p>
+  <ol>
+    <li><strong>Objects</strong> — In the simplest systems, the heap manager doesn't track these at all. The <em>program</em> keeps track of its own objects (via pointers). The heap manager trusts the program to know where its objects are.</li>
+    <li><strong>Free space</strong> — This is the heap manager's primary responsibility. When the program asks to allocate a new object, the heap manager needs to know <em>where the free space is</em> so it can carve out a piece.</li>
+  </ol>
+
+  <div class="callout callout-idea">
+    The main job of the heap manager is to keep track of <strong>where things <em>aren't</em></strong>. You hope the program keeps track of where things <em>are</em>. The heap manager's focus is the free space, because that's what it needs when the program asks for more memory.
+  </div>
+
+  <h3 id="ch2-os">Why Isn't the Heap Manager Part of the OS?</h3>
+
+  <p>You might think: shouldn't the operating system handle heap management? Then every language could share the same manager.</p>
+
+  <p>In theory, yes. In practice, there are two big reasons this doesn't work well:</p>
+
+  <p><strong>Reason 1: Speed.</strong> Every call to the operating system requires a <em>context switch</em>: the CPU has to save all the current process's state, switch to kernel mode, do the work, then switch back. This is expensive — hundreds or thousands of CPU cycles. Programs call <code>malloc</code>/<code>new</code> <em>constantly</em>, especially object-oriented programs. If every allocation required a system call, performance would be terrible.</p>
+
+  <p><strong>Reason 2: Language-specific needs.</strong> Different languages have different heap requirements. A Scheme implementation might want a garbage-collected heap. A C implementation wants manual control. Putting everything in the OS would force a one-size-fits-all approach.</p>
+
+  <p>The result: heap management is done in <strong>user space</strong>, typically inside the language's runtime library (like the C library, <code>libc</code>). No system calls, no kernel involvement, no root privileges needed. The heap is just a big array of memory that we carve up ourselves.</p>
+
+  <div class="callout callout-warn">
+    Having per-language heap managers creates a problem for multi-language applications. If part of your program is in Scheme and part is in C++, they have separate heap managers that don't coordinate with each other. Each gets its own arena, and you may waste memory. This is a real-world pain point.
+  </div>
+</div>
+
+<div class="sep">· · ·</div>
+
+<!-- ===== CHAPTER 3: FREE LISTS ===== -->
+<div class="chapter" id="ch3">
+  <div class="chapter-number">Chapter 3</div>
+  <h2>Free Lists: Tracking Empty Space</h2>
+  <p class="chapter-subtitle">The fundamental data structure behind memory allocation</p>
+
+  <h3 id="ch3-basic">The Free List: A Linked List of Available Blocks</h3>
+
+  <p>We need a data structure to keep track of which parts of the heap are free. The simplest choice: a <strong>linked list</strong> where each node describes one contiguous block of free space.</p>
+
+  <p>Each node in the free list stores two pieces of information:</p>
+  <ol>
+    <li>The <strong>size</strong> of this free block (how many bytes are available)</li>
+    <li>A <strong>next pointer</strong> to the next free block in the list</li>
+  </ol>
+
+  <div class="diagram">
+    <svg viewBox="0 0 640 160" xmlns="http://www.w3.org/2000/svg">
+      <text x="30" y="25" font-family="DM Sans" font-size="12" font-weight="600" fill="#555">free_list →</text>
+      <!-- Block 1 -->
+      <rect x="140" y="10" width="110" height="55" rx="5" fill="#fef9e7" stroke="#e67e22" stroke-width="2"/>
+      <text x="195" y="30" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#333">size: 1000</text>
+      <text x="195" y="50" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#333">next: →</text>
+      <!-- Block 2 -->
+      <rect x="300" y="10" width="110" height="55" rx="5" fill="#fef9e7" stroke="#e67e22" stroke-width="2"/>
+      <text x="355" y="30" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#333">size: 300</text>
+      <text x="355" y="50" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#333">next: →</text>
+      <!-- Block 3 -->
+      <rect x="460" y="10" width="110" height="55" rx="5" fill="#fef9e7" stroke="#e67e22" stroke-width="2"/>
+      <text x="515" y="30" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#333">size: 250</text>
+      <text x="515" y="50" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#333">next: NULL</text>
+      <!-- Arrows -->
+      <line x1="250" y1="37" x2="298" y2="37" stroke="#e67e22" stroke-width="1.5" marker-end="url(#arrow2)"/>
+      <line x1="410" y1="37" x2="458" y2="37" stroke="#e67e22" stroke-width="1.5" marker-end="url(#arrow2)"/>
+      <!-- Heap below -->
+      <rect x="20" y="90" width="600" height="50" rx="4" fill="#f9f9f9" stroke="#ccc" stroke-width="1"/>
+      <rect x="20" y="90" width="130" height="50" fill="#fef9e7" stroke="#e67e22" stroke-width="1.5" rx="4"/>
+      <text x="85" y="120" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#b7950b">1000 bytes free</text>
+      <rect x="230" y="90" width="80" height="50" fill="#d5f5e3" stroke="#27ae60" stroke-width="1.5" rx="4"/>
+      <text x="270" y="120" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#1e8449">Object</text>
+      <rect x="310" y="90" width="90" height="50" fill="#fef9e7" stroke="#e67e22" stroke-width="1.5" rx="4"/>
+      <text x="355" y="120" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#b7950b">300 free</text>
+      <rect x="400" y="90" width="70" height="50" fill="#d5f5e3" stroke="#27ae60" stroke-width="1.5" rx="4"/>
+      <text x="435" y="120" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#1e8449">Object</text>
+      <rect x="470" y="90" width="80" height="50" fill="#fef9e7" stroke="#e67e22" stroke-width="1.5" rx="4"/>
+      <text x="510" y="120" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#b7950b">250 free</text>
+      <!-- dashed lines connecting -->
+      <line x1="195" y1="65" x2="85" y2="90" stroke="#e67e22" stroke-width="1" stroke-dasharray="4"/>
+      <line x1="355" y1="65" x2="355" y2="90" stroke="#e67e22" stroke-width="1" stroke-dasharray="4"/>
+      <line x1="515" y1="65" x2="510" y2="90" stroke="#e67e22" stroke-width="1" stroke-dasharray="4"/>
+      <defs><marker id="arrow2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#e67e22"/></marker></defs>
+    </svg>
+    <div class="diagram-caption">Each free-list node describes a free region in the heap. The linked list connects all free regions.</div>
+  </div>
+
+  <h3 id="ch3-self">The Self-Hosting Trick: Store the Free List <em>Inside</em> the Free Space</h3>
+
+  <p>There's an immediate problem: the free list is itself a data structure that grows and shrinks dynamically. It needs memory to live in. But where? If we put it on a separate heap, we'd need a free list for <em>that</em> heap, which needs <em>its own</em> heap, leading to infinite regression.</p>
+
+  <div class="analogy">
+    Imagine you're managing an empty warehouse. You need a notebook to track which shelves are empty. But the notebook needs to sit on a shelf too! You could buy a separate cabinet for the notebook… but then you need a second notebook to track the cabinet. The clever solution: just write your notes directly on the empty shelves. When a shelf gets used, erase the notes and use the shelf. The inventory system lives <em>within</em> the space it's tracking.
+  </div>
+
+  <p>The elegant solution: <strong>store the free list nodes inside the free space itself.</strong> Each free block is large enough to hold at least two words (a size field and a next pointer). Since the space is free — nobody's using it — we can use the first few bytes of each free block to store the free list metadata.</p>
+
+  <p>This means the free list doesn't consume any extra memory. It lives inside memory that would otherwise be unused anyway. When a free block gets allocated (given to the program), the free list node that was sitting there simply gets overwritten by the object — that's fine, because we no longer need to track that block as free.</p>
+
+  <div class="callout callout-idea">
+    At the very start (before any allocations), the heap is entirely free. The free list has exactly one entry: a single node describing the entire arena. As objects are allocated and freed, the free list grows and shrinks, always living inside the unused portions of the heap.
+  </div>
+
+  <h3 id="ch3-alloc">First-Fit Allocation: How <code>malloc</code> Works</h3>
+
+  <p>When a program calls <code>malloc(n)</code>, requesting <code>n</code> bytes of memory, the simplest algorithm is <strong>first fit</strong>:</p>
+
+  <ol>
+    <li><strong>Walk</strong> down the free list, examining each free block</li>
+    <li><strong>Find the first block</strong> whose size is ≥ n</li>
+    <li><strong>Split</strong> that block into two pieces:
+      <ul>
+        <li>A piece of size n — return this address to the caller</li>
+        <li>The leftover — keep this on the free list (just shrink the block's recorded size)</li>
+      </ul>
+    </li>
+  </ol>
+
+  <p>In practice, we carve off from the <strong>end</strong> of the free block, not the beginning. Why? Because if we carved from the beginning, we'd have to update the previous node's next pointer (since the block moved). By carving from the end, the block stays in the same place — it just has a smaller size. No pointer updates needed.</p>
+
+  <h4>Edge case: the free block evaporates</h4>
+
+  <p>Remember, each free block needs at least two words of space to store its metadata (size + next pointer). If after an allocation the leftover space is smaller than two words, we can't keep tracking it. The block <em>evaporates</em>: we give all of it to the caller (who gets a few extra bytes) and remove the entry from the free list entirely.</p>
+
+  <h4>Edge case: no block is big enough</h4>
+
+  <p>If we walk the entire free list and no single block is large enough for the requested allocation, <code>malloc</code> returns <code>NULL</code> — the allocation fails. This can happen even if there's plenty of free memory overall, if that memory is scattered in small pieces. This is the problem of <strong>external fragmentation</strong>, which we'll explore next.</p>
+
+  <!-- EXPLORER -->
+  <div class="explorer" id="ch3-explorer">
+    <div class="explorer-header">⚡ Interactive: First-Fit Allocation Step-by-Step</div>
+    <div class="explorer-body">
+      <p style="font-size:15px; color:#666; margin-bottom:16px;">Walk through what happens when <code>malloc(10)</code> is called on a free list with blocks of sizes [1000, 300, 250].</p>
+      <div class="step-controls">
+        <button class="step-btn active" onclick="showStep(this, 'alloc', 0)">Start</button>
+        <button class="step-btn" onclick="showStep(this, 'alloc', 1)">Step 1</button>
+        <button class="step-btn" onclick="showStep(this, 'alloc', 2)">Step 2</button>
+        <button class="step-btn" onclick="showStep(this, 'alloc', 3)">Step 3</button>
+      </div>
+      <div class="step-content active" data-step-group="alloc" data-step="0">
+        <p>We call <code>malloc(10)</code>. The free list has three blocks: sizes 1000, 300, and 250. We need to find the first block that's at least 10 bytes.</p>
+        <pre><code>free_list → [1000] → [300] → [250] → NULL
+
+Request: malloc(10)</code></pre>
+      </div>
+      <div class="step-content" data-step-group="alloc" data-step="1">
+        <p><strong>Check the first block (size 1000).</strong> Is 1000 ≥ 10? Yes! We found our block. No need to keep walking.</p>
+        <pre><code>free_list → [<span class="st">1000 ✓</span>] → [300] → [250] → NULL
+                ^^^^
+          First block is big enough!</code></pre>
+      </div>
+      <div class="step-content" data-step-group="alloc" data-step="2">
+        <p><strong>Carve off 10 bytes from the end</strong> of this 1000-byte block. The block shrinks from 1000 to 990. The last 10 bytes become our allocated object.</p>
+        <pre><code>free_list → [<span class="st">990</span>] → [300] → [250] → NULL
+                                        
+            ┌──────────────┐
+            │ 990 free │ 10 │  ← returned to caller
+            └──────────────┘</code></pre>
+      </div>
+      <div class="step-content" data-step-group="alloc" data-step="3">
+        <p><strong>Return the address</strong> of the 10-byte chunk to the caller. The free list is updated — the first block now says 990 instead of 1000. The other blocks are untouched.</p>
+        <pre><code>free_list → [990] → [300] → [250] → NULL
+
+malloc(10) returned: pointer to 10-byte block ✓</code></pre>
+        <p>Total cost: we examined only <strong>one</strong> free block. Fast! But with first-fit, this won't always be so lucky...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sep">· · ·</div>
+
+<!-- ===== CHAPTER 4: FRAGMENTATION ===== -->
+<div class="chapter" id="ch4">
+  <div class="chapter-number">Chapter 4</div>
+  <h2>Fragmentation: The Enemy of Efficiency</h2>
+  <p class="chapter-subtitle">Why free space can become unusable — and strategies to fight back</p>
+
+  <h3 id="ch4-external">External Fragmentation</h3>
+
+  <p>External fragmentation happens when there's <strong>enough total free memory</strong> to satisfy a request, but it's <strong>scattered across multiple small blocks</strong> instead of being in one contiguous piece.</p>
+
+<pre><code><span class="cm">// Free list: [1000] → [300] → [250]</span>
+<span class="cm">// Total free: 1550 bytes</span>
+<span class="cm">// Request: malloc(1200)</span>
+<span class="cm">// Result: FAILS! No single block ≥ 1200</span>
+<span class="cm">// Even though 1550 > 1200, it's split up</span></code></pre>
+
+  <p>This is like having $15 in loose change scattered around your house, but the vending machine only takes bills. You have enough money; it's just in the wrong form.</p>
+
+  <div class="callout callout-why">
+    External fragmentation is the more serious problem for most systems. It means your program can <em>crash</em> (malloc returns NULL) even when there's plenty of memory available. It wastes memory that exists but can't be used.
+  </div>
+
+  <h3 id="ch4-internal">Internal Fragmentation</h3>
+
+  <p>Internal fragmentation is wasted space <em>inside</em> an allocated object. This happens for two reasons:</p>
+
+  <p><strong>1. Block evaporation.</strong> When a free block is too small to keep tracking (less than two words after splitting), we give the entire block to the caller. The caller gets more memory than they asked for — those extra bytes are wasted.</p>
+
+  <p><strong>2. Alignment requirements.</strong> On x86-64 processors, the C memory allocator (<code>malloc</code>) always returns addresses that are multiples of 16. Why? Because some data types (like 128-bit SIMD values) require 16-byte alignment. Since <code>malloc</code> doesn't know what type you're storing, it always aligns to the strictest requirement. If you ask for 15 bytes, you'll get 16. That extra byte is internal fragmentation.</p>
+
+  <div class="callout callout-idea">
+    Internal fragmentation wastes a few bytes per object. External fragmentation can make large allocations impossible even when memory exists. Both are bad, but external fragmentation is usually the bigger concern.
+  </div>
+
+  <h3 id="ch4-coalesce">Coalescing: Merging Adjacent Free Blocks</h3>
+
+  <p>The most important technique for fighting external fragmentation is <strong>coalescing</strong>: whenever you free an object, check if the newly freed space is adjacent to an existing free block. If so, merge them into one larger block.</p>
+
+  <p>When <code>free(p)</code> is called, the implementation checks two things:</p>
+  <ol>
+    <li>Is the space <strong>just before</strong> <code>p</code> a free block? If yes, extend that block to include <code>p</code>'s space.</li>
+    <li>Is the space <strong>just after</strong> <code>p</code> a free block? If yes, extend to include that block too.</li>
+  </ol>
+
+  <p>If both neighbors are free, a single <code>free()</code> call can merge three pieces (the predecessor free block, the freed object, and the successor free block) into one large block. This actually <em>shrinks</em> the free list by one node — a win for performance too, since shorter free lists mean faster searches.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 620 140" xmlns="http://www.w3.org/2000/svg">
+      <!-- Before -->
+      <text x="20" y="22" font-family="DM Sans" font-size="12" font-weight="600" fill="#555">Before free(O₂):</text>
+      <rect x="20" y="30" width="120" height="40" rx="4" fill="#fef9e7" stroke="#e67e22" stroke-width="1.5"/>
+      <text x="80" y="55" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#b7950b">Free (200)</text>
+      <rect x="140" y="30" width="80" height="40" rx="4" fill="#d5f5e3" stroke="#27ae60" stroke-width="1.5"/>
+      <text x="180" y="55" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#1e8449">O₂ (50)</text>
+      <rect x="220" y="30" width="100" height="40" rx="4" fill="#fef9e7" stroke="#e67e22" stroke-width="1.5"/>
+      <text x="270" y="55" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#b7950b">Free (150)</text>
+
+      <!-- After -->
+      <text x="20" y="100" font-family="DM Sans" font-size="12" font-weight="600" fill="#555">After coalescing:</text>
+      <rect x="20" y="108" width="300" height="40" rx="4" fill="#fef9e7" stroke="#e67e22" stroke-width="2"/>
+      <text x="170" y="133" text-anchor="middle" font-family="DM Sans" font-size="12" font-weight="600" fill="#b7950b">One Free Block (400)</text>
+
+      <!-- Arrow -->
+      <path d="M180,72 L180,106" stroke="#c0392b" stroke-width="2" marker-end="url(#arrowR)" stroke-dasharray="4"/>
+      <defs><marker id="arrowR" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#c0392b"/></marker></defs>
+    </svg>
+    <div class="diagram-caption">Freeing O₂ and coalescing with both adjacent free blocks creates one large block (200 + 50 + 150 = 400 bytes).</div>
+  </div>
+
+  <div class="callout callout-idea">
+    <strong>Rule:</strong> No two free blocks should ever be adjacent. If they are, they should be coalesced. Adjacent free blocks mean unnecessary external fragmentation.
+  </div>
+
+  <h3>Object Headers: How <code>free()</code> Knows the Object Size</h3>
+
+  <p>When you call <code>free(p)</code>, the heap manager needs to know how big the object at <code>p</code> is. The simplest approach: each object has a <strong>hidden header</strong> — an extra word placed just before the object that stores its size. The pointer returned by <code>malloc</code> points just <em>past</em> this header.</p>
+
+<pre><code><span class="cm">// What malloc actually does internally:</span>
+<span class="cm">//   [size | object data ...]</span>
+<span class="cm">//          ^ pointer returned to user</span>
+<span class="cm">// When free(p) is called, it looks at p[-1] to find the size</span></code></pre>
+
+  <p>C also offers <code>free_sized(p, n)</code> where the caller specifies the size, avoiding the need to look up the hidden header. This can be faster for high-performance applications.</p>
+
+  <h3 id="ch4-roving">The Roving Pointer: Fixing First-Fit's Weakness</h3>
+
+  <p>There's a hidden inefficiency in first-fit allocation. After many allocations and frees, the beginning of the free list fills up with <strong>tiny, useless blocks</strong> — the leftovers that were too small for any allocation. Every future allocation has to skip past all these tiny blocks to reach the first useful one.</p>
+
+  <p>The fix: use a <strong>circular free list</strong> with a <strong>roving pointer</strong>. Instead of always starting from the beginning, start from where the last successful allocation happened.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 500 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- Circular arrangement -->
+      <circle cx="250" cy="100" r="70" fill="none" stroke="#ddd" stroke-width="1.5"/>
+      <rect x="220" y="20" width="60" height="28" rx="4" fill="#fef9e7" stroke="#e67e22" stroke-width="1.5"/>
+      <text x="250" y="39" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#333">3</text>
+      <rect x="320" y="65" width="60" height="28" rx="4" fill="#fef9e7" stroke="#e67e22" stroke-width="1.5"/>
+      <text x="350" y="84" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#333">12</text>
+      <rect x="310" y="130" width="60" height="28" rx="4" fill="#d6eaf8" stroke="#2980b9" stroke-width="2"/>
+      <text x="340" y="149" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#333">8000</text>
+      <rect x="190" y="145" width="60" height="28" rx="4" fill="#fef9e7" stroke="#e67e22" stroke-width="1.5"/>
+      <text x="220" y="164" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#333">2</text>
+      <rect x="140" y="80" width="60" height="28" rx="4" fill="#fef9e7" stroke="#e67e22" stroke-width="1.5"/>
+      <text x="170" y="99" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#333">10</text>
+
+      <!-- Roving pointer -->
+      <text x="420" y="148" font-family="DM Sans" font-size="12" font-weight="600" fill="#2980b9">← roving pointer</text>
+      <text x="420" y="165" font-family="DM Sans" font-size="10" fill="#888">(start next search here)</text>
+    </svg>
+    <div class="diagram-caption">A circular free list. The roving pointer starts at the large block (8000), so small allocations don't have to skip tiny fragments.</div>
+  </div>
+
+  <p>This way, the next allocation typically succeeds immediately — the current block is probably big enough. As we chew through it, the pointer advances. Meanwhile, <code>free()</code> calls coalesce freed objects, growing the other blocks. By the time the pointer wraps around, those blocks should be big again.</p>
+
+  <h3 id="ch4-bestfit">Best-Fit Allocation</h3>
+
+  <p>An alternative to first-fit is <strong>best-fit</strong>: instead of using the first block that's big enough, find the block that's <em>closest in size</em> to the request (but still ≥ n). This tends to minimize wasted space and reduce fragmentation. However, it requires searching the entire free list (or maintaining a sorted index), making it slower. In practice, best-fit is rarely used because the performance cost outweighs the fragmentation benefit.</p>
+
+  <div class="quiz">
+    <div class="quiz-label">Check Your Understanding</div>
+    <div class="quiz-question">A free list has blocks of sizes [500, 300, 200]. You call malloc(400). What happens with first-fit?</div>
+    <ul class="quiz-options" data-quiz="q2">
+      <li data-answer="a">Uses the 500-byte block, leaving it at 100 bytes</li>
+      <li data-answer="b">Uses the 300-byte block since it's closest in size</li>
+      <li data-answer="c">Fails because no block is exactly 400 bytes</li>
+      <li data-answer="d">Combines the 300 and 200 blocks to make 500</li>
+    </ul>
+    <button class="quiz-btn" onclick="checkQuiz('q2','a')">Check Answer</button>
+    <div class="quiz-feedback" data-quiz-fb="q2"></div>
+  </div>
+</div>
+
+<div class="sep">· · ·</div>
+
+<!-- ===== CHAPTER 5: QUICK LISTS ===== -->
+<div class="chapter" id="ch5">
+  <div class="chapter-number">Chapter 5</div>
+  <h2>Quick Lists: A Speed Hack</h2>
+  <p class="chapter-subtitle">When you know what you'll be allocating, you can beat the general-purpose allocator</p>
+
+  <h3 id="ch5-idea">The Idea</h3>
+
+  <p>Suppose you're writing a Scheme interpreter in C. In Scheme, the most common operation is <code>cons</code> — creating pairs (two-word objects). Your program creates <em>millions</em> of these pairs. Each one is exactly 16 bytes (two pointers on x86-64).</p>
+
+  <p>The general-purpose <code>malloc</code> works, but it's doing a lot of unnecessary work for these tiny, fixed-size objects: walking free lists, checking sizes, worrying about coalescing. What if you maintained your own <strong>private free list</strong> just for pairs?</p>
+
+  <div class="callout callout-idea">
+    A <strong>quick list</strong> is a private, specialized free list for objects of a single fixed size. Since everything is the same size, there's no need to check sizes, no fragmentation to worry about, and allocation/deallocation is just a few instructions.
+  </div>
+
+  <h3 id="ch5-code">Code Walkthrough</h3>
+
+  <p>Here's how you'd implement a quick list for Scheme pairs in C:</p>
+
+<pre><code><span class="kw">typedef struct</span> <span class="ty">pair</span> {
+    <span class="kw">struct</span> <span class="ty">pair</span> *head;
+    <span class="kw">struct</span> <span class="ty">pair</span> *tail;
+} <span class="ty">pair</span>;
+
+<span class="cm">// Our private free list — starts empty</span>
+<span class="kw">static</span> <span class="ty">pair</span> *my_free = <span class="kw">NULL</span>;</code></pre>
+
+  <h4>The fast allocator (<code>cons</code>)</h4>
+
+<pre><code><span class="ty">pair</span>* <span class="fn">cons</span>() {
+    <span class="ty">pair</span> *p = my_free;
+
+    <span class="kw">if</span> (p) {
+        <span class="cm">// FAST PATH: grab from our private list</span>
+        my_free = p->tail;  <span class="cm">// remove from list</span>
+    } <span class="kw">else</span> {
+        <span class="cm">// SLOW PATH: our list is empty, ask malloc</span>
+        p = <span class="fn">malloc</span>(<span class="kw">sizeof</span>(*p));
+    }
+    <span class="kw">return</span> p;
+}</code></pre>
+
+  <p>The fast path is just <strong>2-3 instructions</strong>: check if the list is non-empty, grab the first node, advance the pointer. No free list walking, no size checking, no coalescing. It's the fastest possible allocation.</p>
+
+  <h4>The fast deallocator (<code>my_free_pair</code>)</h4>
+
+<pre><code><span class="kw">void</span> <span class="fn">my_free_pair</span>(<span class="ty">pair</span> *p) {
+    <span class="cm">// Just prepend to our private free list</span>
+    p->tail = my_free;
+    my_free = p;
+}</code></pre>
+
+  <p>Freeing is also just 2 instructions: set the node's next pointer, update the list head. No coalescing, no searching.</p>
+
+  <h3 id="ch5-tradeoff">The Tradeoff: Speed vs. Fragmentation</h3>
+
+  <p>Quick lists are fast, but they come with a cost: the underlying <code>malloc</code> thinks all the objects in your quick list are <strong>still in use</strong>. From <code>malloc</code>'s perspective, you allocated those objects and never freed them. This means:</p>
+
+  <ul>
+    <li>The memory manager <strong>can't coalesce</strong> quick list objects with adjacent free blocks</li>
+    <li>You'll get <strong>more external fragmentation</strong> in the underlying heap</li>
+    <li>Memory is "hoarded" by your quick list even if it could be useful elsewhere</li>
+  </ul>
+
+  <p>This is why quick lists are only worth using for objects that are <strong>extremely common</strong> in your program. If you only allocate pairs, and you allocate millions of them, the speed benefit far outweighs the fragmentation cost.</p>
+
+  <div class="callout callout-connect">
+    Some sophisticated memory allocators (like glibc's <code>malloc</code>) have quick lists <em>built in</em>. They maintain separate fast lists for common allocation sizes (16 bytes, 32 bytes, etc.) internally. If your allocator already does this, building your own quick list on top would be redundant — you'd have two layers of caching, which wastes memory without improving speed.
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-label">Check Your Understanding</div>
+    <div class="quiz-question">Why do quick lists increase external fragmentation in the underlying heap?</div>
+    <ul class="quiz-options" data-quiz="q3">
+      <li data-answer="a">Quick lists use more memory per object than malloc</li>
+      <li data-answer="b">The underlying allocator thinks quick-list objects are still in use, so it can't coalesce them with adjacent free blocks</li>
+      <li data-answer="c">Quick lists always allocate objects at the end of the heap</li>
+      <li data-answer="d">Quick lists cause alignment problems</li>
+    </ul>
+    <button class="quiz-btn" onclick="checkQuiz('q3','b')">Check Answer</button>
+    <div class="quiz-feedback" data-quiz-fb="q3"></div>
+  </div>
+</div>
+
+<div class="sep">· · ·</div>
+
+<!-- ===== CHAPTER 6: WHAT CAN GO WRONG ===== -->
+<div class="chapter" id="ch6">
+  <div class="chapter-number">Chapter 6</div>
+  <h2>What Can Go Wrong</h2>
+  <p class="chapter-subtitle">The two fundamental bugs of manual memory management</p>
+
+  <p>If you've used <code>malloc</code>/<code>free</code> or <code>new</code>/<code>delete</code>, you know that manual memory management is error-prone. There are exactly <strong>two fundamental things</strong> that can go wrong, and understanding them deeply is crucial — because they motivate the invention of garbage collection.</p>
+
+  <h3 id="ch6-dangling">Problem 1: Dangling Pointers</h3>
+
+  <p>A <span class="term">dangling pointer</span> is a pointer that still refers to memory that has already been freed. The object is gone (its space may be reused), but the pointer doesn't know that.</p>
+
+<pre><code><span class="ty">int</span> *p = <span class="fn">malloc</span>(<span class="kw">sizeof</span>(<span class="ty">int</span>));
+*p = <span class="num">42</span>;
+<span class="fn">free</span>(p);         <span class="cm">// The object is freed</span>
+
+<span class="cm">// ... later ...</span>
+printf(<span class="st">"%d"</span>, *p); <span class="cm">// DISASTER: p is dangling!</span>
+                   <span class="cm">// The memory at p might be:</span>
+                   <span class="cm">//   - still 42 (by luck, undisturbed)</span>
+                   <span class="cm">//   - some other value (reused by another malloc)</span>
+                   <span class="cm">//   - cause a crash (segfault)</span></code></pre>
+
+  <p>Why is this so dangerous?</p>
+  <ul>
+    <li><strong>Non-deterministic behavior:</strong> sometimes the old data is still there, so the bug seems to "work." Other times, the memory has been reused by a different part of your program, and two unrelated pieces of code are now writing to the same memory, corrupting each other's data.</li>
+    <li><strong>Crashes:</strong> if the reused memory contains a NULL pointer or invalid data, dereferencing it causes a segfault.</li>
+    <li><strong>Security vulnerabilities:</strong> use-after-free bugs are a major source of exploitable security holes.</li>
+  </ul>
+
+  <h3 id="ch6-leaks">Problem 2: Memory Leaks</h3>
+
+  <p>A <span class="term">memory leak</span> occurs when you allocate memory, stop using it, but never free it. The heap manager thinks the memory is still in use and won't reclaim it.</p>
+
+<pre><code><span class="ty">int</span> *p = <span class="fn">malloc</span>(<span class="kw">sizeof</span>(<span class="ty">int</span>));
+*p = <span class="num">42</span>;
+<span class="cm">// ... use p for a while ...</span>
+
+<span class="cm">// From here on, the program never touches p again.</span>
+<span class="cm">// But free(p) was never called!</span>
+<span class="cm">// The memory sits there, reserved but unused, forever.</span></code></pre>
+
+  <p>A single small leak might not matter. But if your program keeps leaking — allocating objects and forgetting to free them — memory consumption grows without bound. For long-running programs (servers, embedded systems, robots), this is fatal: eventually the program runs out of memory and crashes.</p>
+
+  <h3 id="ch6-which">Which Problem Is Worse?</h3>
+
+  <div class="callout callout-warn">
+    <strong>Dangling pointers</strong> are generally considered the worse problem because they cause <em>crashes</em> and <em>unpredictable behavior</em>. A memory leak makes your program gradually slower and fatter, but it keeps running. A dangling pointer can crash your braking system or your nuclear control rods. From a reliability standpoint, crashes are more dangerous than slowdowns.
+  </div>
+
+  <p>However, some engineers care more about leaks because they cause gradual performance degradation that's hard to diagnose. Both are real problems. The question is: <strong>can we eliminate them?</strong></p>
+
+  <p>Hiring "better programmers who never make mistakes" isn't realistic. We need a <em>system-level</em> solution that prevents these errors entirely. That's what garbage collection is for.</p>
+</div>
+
+<div class="sep">· · ·</div>
+
+<!-- ===== CHAPTER 7: GARBAGE COLLECTION ===== -->
+<div class="chapter" id="ch7">
+  <div class="chapter-number">Chapter 7</div>
+  <h2>Garbage Collection: Mark and Sweep</h2>
+  <p class="chapter-subtitle">Letting the system free memory for you — no dangling pointers, ever</p>
+
+  <h3 id="ch7-idea">The Core Idea</h3>
+
+  <p>The fundamental idea of garbage collection is simple: <strong>remove <code>free</code>/<code>delete</code> from the programmer's vocabulary entirely.</strong> The programmer allocates objects (with <code>new</code> or equivalent), and the system automatically reclaims objects that are no longer needed.</p>
+
+  <p>Languages like OCaml, Python, Java, Scheme, JavaScript, Go, and many others use garbage collection. It eliminates dangling pointers by construction — if you never free anything manually, you can never free something too early.</p>
+
+  <p>You could even simulate this in C with a macro:</p>
+
+<pre><code><span class="kw">#define</span> <span class="fn">free</span>(p) ((void)0)  <span class="cm">// free does nothing!</span></code></pre>
+
+  <p>This eliminates dangling pointers, but your program now leaks like crazy — every allocation persists forever. We need something smarter: a system that automatically figures out which objects are no longer needed and reclaims them.</p>
+
+  <h3 id="ch7-roots">Prerequisites: Roots and Pointer Slots</h3>
+
+  <p>For a garbage collector to know which objects are "in use," it needs two pieces of information:</p>
+
+  <h4>1. Roots</h4>
+  <p><span class="term">Roots</span> are pointers from <strong>outside the heap</strong> that point <strong>into the heap</strong>. These are the starting points — the objects that the program can directly reach. Roots include:</p>
+  <ul>
+    <li>Local variables on the stack that hold pointers to heap objects</li>
+    <li>Global/static variables that point to heap objects</li>
+    <li>CPU registers containing pointers to heap objects</li>
+  </ul>
+
+  <h4>2. Pointer slots within objects</h4>
+  <p>An object in the heap might contain pointers to other objects. The garbage collector needs to know <strong>which fields of each object are pointers</strong> (as opposed to integers, floating-point values, or other non-pointer data). These pointers create chains of reachability: if root R points to object A, and A contains a pointer to object B, then B is also "in use" — even though no root directly points to B.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 600 220" xmlns="http://www.w3.org/2000/svg">
+      <!-- Root area -->
+      <rect x="20" y="10" width="100" height="80" rx="4" fill="#fadbd8" stroke="#c0392b" stroke-width="1.5"/>
+      <text x="70" y="30" text-anchor="middle" font-family="DM Sans" font-size="11" font-weight="700" fill="#c0392b">ROOTS</text>
+      <text x="70" y="50" font-family="JetBrains Mono" font-size="10" fill="#333">R₁ →</text>
+      <text x="70" y="68" font-family="JetBrains Mono" font-size="10" fill="#333">R₂ →</text>
+
+      <!-- Objects -->
+      <rect x="180" y="15" width="70" height="35" rx="4" fill="#d5f5e3" stroke="#27ae60" stroke-width="1.5"/>
+      <text x="215" y="37" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#1e8449">A</text>
+
+      <rect x="180" y="65" width="70" height="35" rx="4" fill="#d5f5e3" stroke="#27ae60" stroke-width="1.5"/>
+      <text x="215" y="87" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#1e8449">B</text>
+
+      <rect x="310" y="15" width="70" height="35" rx="4" fill="#d5f5e3" stroke="#27ae60" stroke-width="1.5"/>
+      <text x="345" y="37" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#1e8449">C</text>
+
+      <rect x="310" y="110" width="70" height="35" rx="4" fill="#f9ebea" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="4"/>
+      <text x="345" y="132" text-anchor="middle" font-family="DM Sans" font-size="11" fill="#c0392b">D</text>
+      <text x="345" y="165" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#c0392b">GARBAGE</text>
+      <text x="345" y="178" text-anchor="middle" font-family="DM Sans" font-size="9" fill="#999">(no path from roots)</text>
+
+      <!-- Arrows -->
+      <line x1="95" y1="47" x2="178" y2="33" stroke="#333" stroke-width="1.5" marker-end="url(#arrowB)"/>
+      <line x1="95" y1="65" x2="178" y2="80" stroke="#333" stroke-width="1.5" marker-end="url(#arrowB)"/>
+      <line x1="250" y1="33" x2="308" y2="33" stroke="#333" stroke-width="1.5" marker-end="url(#arrowB)"/>
+
+      <defs><marker id="arrowB" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#333"/></marker></defs>
+    </svg>
+    <div class="diagram-caption">Objects A, B, and C are reachable from roots — they're in use. Object D has no path from any root — it's garbage and can be freed.</div>
+  </div>
+
+  <h3 id="ch7-marksweep">The Mark and Sweep Algorithm</h3>
+
+  <p>Mark and sweep is the simplest and most fundamental garbage collection algorithm. It works in two phases:</p>
+
+  <h4>Setup: The Mark Bit</h4>
+  <p>Every object has a hidden <span class="term">mark bit</span> in its header (alongside the size field). This bit starts at 0 (unmarked). The mark bit typically shares a word with the size field since sizes are always even (so the lowest bit is available).</p>
+
+  <h4>Phase 1: Mark</h4>
+  <p>Starting from each root, recursively visit every reachable object and set its mark bit to 1.</p>
+
+<pre><code><span class="kw">function</span> <span class="fn">visit</span>(p):
+    <span class="kw">if</span> p.marked:        <span class="cm">// Already visited? Stop.</span>
+        <span class="kw">return</span>            <span class="cm">// (This handles cycles!)</span>
+    p.marked = <span class="kw">true</span>     <span class="cm">// Mark this object</span>
+    <span class="kw">for each</span> pointer q <span class="kw">in</span> p:
+        <span class="fn">visit</span>(q)          <span class="cm">// Recursively visit objects it points to</span>
+
+<span class="cm">// Mark phase:</span>
+<span class="kw">for each</span> root r:
+    <span class="fn">visit</span>(r)</code></pre>
+
+  <p>The mark bit serves double duty: it identifies objects in use, <strong>and</strong> it prevents infinite loops when the data has cycles (e.g., A → B → A). If an object is already marked, we skip it.</p>
+
+  <h4>Phase 2: Sweep</h4>
+  <p>Walk through <em>every</em> object in the heap (not just reachable ones). If an object is marked, clear the mark (for next time). If it's not marked, it's garbage — free it.</p>
+
+<pre><code><span class="cm">// Sweep phase:</span>
+<span class="kw">for each</span> object o <span class="kw">in</span> heap:
+    <span class="kw">if</span> o.marked:
+        o.marked = <span class="kw">false</span>  <span class="cm">// Reset for next GC cycle</span>
+    <span class="kw">else</span>:
+        <span class="fn">free</span>(o)            <span class="cm">// Object is garbage — reclaim it</span></code></pre>
+
+  <p>The <code>free</code> here does the same thing as the C <code>free</code>: put the block on the free list, coalesce adjacent blocks, etc. But it's <strong>safe</strong> because we've proven (by exhaustive marking) that no reachable pointer points to this object.</p>
+
+  <!-- EXPLORER -->
+  <div class="explorer" id="ch7-explorer">
+    <div class="explorer-header">⚡ Interactive: Mark and Sweep Step-by-Step</div>
+    <div class="explorer-body">
+      <p style="font-size:15px; color:#666; margin-bottom:16px;">Suppose we have roots R₁→A and R₂→B. A→C, B→D, D→B (a cycle!). E exists but nothing points to it.</p>
+      <div class="step-controls">
+        <button class="step-btn active" onclick="showStep(this, 'gc', 0)">Initial</button>
+        <button class="step-btn" onclick="showStep(this, 'gc', 1)">Mark R₁</button>
+        <button class="step-btn" onclick="showStep(this, 'gc', 2)">Mark R₂</button>
+        <button class="step-btn" onclick="showStep(this, 'gc', 3)">Sweep</button>
+      </div>
+      <div class="step-content active" data-step-group="gc" data-step="0">
+        <p>All objects start with mark bit = 0. The heap contains objects A, B, C, D, and E.</p>
+        <pre><code>Roots: R₁ → A,  R₂ → B
+Pointers: A → C,  B → D,  D → B (cycle!)
+E has no incoming pointers.
+
+Objects:  A[0]  B[0]  C[0]  D[0]  E[0]
+                                    (mark bits all 0)</code></pre>
+      </div>
+      <div class="step-content" data-step-group="gc" data-step="1">
+        <p><strong>Visit R₁ → A.</strong> Mark A. A points to C, so visit C. Mark C. C has no pointers. Done with R₁'s tree.</p>
+        <pre><code>visit(A): mark A → A[<span class="st">1</span>]
+  visit(C): mark C → C[<span class="st">1</span>]
+    C has no pointers. Return.
+
+Objects:  A[<span class="st">1</span>]  B[0]  C[<span class="st">1</span>]  D[0]  E[0]</code></pre>
+      </div>
+      <div class="step-content" data-step-group="gc" data-step="2">
+        <p><strong>Visit R₂ → B.</strong> Mark B. B points to D, so visit D. Mark D. D points to B — but B is already marked! <strong>Stop.</strong> The cycle doesn't cause infinite recursion because the mark check catches it.</p>
+        <pre><code>visit(B): mark B → B[<span class="st">1</span>]
+  visit(D): mark D → D[<span class="st">1</span>]
+    visit(B): B already marked! <span class="cm">Return. ← cycle broken!</span>
+
+Objects:  A[<span class="st">1</span>]  B[<span class="st">1</span>]  C[<span class="st">1</span>]  D[<span class="st">1</span>]  E[0]</code></pre>
+      </div>
+      <div class="step-content" data-step-group="gc" data-step="3">
+        <p><strong>Sweep phase.</strong> Walk through every object. A, B, C, D are marked → clear their marks (ready for next GC). E is NOT marked → <strong>free it!</strong></p>
+        <pre><code>Sweep:
+  A[1] → marked, clear → A[0]  ✓ keep
+  B[1] → marked, clear → B[0]  ✓ keep
+  C[1] → marked, clear → C[0]  ✓ keep
+  D[1] → marked, clear → D[0]  ✓ keep
+  E[0] → <span class="kw">NOT marked → FREE!</span>  🗑️ garbage collected
+
+Result: E's memory is reclaimed. All other objects survive.</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <h3 id="ch7-limits">Limitations of Mark and Sweep</h3>
+
+  <h4>1. It doesn't completely solve memory leaks</h4>
+  <p>Mark and sweep reclaims objects that nothing points to. But what if a root (say, a static variable) still holds a pointer to an object that the program will never use again?</p>
+
+<pre><code><span class="kw">static</span> <span class="ty">int</span> *p = <span class="fn">malloc</span>(<span class="num">1000000</span>);
+<span class="cm">// p is used once, then never again.</span>
+<span class="cm">// But p is a root! It still points to the object.</span>
+<span class="cm">// The GC can't free it — it looks "in use."</span></code></pre>
+
+  <p>Determining whether a program will use a variable in the future is equivalent to the <strong>halting problem</strong> — it's mathematically impossible to decide in general. So garbage collection can eliminate unreachable-object leaks but not all leaks.</p>
+
+  <h4>2. It's not real-time</h4>
+  <p>Mark and sweep must visit <em>every reachable object</em> in the system. If you have a billion objects, this takes a while. During that time, the program is <strong>paused</strong> — it can't do anything else. For a robot, a video game, or a stock trading system, a multi-second pause is catastrophic.</p>
+
+  <h4>3. Performance overhead</h4>
+  <p>Even ignoring real-time concerns, mark and sweep is expensive. It does work proportional to the <em>total number of objects</em>, not just the ones being freed. Running a full GC because memory is "a little bit low" can be painful.</p>
+
+  <h4>4. Doesn't work natively with C/C++</h4>
+  <p>Mark and sweep requires knowing where roots are and which object fields are pointers. Languages like C and C++ don't provide this information at runtime (for efficiency). This motivates <em>conservative</em> garbage collection, covered next.</p>
+
+  <div class="callout callout-connect">
+    For short-lived programs, none of this matters much — when a process exits, the OS reclaims all its memory. Garbage collection becomes critical for <strong>long-lived programs</strong>: servers, editors, interpreters, robots — anything that runs for hours or days and continuously allocates memory.
+  </div>
+</div>
+
+<div class="sep">· · ·</div>
+
+<!-- ===== CHAPTER 8: CONSERVATIVE GC ===== -->
+<div class="chapter" id="ch8">
+  <div class="chapter-number">Chapter 8</div>
+  <h2>Conservative Garbage Collection</h2>
+  <p class="chapter-subtitle">Making GC work for C and C++ — when the compiler won't help you</p>
+
+  <h3 id="ch8-problem">The Problem: C Compilers Are Cheapskates</h3>
+
+  <p>Mark and sweep needs to know: (1) where the roots are, and (2) which parts of each object are pointers. In languages like Java or OCaml, the compiler records this information. But C/C++ compilers don't — they optimize for speed and don't want to bloat the executable with metadata.</p>
+
+  <p>The memory manager only sees calls to <code>malloc(n)</code> and <code>free(p)</code>. It knows how big each object is and where it was placed, but not:</p>
+  <ul>
+    <li>Where the returned pointer was stored (which stack slot? which register?)</li>
+    <li>Which bytes in the object are used as pointers vs. integers vs. floats</li>
+  </ul>
+
+  <h3 id="ch8-how">The Conservative Approach: When in Doubt, Assume It's a Pointer</h3>
+
+  <p>Conservative garbage collection works by using <em>approximate</em> knowledge:</p>
+
+  <h4>Finding roots (approximately)</h4>
+  <p>We don't know exactly which stack slots contain pointers, but we know three things:</p>
+  <ol>
+    <li><strong>The stack</strong> — we know its boundaries (RSP register to base of stack). Roots could be anywhere in this region.</li>
+    <li><strong>Static/global storage</strong> — the OS tells us where global variables live.</li>
+    <li><strong>CPU registers</strong> — a pointer might be sitting in RAX or RSI without being stored to memory yet.</li>
+  </ol>
+
+  <p>These regions form a "roots plus" set — every actual root is in there, plus a lot of non-pointer data.</p>
+
+  <h4>The key trick</h4>
+  <p>For every word in the roots-plus regions, we check: <strong>does this bit pattern happen to equal the address of any known heap object?</strong> We don't dereference the word (that could crash). We just compare its numeric value against our table of allocated objects.</p>
+
+  <ul>
+    <li>If it matches an object address → treat it as a pointer. Mark that object as in use.</li>
+    <li>If it doesn't match → ignore it (it's probably an integer or float).</li>
+  </ul>
+
+  <p>We do the same within objects: examine every word, and if it looks like a pointer to a known object, follow it recursively.</p>
+
+  <div class="callout callout-idea">
+    <strong>Conservative</strong> means the algorithm might make mistakes — but only in one direction. It might think a non-pointer is a pointer (causing a memory leak — the object won't be freed). It will <strong>never</strong> think a pointer is a non-pointer (which would free an object still in use — a dangling pointer). The mistakes are "conservative" — they err on the side of keeping too much, not too little.
+  </div>
+
+  <h4>Why this works in practice</h4>
+  <p>If the heap lives in high memory addresses, it's unlikely that a random integer or float will happen to look like a valid heap pointer. The false-positive rate is low. Additionally, since the memory manager maintains a table of all allocated objects (it recorded them during <code>malloc</code>), checking whether a bit pattern is a valid object address is fast — it's just a table lookup.</p>
+
+  <h3 id="ch8-real">Real-World Success Stories</h3>
+
+  <p>Conservative GC has been successfully used in major, long-lived C/C++ programs:</p>
+
+  <ul>
+    <li><strong>Emacs</strong> — the text editor, originally written in C with manual memory management. As the codebase grew and more contributors joined over 50+ years, use-after-free crashes became a serious problem. Switching to conservative GC eliminated the crashes.</li>
+    <li><strong>GCC</strong> — the GNU Compiler Collection. Same story: large C++ codebase, many contributors, memory bugs. Conservative GC fixed the reliability problems.</li>
+  </ul>
+
+  <p>In both cases, the programs became slightly slower but dramatically more reliable. The slowdown was small enough that nobody cared.</p>
+
+  <div class="callout callout-warn">
+    Conservative GC is not a panacea. You can still leak large objects if a random integer happens to match their address. It works best when programs allocate many small objects (which is common). For programs with a few very large allocations, a false positive could waste significant memory.
+  </div>
+</div>
+
+<div class="sep">· · ·</div>
+
+<!-- ===== CHAPTER 9: REFERENCE COUNTING ===== -->
+<div class="chapter" id="ch9">
+  <div class="chapter-number">Chapter 9</div>
+  <h2>Reference Counting</h2>
+  <p class="chapter-subtitle">A completely different approach — count how many pointers point at each object</p>
+
+  <h3 id="ch9-idea">The Idea</h3>
+
+  <p>Reference counting takes a radically different approach from mark and sweep. Instead of periodically scanning all objects, it <strong>tracks usage continuously</strong>. Every object has a hidden <span class="term">reference count</span> field that records how many pointers currently point to that object.</p>
+
+  <p>The rule is simple: <strong>when the reference count drops to zero, no one can reach the object, so free it immediately.</strong></p>
+
+<pre><code><span class="cm"># Python example</span>
+p = <span class="st">"abc"</span>     <span class="cm"># "abc" created, refcount = 1 (p points to it)</span>
+q = p          <span class="cm"># refcount becomes 2 (both p and q point to it)</span>
+p = <span class="st">"xyz"</span>     <span class="cm"># p now points elsewhere</span>
+               <span class="cm"># "abc" refcount drops to 1 (only q remains)</span>
+q = <span class="kw">None</span>      <span class="cm"># "abc" refcount drops to 0 → FREED immediately!</span></code></pre>
+
+  <h3 id="ch9-assignment">The Cost: Every Assignment Gets Expensive</h3>
+
+  <p>With reference counting, a simple pointer assignment like <code>r = p</code> actually requires <strong>three</strong> memory updates:</p>
+
+  <ol>
+    <li><strong>Decrement</strong> the reference count of whatever <code>r</code> used to point to (it's losing a reference)</li>
+    <li><strong>Update</strong> <code>r</code> itself to point to the new object</li>
+    <li><strong>Increment</strong> the reference count of the new object (it's gaining a reference)</li>
+  </ol>
+
+  <div class="diagram">
+    <svg viewBox="0 0 580 180" xmlns="http://www.w3.org/2000/svg">
+      <!-- Before -->
+      <text x="20" y="20" font-family="DM Sans" font-size="12" font-weight="700" fill="#555">Before: r = p</text>
+      <rect x="20" y="30" width="50" height="30" rx="4" fill="#fadbd8" stroke="#c0392b" stroke-width="1.5"/>
+      <text x="45" y="50" text-anchor="middle" font-family="JetBrains Mono" font-size="11">r</text>
+      <rect x="20" y="75" width="50" height="30" rx="4" fill="#fadbd8" stroke="#c0392b" stroke-width="1.5"/>
+      <text x="45" y="95" text-anchor="middle" font-family="JetBrains Mono" font-size="11">p</text>
+
+      <rect x="130" y="28" width="90" height="35" rx="4" fill="#d5f5e3" stroke="#27ae60" stroke-width="1.5"/>
+      <text x="175" y="42" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#1e8449">Old obj</text>
+      <text x="175" y="56" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#333">rc: 7</text>
+
+      <rect x="130" y="73" width="90" height="35" rx="4" fill="#d6eaf8" stroke="#2980b9" stroke-width="1.5"/>
+      <text x="175" y="87" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#1b4f72">New obj</text>
+      <text x="175" y="101" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#333">rc: 2</text>
+
+      <line x1="70" y1="45" x2="128" y2="45" stroke="#333" stroke-width="1.5" marker-end="url(#arrowB)"/>
+      <line x1="70" y1="90" x2="128" y2="90" stroke="#333" stroke-width="1.5" marker-end="url(#arrowB)"/>
+
+      <!-- After -->
+      <text x="320" y="20" font-family="DM Sans" font-size="12" font-weight="700" fill="#555">After: r = p</text>
+      <rect x="320" y="30" width="50" height="30" rx="4" fill="#fadbd8" stroke="#c0392b" stroke-width="1.5"/>
+      <text x="345" y="50" text-anchor="middle" font-family="JetBrains Mono" font-size="11">r</text>
+      <rect x="320" y="75" width="50" height="30" rx="4" fill="#fadbd8" stroke="#c0392b" stroke-width="1.5"/>
+      <text x="345" y="95" text-anchor="middle" font-family="JetBrains Mono" font-size="11">p</text>
+
+      <rect x="430" y="28" width="90" height="35" rx="4" fill="#d5f5e3" stroke="#27ae60" stroke-width="1.5"/>
+      <text x="475" y="42" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#1e8449">Old obj</text>
+      <text x="475" y="56" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#c0392b">rc: 6 ↓</text>
+
+      <rect x="430" y="73" width="90" height="35" rx="4" fill="#d6eaf8" stroke="#2980b9" stroke-width="1.5"/>
+      <text x="475" y="87" text-anchor="middle" font-family="DM Sans" font-size="10" fill="#1b4f72">New obj</text>
+      <text x="475" y="101" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#27ae60">rc: 3 ↑</text>
+
+      <line x1="370" y1="45" x2="428" y2="90" stroke="#2980b9" stroke-width="1.5" marker-end="url(#arrowB)"/>
+      <line x1="370" y1="90" x2="428" y2="90" stroke="#333" stroke-width="1.5" marker-end="url(#arrowB)"/>
+    </svg>
+    <div class="diagram-caption">A single assignment r = p requires updating two reference counts plus the pointer itself.</div>
+  </div>
+
+  <h4>Advantages over mark and sweep</h4>
+  <ul>
+    <li><strong>Incremental:</strong> objects are freed immediately when their count hits zero. No long GC pauses. No "stop the world."</li>
+    <li><strong>Predictable:</strong> cleanup happens at known times (right after the last reference disappears).</li>
+  </ul>
+
+  <h4>Maximum reference count</h4>
+  <p>The reference count field has limited size (often 1 byte or a few bytes). If an object gets 255 references (with a 1-byte counter), we treat 255 as "infinity" and never decrement below it. The object becomes permanently un-freeable — a small, rare memory leak that prevents integer overflow crashes.</p>
+
+  <h3 id="ch9-cycles">The Cycle Problem</h3>
+
+  <p>Reference counting has a fundamental flaw: it <strong>cannot handle cycles</strong>. If object A points to B and B points back to A, both have reference count ≥ 1 forever, even if nothing else in the program points to either of them.</p>
+
+<pre><code><span class="cm"># Python: creating a cycle</span>
+p = [<span class="num">100</span>]       <span class="cm"># list with refcount 1</span>
+p[<span class="num">0</span>] = p        <span class="cm"># the list now points to itself!</span>
+                  <span class="cm"># refcount = 2 (p and the list's own slot)</span>
+
+p = [<span class="num">999</span>]       <span class="cm"># p now points to a new list</span>
+                  <span class="cm"># old list's refcount drops to 1 (self-reference)</span>
+                  <span class="cm"># It will NEVER reach 0 — it's leaked!</span></code></pre>
+
+  <p>Could we detect cycles? In theory, yes, but checking for cycles on every assignment would make each assignment O(n) in the worst case (where n is the total number of objects), which is far too expensive.</p>
+
+  <div class="callout callout-warn">
+    The simple answer "don't create cycles" isn't always practical. Many data structures (doubly-linked lists, graphs, parent-child pointers in trees) naturally involve cycles.
+  </div>
+
+  <h3 id="ch9-python">Python's Hybrid Approach</h3>
+
+  <p>The standard Python implementation (CPython) uses reference counting as its <em>primary</em> garbage collection mechanism. For most objects, this works well — objects are freed immediately when their last reference disappears.</p>
+
+  <p>But to handle cycles, CPython also has a <strong>mark-and-sweep garbage collector as a fallback</strong>. Periodically, when the reference counting system seems to be accumulating too many objects without freeing them, the mark-and-sweep collector kicks in and finds unreachable cycles.</p>
+
+  <p>This hybrid approach gives you the best of both worlds:</p>
+  <ul>
+    <li><strong>Reference counting</strong> handles the common case (non-cyclic objects) quickly and incrementally</li>
+    <li><strong>Mark and sweep</strong> handles the uncommon case (cyclic garbage) as a safety net</li>
+  </ul>
+
+  <div class="callout callout-connect">
+    This is a general lesson in systems design: <strong>real-world systems are hybrids.</strong> No single algorithm is best for everything. The most practical approach is often to combine a fast algorithm for the common case with a correct-but-slower algorithm for edge cases. You'll see this pattern everywhere: caches, networking protocols, database query planners, and more.
+  </div>
+
+  <!-- FINAL QUIZ -->
+  <div class="quiz" id="ch9-quiz">
+    <div class="quiz-label">Final Review</div>
+    <div class="quiz-question">Why does mark and sweep need a "mark bit" on each object?</div>
+    <ul class="quiz-options" data-quiz="qf1">
+      <li data-answer="a">To record whether the object has been freed</li>
+      <li data-answer="b">To track the object's reference count</li>
+      <li data-answer="c">To identify reachable objects AND prevent infinite loops when traversing cyclic data</li>
+      <li data-answer="d">To store the object's type information</li>
+    </ul>
+    <button class="quiz-btn" onclick="checkQuiz('qf1','c')">Check Answer</button>
+    <div class="quiz-feedback" data-quiz-fb="qf1"></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-label">Final Review</div>
+    <div class="quiz-question">A conservative garbage collector might fail to free an object that's actually garbage. Why?</div>
+    <ul class="quiz-options" data-quiz="qf2">
+      <li data-answer="a">It uses reference counting which can't handle cycles</li>
+      <li data-answer="b">A non-pointer value (integer or float) on the stack happens to have a bit pattern that matches the object's address</li>
+      <li data-answer="c">The object's mark bit is stuck at 1</li>
+      <li data-answer="d">The sweep phase runs out of time before reaching the object</li>
+    </ul>
+    <button class="quiz-btn" onclick="checkQuiz('qf2','b')">Check Answer</button>
+    <div class="quiz-feedback" data-quiz-fb="qf2"></div>
+  </div>
+
+  <div class="quiz">
+    <div class="quiz-label">Final Review</div>
+    <div class="quiz-question">Which combination describes CPython's garbage collection strategy?</div>
+    <ul class="quiz-options" data-quiz="qf3">
+      <li data-answer="a">Mark and sweep only</li>
+      <li data-answer="b">Conservative GC only</li>
+      <li data-answer="c">Reference counting (primary) + mark and sweep (fallback for cycles)</li>
+      <li data-answer="d">Quick lists + first-fit allocation</li>
+    </ul>
+    <button class="quiz-btn" onclick="checkQuiz('qf3','c')">Check Answer</button>
+    <div class="quiz-feedback" data-quiz-fb="qf3"></div>
+  </div>
+</div>
+
+<div class="sep">· · ·</div>
+
+<div style="text-align:center; padding: 40px 0; color: #888; font-family: 'DM Sans', sans-serif; font-size: 14px;">
+  <p>End of lecture material. Review any chapter using the navigation menu (☰).</p>
+</div>
+
+</div><!-- end content -->
+
+<script>
+// === NAV ===
+const navToggle = document.getElementById('navToggle');
+const navSidebar = document.getElementById('navSidebar');
+const navOverlay = document.getElementById('navOverlay');
+function toggleNav() {
+  navSidebar.classList.toggle('open');
+  navOverlay.classList.toggle('show');
+}
+navToggle.addEventListener('click', toggleNav);
+navOverlay.addEventListener('click', toggleNav);
+navSidebar.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+  navSidebar.classList.remove('open');
+  navOverlay.classList.remove('show');
+}));
+
+// === PROGRESS ===
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+});
+
+// === QUIZ ===
+const feedback = {
+  q1: { correct: 'Correct! The EP points to the definer\'s stack frame — this is how the nested function accesses non-local variables like <code>a</code>.', wrong: 'Not quite. The EP (Environment Pointer) specifically points to the stack frame of the function that <em>defined</em> this function, so it can access non-local variables.' },
+  q1b: { correct: 'Exactly! With manual closures, you choose precisely which variables to include in the struct. With automatic nested functions, you get access to <em>all</em> the definer\'s variables whether you need them or not.', wrong: 'Not quite. The key advantage of manual closures is choosing exactly which variables get captured, giving you finer-grained control over the closure\'s contents.' },
+  q2: { correct: 'Right! First-fit takes the <em>first</em> block that fits (≥ 400). The 500-byte block is first and is big enough, so we carve 400 off the end, leaving 100.', wrong: 'Remember, first-fit takes the <em>first</em> block that\'s large enough (≥ 400 bytes). It walks the list in order and stops at the first match.' },
+  q3: { correct: 'Exactly! From malloc\'s perspective, those objects were allocated and never freed. So it can\'t merge them with neighboring free blocks — they look "in use" even though the quick list isn\'t actively using them.', wrong: 'The key issue is that the underlying allocator (malloc) doesn\'t know these objects are free — it thinks they\'re in use. So it can\'t coalesce them with adjacent free blocks.' },
+  qf1: { correct: 'Correct! The mark bit serves two purposes: (1) identifying which objects are reachable (in use) so the sweep phase knows what to free, and (2) preventing infinite recursion when the data structure contains cycles (already-marked objects are skipped).', wrong: 'The mark bit has two purposes: marking reachable objects so the sweep phase can free the rest, AND preventing infinite loops during the recursive marking of cyclic data structures.' },
+  qf2: { correct: 'Exactly! Conservative GC can\'t distinguish pointers from non-pointers. If a random integer or float on the stack happens to have the same bit pattern as a heap object\'s address, the GC will think someone is pointing at that object and keep it alive. This is a false positive — a memory leak.', wrong: 'Conservative GC works by examining every value in the stack/registers/globals. If a non-pointer value (like an integer) happens to have the same bit pattern as a valid heap object address, the GC mistakenly keeps that object alive.' },
+  qf3: { correct: 'Correct! CPython uses reference counting for fast, incremental cleanup of most objects, and has a mark-and-sweep collector that runs periodically to catch cyclic garbage that reference counting misses.', wrong: 'CPython uses a hybrid approach: reference counting as the primary mechanism (for speed and immediacy) plus mark and sweep as a fallback to handle cycles.' }
+};
+
+function checkQuiz(quizId, correctAnswer) {
+  const opts = document.querySelector(`[data-quiz="${quizId}"]`);
+  const fb = document.querySelector(`[data-quiz-fb="${quizId}"]`);
+  const selected = opts.querySelector('.selected');
+  if (!selected) return;
+
+  const answer = selected.dataset.answer;
+  const isCorrect = answer === correctAnswer;
+
+  opts.querySelectorAll('li').forEach(li => {
+    li.style.pointerEvents = 'none';
+    if (li.dataset.answer === correctAnswer) li.classList.add('correct');
+    else if (li.classList.contains('selected')) li.classList.add('wrong');
+  });
+
+  fb.innerHTML = isCorrect ? feedback[quizId].correct : feedback[quizId].wrong;
+  fb.className = 'quiz-feedback show ' + (isCorrect ? 'correct-fb' : 'wrong-fb');
+
+  const btn = opts.parentElement.querySelector('.quiz-btn');
+  btn.disabled = true;
+}
+
+document.querySelectorAll('.quiz-options').forEach(ul => {
+  ul.querySelectorAll('li').forEach(li => {
+    li.addEventListener('click', () => {
+      ul.querySelectorAll('li').forEach(x => x.classList.remove('selected'));
+      li.classList.add('selected');
+    });
+  });
+});
+
+// === STEP EXPLORER ===
+function showStep(btn, group, step) {
+  btn.parentElement.querySelectorAll('.step-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll(`[data-step-group="${group}"]`).forEach(el => {
+    el.classList.toggle('active', parseInt(el.dataset.step) === step);
+  });
+}
+</script>
+
+</body>
+</html>

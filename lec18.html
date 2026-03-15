@@ -1,0 +1,1717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 18 — Parameter Passing & Cost Models</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,300;0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf8f4;
+  --bg-warm: #f5f0e8;
+  --text: #2a2520;
+  --text-muted: #6b6560;
+  --accent: #c0522e;
+  --accent-light: #e8a88c;
+  --accent-bg: #fdf0eb;
+  --green: #3a7a52;
+  --green-bg: #eaf5ef;
+  --blue: #2e6b9c;
+  --blue-bg: #e8f0f8;
+  --purple: #6b4c9a;
+  --purple-bg: #f0ebf5;
+  --yellow: #b8860b;
+  --yellow-bg: #fdf8e8;
+  --border: #e0d8d0;
+  --code-bg: #2b2520;
+  --code-text: #f0e8e0;
+  --shadow: 0 2px 12px rgba(42,37,32,0.08);
+  --shadow-lg: 0 8px 32px rgba(42,37,32,0.12);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Source Serif 4', Georgia, serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 17px;
+  line-height: 1.75;
+}
+
+/* ── NAV ── */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(250,248,244,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 32px;
+  display: flex; align-items: center; gap: 16px;
+}
+.nav-title {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700; font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+}
+.nav-progress {
+  flex: 1; height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.nav-progress-bar {
+  height: 100%; width: 0%;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+.nav-section {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px; color: var(--text-muted);
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  position: fixed; left: 0; top: 52px; bottom: 0;
+  width: 280px; overflow-y: auto;
+  background: var(--bg-warm);
+  border-right: 1px solid var(--border);
+  padding: 24px 0;
+  z-index: 90;
+  transform: translateX(0);
+  transition: transform 0.3s ease;
+}
+.sidebar.collapsed { transform: translateX(-280px); }
+.sidebar-toggle {
+  position: fixed; left: 8px; top: 60px; z-index: 95;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: 6px 10px;
+  cursor: pointer; font-size: 16px;
+  display: none;
+}
+@media(max-width:900px) {
+  .sidebar { transform: translateX(-280px); }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-toggle { display: block; }
+  .main { margin-left: 0 !important; }
+}
+.toc-group { margin-bottom: 8px; }
+.toc-group-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px; text-transform: uppercase;
+  letter-spacing: 1.5px; color: var(--text-muted);
+  padding: 8px 24px 4px;
+}
+.toc-item {
+  display: block; padding: 6px 24px 6px 28px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px; color: var(--text-muted);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.toc-item:hover { color: var(--text); background: rgba(0,0,0,0.03); }
+.toc-item.active {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  background: var(--accent-bg);
+  font-weight: 600;
+}
+.toc-item.sub { padding-left: 40px; font-size: 12px; }
+
+/* ── MAIN ── */
+.main {
+  margin-left: 280px; margin-top: 52px;
+  max-width: 780px;
+  padding: 48px 48px 120px;
+}
+
+/* ── SECTIONS ── */
+.section {
+  margin-bottom: 64px;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeUp 0.5s forwards;
+}
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.section-number {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px; text-transform: uppercase;
+  letter-spacing: 2px; color: var(--accent);
+  margin-bottom: 8px;
+}
+h1 {
+  font-size: 36px; font-weight: 700;
+  line-height: 1.25; margin-bottom: 16px;
+  color: var(--text);
+}
+h2 {
+  font-size: 26px; font-weight: 600;
+  line-height: 1.3; margin: 48px 0 16px;
+  color: var(--text);
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border);
+}
+h3 {
+  font-size: 20px; font-weight: 600;
+  margin: 32px 0 12px;
+  color: var(--text);
+}
+p { margin-bottom: 16px; }
+.lead {
+  font-size: 19px; color: var(--text-muted);
+  line-height: 1.7; margin-bottom: 24px;
+}
+
+/* ── SPECIAL BLOCKS ── */
+.callout {
+  padding: 20px 24px;
+  border-radius: 8px;
+  margin: 24px 0;
+  border-left: 4px solid;
+}
+.callout.why { background: var(--blue-bg); border-color: var(--blue); }
+.callout.key { background: var(--accent-bg); border-color: var(--accent); }
+.callout.warn { background: var(--yellow-bg); border-color: var(--yellow); }
+.callout.idea { background: var(--purple-bg); border-color: var(--purple); }
+.callout.good { background: var(--green-bg); border-color: var(--green); }
+.callout-title {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700; font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+.callout.why .callout-title { color: var(--blue); }
+.callout.key .callout-title { color: var(--accent); }
+.callout.warn .callout-title { color: var(--yellow); }
+.callout.idea .callout-title { color: var(--purple); }
+.callout.good .callout-title { color: var(--green); }
+
+/* ── CODE ── */
+pre {
+  background: var(--code-bg);
+  color: var(--code-text);
+  padding: 20px 24px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 20px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  position: relative;
+}
+pre .label {
+  position: absolute; top: 8px; right: 12px;
+  font-size: 10px; text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #888;
+}
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  background: rgba(192,82,46,0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--accent);
+}
+pre code { background: none; padding: 0; color: inherit; }
+.kw { color: #e8a88c; }
+.cm { color: #888; font-style: italic; }
+.str { color: #a8d8a0; }
+.num { color: #d4a8e0; }
+
+/* ── TABLES ── */
+table {
+  width: 100%; border-collapse: collapse;
+  margin: 24px 0;
+  font-size: 15px;
+}
+th {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600; font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-align: left;
+  padding: 10px 16px;
+  border-bottom: 2px solid var(--border);
+  color: var(--text-muted);
+}
+td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+tr:last-child td { border-bottom: none; }
+
+/* ── DIAGRAMS ── */
+.diagram {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  margin: 24px 0;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.diagram svg { max-width: 100%; height: auto; }
+.diagram-caption {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px; color: var(--text-muted);
+  margin-top: 12px;
+  text-align: center;
+}
+
+/* ── QUIZ ── */
+.quiz {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 28px;
+  margin: 32px 0;
+  box-shadow: var(--shadow);
+}
+.quiz-tag {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px; text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--green); font-weight: 700;
+  margin-bottom: 12px;
+}
+.quiz-q {
+  font-size: 17px; font-weight: 600;
+  margin-bottom: 16px;
+}
+.quiz-options { list-style: none; }
+.quiz-options li {
+  padding: 12px 16px;
+  margin: 6px 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
+  transition: all 0.2s;
+  font-family: 'DM Sans', sans-serif;
+}
+.quiz-options li:hover { border-color: var(--accent); background: var(--accent-bg); }
+.quiz-options li.selected { border-color: var(--accent); background: var(--accent-bg); font-weight: 600; }
+.quiz-options li.correct { border-color: var(--green); background: var(--green-bg); }
+.quiz-options li.wrong { border-color: #c44; background: #fde8e8; }
+.quiz-explain {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  font-size: 15px;
+  display: none;
+}
+.quiz-explain.show { display: block; }
+.quiz-explain.correct-expl { background: var(--green-bg); }
+.quiz-explain.wrong-expl { background: #fde8e8; }
+
+/* ── INTERACTIVE EXPLORER ── */
+.explorer {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 32px 0;
+  box-shadow: var(--shadow);
+}
+.explorer-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-warm);
+}
+.explorer-tab {
+  padding: 12px 20px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+.explorer-tab:hover { color: var(--text); }
+.explorer-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  background: white;
+}
+.explorer-panel { display: none; padding: 24px; }
+.explorer-panel.active { display: block; }
+
+/* ── STEP THROUGH ── */
+.stepper {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 32px 0;
+  box-shadow: var(--shadow);
+}
+.stepper-display {
+  padding: 24px;
+  min-height: 200px;
+}
+.stepper-controls {
+  display: flex; gap: 8px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-warm);
+}
+.btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px; font-weight: 600;
+  padding: 8px 20px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  background: white;
+  color: var(--text);
+  transition: all 0.2s;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+.btn.primary:hover { background: #a84424; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.step-indicator {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px; color: var(--text-muted);
+  display: flex; align-items: center;
+  margin-left: auto;
+}
+
+/* ── COMPARISON ── */
+.vs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 24px 0;
+}
+@media(max-width:600px) { .vs-grid { grid-template-columns: 1fr; } }
+.vs-card {
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.vs-card h4 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px; font-weight: 700;
+  margin-bottom: 12px;
+}
+.pro { color: var(--green); }
+.con { color: #c44; }
+.pro::before { content: '✓ '; }
+.con::before { content: '✗ '; }
+
+/* ── HIGHLIGHT LINE ── */
+.hl { background: rgba(192,82,46,0.12); padding: 2px 0; }
+
+/* ── STORY BOX ── */
+.story {
+  background: var(--bg-warm);
+  border-radius: 10px;
+  padding: 24px 28px;
+  margin: 28px 0;
+  border: 1px solid var(--border);
+  position: relative;
+}
+.story::before {
+  content: '📖';
+  position: absolute;
+  top: -12px; left: 20px;
+  background: var(--bg-warm);
+  padding: 0 8px;
+  font-size: 18px;
+}
+.story-title {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700; font-size: 14px;
+  margin-bottom: 8px; color: var(--accent);
+}
+
+/* ── FOOTER ── */
+.chapter-nav {
+  display: flex; justify-content: space-between;
+  margin-top: 64px;
+  padding-top: 32px;
+  border-top: 2px solid var(--border);
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<div class="nav">
+  <div class="nav-title">Lecture 18</div>
+  <div class="nav-progress"><div class="nav-progress-bar" id="progressBar"></div></div>
+  <div class="nav-section" id="navSection">Parameter Passing</div>
+</div>
+
+<button class="sidebar-toggle" id="sidebarToggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+  <div class="toc-group">
+    <div class="toc-group-title">Part I — Parameter Passing</div>
+    <a class="toc-item" href="#big-picture">Why This Matters</a>
+    <a class="toc-item sub" href="#terminology">Arguments vs Parameters</a>
+    <a class="toc-item sub" href="#correspondence">Correspondence Issues</a>
+    <a class="toc-item" href="#call-by-value">Call by Value</a>
+    <a class="toc-item" href="#call-by-reference">Call by Reference</a>
+    <a class="toc-item sub" href="#aliasing">The Aliasing Problem</a>
+    <a class="toc-item" href="#call-by-result">Call by Result (Ada)</a>
+    <a class="toc-item sub" href="#call-by-value-result">Call by Value-Result</a>
+    <a class="toc-item" href="#macro-calls">Macro Calls</a>
+    <a class="toc-item" href="#call-by-name">Call by Name</a>
+    <a class="toc-item sub" href="#call-by-need">Call by Need / Lazy Eval</a>
+    <a class="toc-item" href="#call-by-unification">Call by Unification</a>
+    <a class="toc-item" href="#param-quiz">Check Your Understanding</a>
+  </div>
+  <div class="toc-group">
+    <div class="toc-group-title">Part II — Cost Models</div>
+    <a class="toc-item" href="#cost-intro">What Are Cost Models?</a>
+    <a class="toc-item sub" href="#cost-types">Types of Costs</a>
+    <a class="toc-item" href="#data-structure-costs">Data Structure Costs</a>
+    <a class="toc-item" href="#function-call-cost">Function Call Overhead</a>
+    <a class="toc-item sub" href="#tail-call">Tail Call Optimization</a>
+    <a class="toc-item" href="#prolog-efficiency">Prolog Efficiency</a>
+    <a class="toc-item" href="#array-costs">Array Access Costs</a>
+    <a class="toc-item" href="#cost-quiz">Check Your Understanding</a>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<div class="main" id="mainContent">
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- PART I: PARAMETER PASSING -->
+<!-- ═══════════════════════════════════════════════ -->
+
+<section class="section" id="big-picture">
+  <div class="section-number">Part I</div>
+  <h1>Parameter Passing</h1>
+  <p class="lead">When you call a function, you give it some data to work with. <em>How</em> that data gets from the caller to the function — and what the function can do with it — is one of the most important design decisions in any programming language.</p>
+
+  <div class="callout why">
+    <div class="callout-title">Why Should I Care?</div>
+    <p>Function calls are the <strong>primary mechanism</strong> by which software gets glued together. Think about any program you've ever written — it's full of function calls. Because we do them so often, two things must be true:</p>
+    <p><strong>1. They have to be fast.</strong> If every function call is even a tiny bit slower than it needs to be, that cost multiplies across millions of calls.</p>
+    <p><strong>2. They have to be clear.</strong> When you call a function, you should know <em>exactly</em> what happens to the data you pass in. Does the function get its own private copy? Can it modify your original data? If you don't know the answer, you can't reason about your program.</p>
+  </div>
+
+  <p>This lecture covers the many different ways programming languages handle parameter passing — each with different tradeoffs between speed, memory usage, clarity, and power. Understanding these tradeoffs is essential to understanding <em>why</em> different languages work the way they do.</p>
+</section>
+
+<!-- TERMINOLOGY -->
+<section class="section" id="terminology">
+  <h2>Arguments vs. Parameters: Getting the Words Right</h2>
+  <p>Before we dive in, let's nail down two terms that people often mix up. We need to be precise, because the distinction matters.</p>
+
+  <p>Consider this code:</p>
+  <pre><code><span class="cm">// The CALLER — the code that calls the function</span>
+f(x + 1)     <span class="cm">// (x + 1) is the ARGUMENT</span>
+
+<span class="cm">// The CALLEE — the function being called</span>
+<span class="kw">def</span> f(y):     <span class="cm">// y is the PARAMETER</span>
+    ...</code></pre>
+
+  <div class="callout key">
+    <div class="callout-title">Key Distinction</div>
+    <p><strong>Argument</strong> = what the <em>caller</em> passes in. It's the expression at the call site: <code>x + 1</code>.</p>
+    <p><strong>Parameter</strong> = what the <em>callee</em> (the function) receives. It's the variable name in the function definition: <code>y</code>.</p>
+    <p>Think of it this way: <strong>A</strong>rguments are what you <strong>A</strong>ctually pass. <strong>P</strong>arameters are the <strong>P</strong>laceholders waiting to receive them.</p>
+  </div>
+
+  <p>Throughout this lecture, we'll be consistent: "argument" is from the caller's perspective, "parameter" is from the callee's perspective.</p>
+</section>
+
+<!-- CORRESPONDENCE -->
+<section class="section" id="correspondence">
+  <h2>Correspondence Issues: Which Argument Goes Where?</h2>
+  <p>When you call a function with multiple arguments, the language needs a rule for <em>which argument matches up with which parameter</em>. This is called the <strong>correspondence issue</strong>. There are three common approaches:</p>
+
+  <h3>1. Positional Correspondence (Most Common)</h3>
+  <p>This is the one you already know intuitively. Arguments are listed left to right. Parameters are listed left to right. The first argument goes to the first parameter, the second to the second, and so on.</p>
+  <pre><code><span class="kw">def</span> f(x, y, z):
+    ...
+
+f(<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>)   <span class="cm">// x=1, y=2, z=3 — simple and obvious</span></code></pre>
+  <p>This is by far the most common approach and appears in virtually every language.</p>
+
+  <h3>2. Keyword Correspondence</h3>
+  <p>Some languages (like Python) let you specify <em>which parameter</em> each argument should go to by name. This means the order doesn't matter:</p>
+  <pre><code><span class="kw">def</span> f(x, y):
+    <span class="kw">print</span>(x, y)
+
+f(y=<span class="num">9</span>, x=<span class="num">7</span>)   <span class="cm">// x=7, y=9 — order doesn't matter!</span></code></pre>
+  <p>Even though the arguments are "backwards" compared to the function definition, Python matches them up by name. This is especially useful when a function has many optional parameters — you can skip ones you don't care about and name the ones you do.</p>
+
+  <h3>3. Varying Number of Arguments</h3>
+  <p>Some functions can accept a different number of arguments each time they're called. You've seen this in Python with <code>*args</code>, in C with <code>...</code> (variadic functions like <code>printf</code>), and in Scheme:</p>
+  <pre><code><span class="cm">;; Scheme example</span>
+(f <span class="num">3</span> <span class="num">9</span> <span class="num">12</span>)
+
+<span class="cm">;; f is defined as: (lambda (x . r) ...)</span>
+<span class="cm">;; x gets bound to 3</span>
+<span class="cm">;; r gets bound to the list (9 12)</span></code></pre>
+  <p>The first argument binds to <code>x</code> normally. All remaining arguments get collected into a list called <code>r</code>. This lets one function handle many different use cases.</p>
+
+  <div class="callout idea">
+    <div class="callout-title">The Bigger Question</div>
+    <p>Correspondence is about <em>which</em> argument goes where. But the far more important question — and the rest of this lecture — is about <em>how</em> the argument value gets passed. Does the callee get a copy? A reference? Something else entirely? This determines the <strong>meaning</strong> of your function call.</p>
+  </div>
+</section>
+
+<!-- CALL BY VALUE -->
+<section class="section" id="call-by-value">
+  <h2>Call by Value</h2>
+  <p>This is the most common parameter passing mechanism, used in C, Java, Python (for immutable types), OCaml, Scheme, and many more languages. Let's understand it from scratch.</p>
+
+  <h3>How It Works</h3>
+  <p>The process is straightforward:</p>
+
+  <div class="stepper" id="cbv-stepper">
+    <div class="stepper-display" id="cbv-display"></div>
+    <div class="stepper-controls">
+      <button class="btn" onclick="stepCBV(-1)" id="cbv-prev" disabled>← Previous</button>
+      <button class="btn primary" onclick="stepCBV(1)" id="cbv-next">Next Step →</button>
+      <div class="step-indicator" id="cbv-indicator">Step 1 / 5</div>
+    </div>
+  </div>
+
+  <h3>The Key Rule</h3>
+  <p>Because the callee works with a <em>copy</em> of each value, anything the callee does to its parameters <strong>does not affect the caller</strong>. The caller's original data is safe and untouched.</p>
+
+  <pre><code><span class="kw">void</span> increment(<span class="kw">int</span> n) {
+    n = n + <span class="num">1</span>;      <span class="cm">// modifies the LOCAL copy</span>
+}
+
+<span class="kw">int</span> main() {
+    <span class="kw">int</span> x = <span class="num">5</span>;
+    increment(x);
+    printf(<span class="str">"%d"</span>, x);  <span class="cm">// still prints 5!</span>
+}</code></pre>
+
+  <div class="vs-grid">
+    <div class="vs-card">
+      <h4 class="pro" style="color:var(--green)">Pros</h4>
+      <p><span class="pro">Simple and well-understood</span> — the most common convention, you already know it</p>
+      <p><span class="pro">Safe</span> — the callee can't mess with the caller's data, keeping code decoupled</p>
+      <p><span class="pro">Easy to reason about</span> — each function works with its own private data</p>
+    </div>
+    <div class="vs-card">
+      <h4 style="color:#c44">Cons</h4>
+      <p><span class="con">Expensive for large data</span> — copying a billion-element array is wasteful in both time and memory</p>
+      <p><span class="con">Sometimes you WANT the callee to modify the caller's data</span> — e.g., a function that reads from a file into a buffer</p>
+    </div>
+  </div>
+
+  <p>The efficiency problem is the big one. Passing an integer? The copy is basically free — it's just one register operation. Passing a massive struct or an array of a million elements? Now you're copying megabytes of data, allocating memory, and burning CPU time for a copy that might not even be necessary.</p>
+</section>
+
+<!-- CALL BY REFERENCE -->
+<section class="section" id="call-by-reference">
+  <h2>Call by Reference</h2>
+  <p>Call by reference was invented to fix the two big problems with call by value: (1) it's too expensive for large objects, and (2) sometimes you <em>want</em> the callee to modify the caller's data.</p>
+
+  <h3>The Basic Idea</h3>
+  <p>Instead of copying the value, the caller passes the <em>address</em> (a pointer) to the original value. The callee then works directly with the original data through that pointer.</p>
+
+  <h3>C++ Syntax vs. What Really Happens</h3>
+  <p>C++ has a nice syntax for call by reference using the <code>&amp;</code> symbol. But underneath, it's really just passing pointers — it's "syntactic sugar" that makes the code cleaner:</p>
+
+  <div class="explorer">
+    <div class="explorer-tabs">
+      <div class="explorer-tab active" onclick="showExplorerTab(this, 'cbr-nice')">C++ Nice Syntax</div>
+      <div class="explorer-tab" onclick="showExplorerTab(this, 'cbr-real')">What Really Happens (C equivalent)</div>
+    </div>
+    <div class="explorer-panel active" id="cbr-nice">
+      <pre><code><span class="kw">int</span> f(<span class="kw">int</span> <span class="hl">&amp;n</span>) {   <span class="cm">// n is a reference</span>
+    n++;              <span class="cm">// looks like normal variable access</span>
+    <span class="kw">return</span> n * <span class="num">2</span>;
+}
+
+<span class="kw">int</span> main() {
+    <span class="kw">int</span> i = <span class="num">27</span>;
+    <span class="kw">int</span> result = f(i);  <span class="cm">// just pass i, looks simple</span>
+    <span class="cm">// i is now 28! f modified it.</span>
+}</code></pre>
+    </div>
+    <div class="explorer-panel" id="cbr-real">
+      <pre><code><span class="cm">// The COMPILER converts the & reference into pointers:</span>
+
+<span class="kw">int</span> f(<span class="kw">int</span> <span class="hl">*n</span>) {    <span class="cm">// pointer to int</span>
+    (<span class="hl">*n</span>)++;           <span class="cm">// dereference to access</span>
+    <span class="kw">return</span> (<span class="hl">*n</span>) * <span class="num">2</span>;  <span class="cm">// dereference again</span>
+}
+
+<span class="kw">int</span> main() {
+    <span class="kw">int</span> i = <span class="num">27</span>;
+    <span class="kw">int</span> result = f(<span class="hl">&amp;i</span>);  <span class="cm">// pass ADDRESS of i</span>
+    <span class="cm">// i is now 28</span>
+}</code></pre>
+    </div>
+  </div>
+
+  <p>The C++ reference syntax (<code>int &amp;n</code>) is what the professor calls a "polite fiction." Under the hood, it's pointers. But the notation is more compact and less error-prone — no manual <code>*</code> dereferencing scattered everywhere.</p>
+
+  <h3>Why It Helps with Large Objects</h3>
+  <p>If you have a struct with thousands of fields, call by value would copy the entire thing. Call by reference just passes one pointer (8 bytes on a 64-bit machine), regardless of how big the struct is. The callee accesses the original directly through that pointer.</p>
+  <pre><code><span class="kw">struct</span> BigData {
+    <span class="kw">int</span> values[<span class="num">1000000</span>];  <span class="cm">// ~4 MB of data</span>
+};
+
+<span class="cm">// Call by value: copies 4 MB every time. Slow!</span>
+<span class="kw">void</span> process_val(<span class="kw">struct</span> BigData s) { ... }
+
+<span class="cm">// Call by reference: passes 8 bytes. Fast!</span>
+<span class="kw">void</span> process_ref(<span class="kw">struct</span> BigData &amp;s) { ... }</code></pre>
+
+  <h3>Pros and Cons</h3>
+  <div class="vs-grid">
+    <div class="vs-card">
+      <h4 style="color:var(--green)">Pros</h4>
+      <p><span class="pro">Fast for large objects</span> — only an 8-byte pointer is passed</p>
+      <p><span class="pro">Callee can modify caller's data</span> — useful for output parameters</p>
+    </div>
+    <div class="vs-card">
+      <h4 style="color:#c44">Cons</h4>
+      <p><span class="con">Tighter coupling</span> — callee can "mess with the caller's brain"</p>
+      <p><span class="con">Slower for small objects</span> — forces the value into memory for address-taking</p>
+      <p><span class="con">Aliasing problems</span> — the big one (see below)</p>
+    </div>
+  </div>
+
+  <div class="callout idea">
+    <div class="callout-title">Partial Fix: const</div>
+    <p>You can partially address the coupling problem by declaring a reference as <code>const</code>:</p>
+    <pre><code><span class="kw">void</span> f(<span class="kw">const int</span> &amp;n) {
+    <span class="cm">// n++; ← ERROR! Can't modify a const reference</span>
+    printf(<span class="str">"%d"</span>, n);  <span class="cm">// reading is fine</span>
+}</code></pre>
+    <p>This gives you the efficiency of passing a reference (no copy) while promising not to modify the data. It's a looser coupling — but it doesn't solve the aliasing problem.</p>
+  </div>
+</section>
+
+<!-- ALIASING -->
+<section class="section" id="aliasing">
+  <h2>The Aliasing Problem</h2>
+  <p>This is the most important problem with call by reference, and it's subtle enough that it has caused real-world disasters.</p>
+
+  <div class="callout key">
+    <div class="callout-title">What Is Aliasing?</div>
+    <p><strong>Aliasing</strong> occurs when two different names refer to the same underlying object or memory location. It's like someone going by both "delegate" and "Frank Templeton" — two names, one person. If something changes about that person, it changes under <em>both</em> names.</p>
+  </div>
+
+  <h3>How Call by Reference Creates Aliasing</h3>
+  <p>Consider this seemingly obvious code:</p>
+
+  <div class="stepper" id="alias-stepper">
+    <div class="stepper-display" id="alias-display"></div>
+    <div class="stepper-controls">
+      <button class="btn" onclick="stepAlias(-1)" id="alias-prev" disabled>← Previous</button>
+      <button class="btn primary" onclick="stepAlias(1)" id="alias-next">Next Step →</button>
+      <div class="step-indicator" id="alias-indicator">Step 1 / 4</div>
+    </div>
+  </div>
+
+  <h3>Why Compilers Hate Aliasing</h3>
+  <p>Compilers love to optimize code. One very common optimization is to "cache" a value in a register. If a compiler sees <code>x = 0</code> followed by <code>print(x)</code>, it wants to just emit code that prints <code>0</code> directly — no need to load <code>x</code> from memory.</p>
+  <p>But with aliasing, the compiler <strong>cannot</strong> do this optimization in general. After <code>y = 1</code>, the value of <code>x</code> might also have changed (if <code>x</code> and <code>y</code> are aliases). So the compiler must always reload from memory, just in case.</p>
+  <p>This is one of the reasons C++ can be <strong>slower</strong> than C in practice — C++ has call by reference, which introduces aliasing possibilities that force the compiler to be more conservative with optimizations.</p>
+
+  <div class="story">
+    <div class="story-title">The Rocket That Crashed Because of Call by Reference</div>
+    <p>In an early space program, flight software was written in a variant of Fortran that used call by reference. A function was called like this:</p>
+    <pre><code>CALL F(<span class="num">3.14159</span>)</code></pre>
+    <p>The Fortran compiler passed the <em>address</em> of the constant <code>3.14159</code> to the function. Inside the function, the code modified its parameter: <code>X = X + 1</code>. Because of call by reference, this <strong>changed the value of the constant π itself</strong> in memory.</p>
+    <p>The next time the program used π, it was <code>4.14159</code> instead of <code>3.14159</code>. Orbit calculations went wrong. The rocket had to be destroyed.</p>
+    <p>This is the danger of call by reference: it can modify things you never intended to be modified, including <em>constants</em>.</p>
+  </div>
+</section>
+
+<!-- CALL BY RESULT -->
+<section class="section" id="call-by-result">
+  <h2>Call by Result (Ada's Innovation)</h2>
+
+  <div class="callout why">
+    <div class="callout-title">Motivation</div>
+    <p>The Ada programming language was designed for <em>highly reliable</em> software — the kind that controls airplane flaps or missile systems. The designers wanted to avoid the aliasing problems of call by reference while still allowing functions to return multiple values efficiently. Their solution: <strong>call by result</strong>.</p>
+  </div>
+
+  <h3>The Core Idea</h3>
+  <p>Call by result says: a function can have special "output parameters" that start off <strong>uninitialized</strong>. The function's job is to assign values to them. Only when the function <em>returns</em> are those values copied back to the caller's variables.</p>
+
+  <pre><code><span class="cm">// Using C-like syntax for Ada's concept</span>
+<span class="kw">int</span> f(<span class="kw">int</span> n, <span class="kw">int</span> <span class="hl">result</span> o, <span class="kw">int</span> <span class="hl">result</span> p) {
+    <span class="cm">// o and p start UNINITIALIZED</span>
+    <span class="cm">// It's f's job to set them</span>
+    o = <span class="num">37</span>;
+    p = <span class="num">28</span>;
+    <span class="kw">return</span> <span class="num">12</span>;
+}
+
+<span class="cm">// Caller:</span>
+<span class="kw">int</span> a = <span class="num">100</span>, b, c;
+<span class="kw">int</span> d = f(a, b, c);
+<span class="cm">// After return: d = 12, b = 37, c = 28</span></code></pre>
+
+  <h3>How It Differs from Call by Reference</h3>
+  <p>This <em>looks</em> similar to call by reference, but there are critical differences:</p>
+  <table>
+    <tr><th>Property</th><th>Call by Reference</th><th>Call by Result</th></tr>
+    <tr><td>When does the caller see changes?</td><td>Immediately, as the callee modifies</td><td>Only at the point of return</td></tr>
+    <tr><td>Can callee read the original value?</td><td>Yes</td><td>No — parameter starts uninitialized</td></tr>
+    <tr><td>Aliasing possible?</td><td>Yes — a major problem</td><td>No — passing the same variable twice is prohibited</td></tr>
+    <tr><td>Callee works with...</td><td>The original data directly</td><td>Its own local copy</td></tr>
+  </table>
+
+  <h3>Real-World Example: The <code>read()</code> System Call</h3>
+  <p>In C/Linux, the <code>read()</code> function reads data from a file into a buffer:</p>
+  <pre><code>ssize_t read(<span class="kw">int</span> fd, <span class="kw">void</span> *buf, size_t count);</code></pre>
+  <p>The <code>buf</code> parameter is passed by reference (pointer). But conceptually, <code>read()</code> should <em>never</em> look at what's already in <code>buf</code> — it only writes into it. If C had call by result, <code>buf</code> would be declared as an output parameter, making the intent crystal clear and enabling more compiler optimizations.</p>
+
+  <div class="callout warn">
+    <div class="callout-title">Ada's Anti-Aliasing Rules</div>
+    <p>Ada <strong>prohibits</strong> passing the same variable as two different output parameters. The compiler will reject code like <code>f(a, x, x)</code> where <code>x</code> appears twice in output positions. This prevents aliasing and enables aggressive optimization.</p>
+    <p>In fact, Ada compilers are allowed to <em>secretly implement</em> call by value-result using call by reference under the hood — because the anti-aliasing rules guarantee the behavior will be identical. They get the clarity of value semantics with the speed of reference passing.</p>
+  </div>
+</section>
+
+<!-- CALL BY VALUE-RESULT -->
+<section class="section" id="call-by-value-result">
+  <h3>Call by Value-Result</h3>
+  <p>Ada also has a mode that combines both call by value and call by result. It works like this:</p>
+
+  <div class="stepper" id="cvr-stepper">
+    <div class="stepper-display" id="cvr-display"></div>
+    <div class="stepper-controls">
+      <button class="btn" onclick="stepCVR(-1)" id="cvr-prev" disabled>← Previous</button>
+      <button class="btn primary" onclick="stepCVR(1)" id="cvr-next">Next Step →</button>
+      <div class="step-indicator" id="cvr-indicator">Step 1 / 4</div>
+    </div>
+  </div>
+
+  <h3>Call by Value-Result vs. Call by Reference</h3>
+  <p>The semantics are almost the same — but not quite. The crucial difference is <strong>when</strong> changes become visible:</p>
+  <table>
+    <tr><th></th><th>Call by Reference</th><th>Call by Value-Result</th></tr>
+    <tr><td>Caller's data changes...</td><td>Immediately, every modification</td><td>Only at return time</td></tr>
+    <tr><td>Aliasing issues?</td><td>Yes</td><td>Avoided (same anti-aliasing rules as call by result)</td></tr>
+    <tr><td>Speed for large data</td><td>Fast (no copying)</td><td>Slower (copy in + copy out)</td></tr>
+    <tr><td>The callee works with...</td><td>The original data</td><td>A private copy</td></tr>
+  </table>
+</section>
+
+<!-- MACRO CALLS -->
+<section class="section" id="macro-calls">
+  <h2>Macro Calls: A Completely Different Kind of "Call"</h2>
+
+  <p>Everything we've discussed so far involves passing <em>values</em> at runtime. Macro calls are fundamentally different: the arguments are <strong>pieces of your program's source code</strong>, not runtime values. Macros operate at compile time.</p>
+
+  <div class="callout key">
+    <div class="callout-title">Macros vs. Functions</div>
+    <p><strong>Function call:</strong> Arguments are evaluated → values are passed → function runs with those values.</p>
+    <p><strong>Macro call:</strong> Arguments are <em>not evaluated</em>. They are chunks of text (in C) or syntax trees (in Scheme). The macro system <em>substitutes</em> them into a template to produce new code, which is then compiled.</p>
+  </div>
+
+  <p>You've seen macros in two forms:</p>
+  <pre><code><span class="cm">// C preprocessor macros — arguments are token strings</span>
+<span class="kw">#define</span> SQUARE(x) ((x) * (x))
+SQUARE(<span class="num">3</span> + <span class="num">1</span>)  →  ((<span class="num">3</span> + <span class="num">1</span>) * (<span class="num">3</span> + <span class="num">1</span>))
+
+<span class="cm">;; Scheme define-syntax — arguments are syntax trees</span>
+<span class="cm">;; (and a b) expands to (if a b #f)</span></code></pre>
+
+  <h3>Recursion in Macros</h3>
+  <p>What happens if a macro expands to code that calls itself?</p>
+
+  <div class="explorer">
+    <div class="explorer-tabs">
+      <div class="explorer-tab active" onclick="showExplorerTab(this, 'macro-c')">C/C++ Approach</div>
+      <div class="explorer-tab" onclick="showExplorerTab(this, 'macro-scheme')">Scheme Approach</div>
+    </div>
+    <div class="explorer-panel active" id="macro-c">
+      <p><strong>C/C++ prevents infinite expansion</strong> by a simple rule: if macro M is being expanded and the expansion contains another call to M, that inner call is <strong>not expanded</strong> — it's left as plain text.</p>
+      <pre><code><span class="kw">#define</span> f(x, y)  f(y, x)
+
+f(<span class="num">1</span>, <span class="num">2</span>)
+<span class="cm">// Expands to: f(2, 1)</span>
+<span class="cm">// The inner f(2,1) is NOT expanded again</span>
+<span class="cm">// (just reverses arguments once)</span></code></pre>
+      <p>This also handles "ping-pong" recursion: if f expands to something calling g, and g expands to something calling f, the second call to f is not expanded. The rule checks the <em>entire chain</em> of nested macro expansions.</p>
+      <p><strong>Guarantee:</strong> Every C program can be compiled in finite time. Macros never loop.</p>
+    </div>
+    <div class="explorer-panel" id="macro-scheme">
+      <p><strong>Scheme allows recursive macros.</strong> You've used this — the <code>and</code> macro was defined in terms of itself! Scheme macros can be genuinely recursive.</p>
+      <p>This means:</p>
+      <p>⚠️ A Scheme program <strong>can fail to compile</strong> if a macro expansion loops infinitely. The compiler will eventually overflow its stack or hit a time limit.</p>
+      <p>This is a deliberate tradeoff: recursive macros are more powerful, but they can cause compilation to hang.</p>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <div class="callout-title">Critical Point</div>
+    <p>When using any language with macros, you <strong>must</strong> know whether you're calling a macro or a function, because they behave completely differently. A macro substitutes text; a function passes values. Confusing the two leads to bugs.</p>
+  </div>
+</section>
+
+<!-- CALL BY NAME -->
+<section class="section" id="call-by-name">
+  <h2>Call by Name</h2>
+
+  <p>Call by name is a more exotic parameter passing mechanism. The relationship between call by name and call by reference is analogous to the relationship between <strong>functions and pointers</strong>:</p>
+
+  <div class="callout idea">
+    <div class="callout-title">The Analogy</div>
+    <p><strong>Call by reference:</strong> The caller passes a <em>pointer</em> to each argument. The callee <em>dereferences</em> it to get the value.</p>
+    <p><strong>Call by name:</strong> The caller passes a <em>tiny function</em> (called a "thunk") for each argument. The callee <em>calls</em> it to get the value.</p>
+  </div>
+
+  <h3>How It Works</h3>
+  <p>When the caller passes an argument using call by name, the argument expression is <strong>not evaluated</strong> yet. Instead, the compiler wraps it in a small, anonymous function (a thunk) that takes no arguments and, when called, evaluates the expression in the caller's environment.</p>
+
+  <h3>The Integration Example</h3>
+  <p>Call by name enables some elegant patterns that other calling conventions can't express directly:</p>
+
+  <pre><code><span class="cm">// Imagine this keyword: "name" means call-by-name</span>
+<span class="kw">double</span> integrate(<span class="kw">double</span> <span class="hl">name</span> expression,
+                <span class="kw">double</span> low, <span class="kw">double</span> high) {
+    <span class="kw">double</span> sum = <span class="num">0</span>;
+    <span class="kw">for</span> (x = low; x <= high; x += <span class="num">0.001</span>) {
+        sum += expression;  <span class="cm">// each access CALLS the thunk</span>
+    }
+    <span class="kw">return</span> sum * <span class="num">0.001</span>;
+}
+
+<span class="cm">// Caller: (x is a shared global variable)</span>
+result = integrate(x*x + <span class="num">2</span>*x + <span class="num">1</span>, <span class="num">0</span>, <span class="num">10</span>);</code></pre>
+
+  <p>What really happens under the hood:</p>
+  <pre><code><span class="cm">// Compiler wraps the expression in a thunk:</span>
+result = integrate(
+    <span class="hl">() => x*x + <span class="num">2</span>*x + <span class="num">1</span></span>,  <span class="cm">// a function, not a value!</span>
+    <span class="num">0</span>, <span class="num">10</span>
+);
+
+<span class="cm">// Inside integrate, "expression" really means:</span>
+sum += <span class="hl">expression()</span>;  <span class="cm">// CALL the thunk each iteration</span></code></pre>
+
+  <p>Each time through the loop, <code>x</code> has a different value (set by the loop). Each time the thunk is called, it re-evaluates <code>x*x + 2*x + 1</code> with the current <code>x</code>. This naturally computes the integral!</p>
+
+  <div class="callout warn">
+    <div class="callout-title">The Downside: Expense</div>
+    <p>Every time the callee accesses a call-by-name parameter, it makes a <strong>function call</strong>. That's much slower than reading a register or a memory location. And if the argument expression is itself expensive, that cost is paid <em>every single time</em>.</p>
+  </div>
+</section>
+
+<!-- CALL BY NEED -->
+<section class="section" id="call-by-need">
+  <h3>Call by Need (Lazy Evaluation)</h3>
+
+  <p>Call by need is call by name with one crucial optimization:</p>
+
+  <div class="callout key">
+    <div class="callout-title">The Rule</div>
+    <p><strong>Call by need</strong> = Call by name + <strong>caching</strong>. The thunk is called at most <em>once</em>. The first time the callee needs the parameter's value, the thunk runs. Its result is cached. Every subsequent access just uses the cached value.</p>
+  </div>
+
+  <p>This means our integration example <strong>stops working</strong> with call by need — the expression would only be evaluated once (with the initial value of <code>x</code>), and the cached result would be reused for every iteration. But most programs don't need that pattern, and the efficiency gain from caching is huge.</p>
+
+  <h3>Lazy Evaluation: Call by Need on Steroids</h3>
+  <p>Languages like <strong>Haskell</strong> take call by need and apply it <em>everywhere</em>. This philosophy is called <strong>lazy evaluation</strong>: don't compute anything until you absolutely need its value for something observable (like printing output).</p>
+
+  <pre><code><span class="cm">-- Haskell: define ALL prime numbers (infinite list!)</span>
+primes = sieve [<span class="num">2</span>..]
+  <span class="kw">where</span> sieve (p:xs) = p : sieve [x | x <- xs, x `mod` p /= <span class="num">0</span>]
+
+<span class="cm">-- Only compute as many as we need:</span>
+take <span class="num">3</span> primes   <span class="cm">-- returns [2, 3, 5]</span>
+<span class="cm">-- The rest of the infinite list is never computed!</span></code></pre>
+
+  <h3>Lazy vs. Eager: A Correctness Win</h3>
+  <p>Lazy evaluation isn't just about efficiency — it can make programs <em>correct</em> that would crash under eager evaluation:</p>
+
+  <pre><code><span class="kw">void</span> printAverage(<span class="kw">int</span> n, <span class="kw">double</span> avg) {
+    <span class="kw">if</span> (n == <span class="num">0</span>) print(<span class="str">"*"</span>);
+    <span class="kw">else</span> print(avg);
+}
+
+<span class="cm">// Caller:</span>
+printAverage(n, sum / n);  <span class="cm">// what if n = 0?</span></code></pre>
+
+  <div class="vs-grid">
+    <div class="vs-card" style="border-color: #c44;">
+      <h4 style="color:#c44">Eager evaluation (C, Python, etc.)</h4>
+      <p>The caller evaluates <code>sum / n</code> <em>before</em> calling the function. If <code>n = 0</code>, the program <strong>crashes</strong> with a division-by-zero error — even though the function would never have used that value!</p>
+    </div>
+    <div class="vs-card" style="border-color: var(--green);">
+      <h4 style="color:var(--green)">Lazy evaluation (Haskell)</h4>
+      <p>The caller wraps <code>sum / n</code> in a thunk but <strong>doesn't evaluate it</strong>. Inside the function, when <code>n = 0</code>, we take the <code>if</code> branch and never need <code>avg</code>. The thunk is never called. No crash!</p>
+    </div>
+  </div>
+
+  <div class="callout good">
+    <div class="callout-title">Formal Result</div>
+    <p>It can be formally proven that under reasonable assumptions, lazy evaluation will produce a correct result in <em>every</em> case where eager evaluation does — plus some additional cases where eager evaluation crashes or loops. The converse is not true. This is a genuine theoretical advantage.</p>
+  </div>
+
+  <div class="callout idea">
+    <div class="callout-title">Connection to Currying</div>
+    <p>Call by name uses the same fundamental mechanism as currying! Currying creates a function with one argument "on the fly." Call by name creates a function with <em>zero</em> arguments on the fly (a thunk). Same technology, different application.</p>
+  </div>
+</section>
+
+<!-- CALL BY UNIFICATION -->
+<section class="section" id="call-by-unification">
+  <h2>Call by Unification (Prolog)</h2>
+  <p>Prolog uses a completely different calling convention that doesn't fit any of the categories above. When you call a Prolog predicate, the arguments are <strong>unified</strong> with the parameters.</p>
+  <p>This means parameter passing in Prolog is <em>bidirectional</em>: unification can bind variables in both the caller and the callee. This is what makes Prolog so different — the caller and callee both contribute to finding a solution, rather than one just passing data to the other.</p>
+
+  <h3>Where Other Languages Fit</h3>
+  <table>
+    <tr><th>Language</th><th>Primary Mechanism</th></tr>
+    <tr><td>C</td><td>Call by value (always)</td></tr>
+    <tr><td>C++</td><td>Call by value + call by reference (programmer chooses)</td></tr>
+    <tr><td>Java</td><td>Call by value (but object references are values — so objects behave like call by reference)</td></tr>
+    <tr><td>Python</td><td>Call by value of object references (same as Java for objects)</td></tr>
+    <tr><td>OCaml / Scheme</td><td>Call by value</td></tr>
+    <tr><td>Haskell</td><td>Call by need (lazy evaluation)</td></tr>
+    <tr><td>Ada</td><td>Call by value, call by result, call by value-result</td></tr>
+    <tr><td>Prolog</td><td>Call by unification</td></tr>
+    <tr><td>Rust</td><td>Call by value with ownership + explicit references</td></tr>
+  </table>
+</section>
+
+<!-- PARAMETER PASSING QUIZ -->
+<section class="section" id="param-quiz">
+  <h2>Check Your Understanding: Parameter Passing</h2>
+
+  <div class="quiz" id="quiz1">
+    <div class="quiz-tag">Question 1</div>
+    <div class="quiz-q">In call by value, the caller passes a function and the callee gets a copy. After the function returns, the caller's original variable <code>x</code> has been incremented by 1 inside the callee. What is the value of x in the caller?</div>
+    <ul class="quiz-options">
+      <li onclick="checkQuiz('quiz1', this, false)">It has been incremented by 1</li>
+      <li onclick="checkQuiz('quiz1', this, true)">It is unchanged — the callee modified its own copy</li>
+      <li onclick="checkQuiz('quiz1', this, false)">It depends on whether x is an integer or an object</li>
+      <li onclick="checkQuiz('quiz1', this, false)">Undefined behavior</li>
+    </ul>
+    <div class="quiz-explain" id="quiz1-explain"></div>
+  </div>
+
+  <div class="quiz" id="quiz2">
+    <div class="quiz-tag">Question 2</div>
+    <div class="quiz-q">What makes the aliasing problem dangerous for compilers?</div>
+    <ul class="quiz-options">
+      <li onclick="checkQuiz('quiz2', this, false)">It causes memory leaks</li>
+      <li onclick="checkQuiz('quiz2', this, true)">It prevents the compiler from safely caching values in registers, since another name might change the value</li>
+      <li onclick="checkQuiz('quiz2', this, false)">It makes the program run in infinite loops</li>
+      <li onclick="checkQuiz('quiz2', this, false)">It only affects dynamically typed languages</li>
+    </ul>
+    <div class="quiz-explain" id="quiz2-explain"></div>
+  </div>
+
+  <div class="quiz" id="quiz3">
+    <div class="quiz-tag">Question 3</div>
+    <div class="quiz-q">What is the key difference between "call by result" and "call by reference"?</div>
+    <ul class="quiz-options">
+      <li onclick="checkQuiz('quiz3', this, false)">Call by result is faster</li>
+      <li onclick="checkQuiz('quiz3', this, false)">Call by result doesn't allow the callee to write values</li>
+      <li onclick="checkQuiz('quiz3', this, true)">In call by result, the parameter starts uninitialized, the callee works with a local copy, and copying happens only at return time</li>
+      <li onclick="checkQuiz('quiz3', this, false)">They are exactly the same thing with different names</li>
+    </ul>
+    <div class="quiz-explain" id="quiz3-explain"></div>
+  </div>
+
+  <div class="quiz" id="quiz4">
+    <div class="quiz-tag">Question 4</div>
+    <div class="quiz-q">Why can lazy evaluation sometimes produce correct results when eager evaluation crashes?</div>
+    <ul class="quiz-options">
+      <li onclick="checkQuiz('quiz4', this, false)">Lazy evaluation uses error handling to catch crashes</li>
+      <li onclick="checkQuiz('quiz4', this, true)">Lazy evaluation only evaluates an argument when its value is actually needed — if it's never needed, the dangerous computation never runs</li>
+      <li onclick="checkQuiz('quiz4', this, false)">Lazy evaluation automatically replaces erroneous values with defaults</li>
+      <li onclick="checkQuiz('quiz4', this, false)">Lazy evaluation runs arguments in parallel to avoid single-point failures</li>
+    </ul>
+    <div class="quiz-explain" id="quiz4-explain"></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- PART II: COST MODELS -->
+<!-- ═══════════════════════════════════════════════ -->
+
+<section class="section" id="cost-intro">
+  <div class="section-number">Part II</div>
+  <h1>Cost Models</h1>
+  <p class="lead">A cost model is your mental picture of <em>how much it costs</em> to do things in a programming language — in time, memory, energy, and more. Without a cost model, you can't write efficient programs.</p>
+
+  <div class="callout why">
+    <div class="callout-title">Why This Connects to Parameter Passing</div>
+    <p>We just spent an hour on parameter passing. Why? Because function calls are the most common operation in most programs. Understanding the <em>cost</em> of each calling convention — how many copies, how many pointer dereferences, how many function calls — is a cost model question. Parameter passing and cost models are deeply intertwined.</p>
+  </div>
+
+  <p>Cost models have two levels, just like algorithm analysis:</p>
+  <table>
+    <tr><th>Level</th><th>What It Measures</th><th>Example</th></tr>
+    <tr><td><strong>Big-O (asymptotic)</strong></td><td>How does cost scale with problem size?</td><td>Accessing element i in a linked list is O(i)</td></tr>
+    <tr><td><strong>Absolute</strong></td><td>What's the actual cost in CPU cycles, bytes, etc.?</td><td>A function call costs ~10 instructions of overhead</td></tr>
+  </table>
+</section>
+
+<!-- COST TYPES -->
+<section class="section" id="cost-types">
+  <h3>Types of Costs</h3>
+  <p>When you're building software, there are many costs to consider. They fall into two broad categories:</p>
+
+  <div class="vs-grid">
+    <div class="vs-card">
+      <h4>Runtime Costs (Production)</h4>
+      <p><strong>Time</strong> — CPU seconds, wall-clock time</p>
+      <p><strong>Space</strong> — RAM usage, cache usage</p>
+      <p><strong>Energy</strong> — battery life (laptops, phones)</p>
+      <p><strong>Power</strong> — heat dissipation, cooling requirements (data centers measure in gigawatts!)</p>
+      <p><strong>Network</strong> — throughput and latency (how fast and how responsive)</p>
+      <p><strong>API/Token costs</strong> — if using external services like AI APIs, each call costs money</p>
+    </div>
+    <div class="vs-card">
+      <h4>Development Costs</h4>
+      <p><strong>Cognitive load</strong> — how hard is the code to understand and maintain?</p>
+      <p><strong>Portability</strong> — how much work to move the code to another platform?</p>
+      <p><strong>Development time</strong> — how long does it take to write and debug?</p>
+    </div>
+  </div>
+
+  <div class="callout idea">
+    <div class="callout-title">Energy vs. Power</div>
+    <p>These are often confused but they're different physical quantities. <strong>Energy</strong> is measured in joules (or kilowatt-hours) — "how much total fuel did we burn?" <strong>Power</strong> is measured in watts — "how fast are we burning fuel right now?" If your laptop overheats, that's a power problem. If your battery dies, that's an energy problem.</p>
+  </div>
+</section>
+
+<!-- DATA STRUCTURE COSTS -->
+<section class="section" id="data-structure-costs">
+  <h2>Data Structure Costs: Lisp Lists vs. Python Lists</h2>
+
+  <p>Different languages implement the same concept — "a list" — very differently, and this has huge cost implications. Let's compare two approaches you've seen in this class:</p>
+
+  <div class="explorer">
+    <div class="explorer-tabs">
+      <div class="explorer-tab active" onclick="showExplorerTab(this, 'ds-lisp')">Lisp/Scheme Lists</div>
+      <div class="explorer-tab" onclick="showExplorerTab(this, 'ds-python')">Python Lists</div>
+    </div>
+    <div class="explorer-panel active" id="ds-lisp">
+      <p>A Lisp list is a <strong>linked list</strong> of cons cells. Each cell holds a value and a pointer to the next cell:</p>
+      <pre><code>[val|→]→[val|→]→[val|→]→[val|→]→[val|/]
+
+<span class="cm">Each box is a "cons cell" with two parts:</span>
+<span class="cm">  car (the value) and cdr (pointer to next)</span></code></pre>
+      <p><strong>Access element i:</strong> O(i) — must walk through i cells</p>
+      <p><strong>Prepend an element:</strong> O(1) — just create a new cons cell pointing to the old head</p>
+      <p><strong>Structure sharing:</strong> Multiple lists can share tails. If list B is list A with one element prepended, they share all of A's cells. Efficient, but creates aliasing.</p>
+    </div>
+    <div class="explorer-panel" id="ds-python">
+      <p>A Python list is a <strong>dynamic array</strong> — a contiguous block of memory with a header:</p>
+      <pre><code>[header: size=5, capacity=8] → [v₀|v₁|v₂|v₃|v₄|__|__|__]
+
+<span class="cm">header stores current size and allocated capacity</span>
+<span class="cm">elements are stored contiguously in memory</span></code></pre>
+      <p><strong>Access element i:</strong> O(1) — direct indexing: address = base + i × element_size</p>
+      <p><strong>Prepend an element:</strong> O(n) — must shift all existing elements right</p>
+      <p><strong>Append an element:</strong> O(1) amortized — if there's room in the capacity, just add it</p>
+    </div>
+  </div>
+
+  <table>
+    <tr><th>Operation</th><th>Lisp List</th><th>Python List</th></tr>
+    <tr><td>Access i-th element</td><td>O(i)</td><td>O(1)</td></tr>
+    <tr><td>Prepend (add to front)</td><td>O(1)</td><td>O(n)</td></tr>
+    <tr><td>Append (add to end)</td><td>O(n)</td><td>O(1) amortized</td></tr>
+    <tr><td>Structure sharing</td><td>Natural</td><td>Requires custom code</td></tr>
+  </table>
+
+  <div class="callout key">
+    <div class="callout-title">The Tradeoff</div>
+    <p>Structure sharing (aliasing) enables efficiency but introduces the same aliasing problems we discussed with call by reference. When two lists share data, modifying one can unexpectedly modify the other.</p>
+  </div>
+
+  <h3>Other Cost Model Examples</h3>
+  <p><strong>Prolog unification:</strong> The cost of unifying two terms X and Y is proportional to <code>min(size(X), size(Y))</code> — whichever term is smaller determines the cost, because the smaller term's variables get instantiated in O(1) each.</p>
+  <p><strong>Scheme comparison operators:</strong></p>
+  <table>
+    <tr><th>Operator</th><th>What It Compares</th><th>Cost</th></tr>
+    <tr><td><code>eq?</code></td><td>Pointer equality (same object?)</td><td>O(1)</td></tr>
+    <tr><td><code>eqv?</code></td><td>Content equality for simple types</td><td>O(n) for strings</td></tr>
+    <tr><td><code>equal?</code></td><td>Deep recursive equality</td><td>O(n) best case, ∞ for circular structures</td></tr>
+  </table>
+</section>
+
+<!-- FUNCTION CALL OVERHEAD -->
+<section class="section" id="function-call-cost">
+  <h2>The Anatomy of a Function Call</h2>
+
+  <p>Since function calls are so common, let's understand exactly what happens during one. Most of this is pure overhead — bureaucratic paperwork that doesn't do any useful work but is necessary for the machinery to function.</p>
+
+  <div class="stepper" id="fncall-stepper">
+    <div class="stepper-display" id="fncall-display"></div>
+    <div class="stepper-controls">
+      <button class="btn" onclick="stepFnCall(-1)" id="fncall-prev" disabled>← Previous</button>
+      <button class="btn primary" onclick="stepFnCall(1)" id="fncall-next">Next Step →</button>
+      <div class="step-indicator" id="fncall-indicator">Step 1 / 10</div>
+    </div>
+  </div>
+
+  <div class="callout idea">
+    <div class="callout-title">Hidden Parameters</div>
+    <p>The return address is really just another parameter — a hidden one that every function receives. Similarly, in object-oriented languages, the <code>self</code>/<code>this</code> pointer is another hidden parameter. And in languages with closures, the environment pointer is yet another hidden parameter. All of these add to the cost.</p>
+  </div>
+</section>
+
+<!-- TAIL CALL -->
+<section class="section" id="tail-call">
+  <h3>Tail Call Optimization</h3>
+
+  <p>We've seen tail call optimization before in the context of saving stack space. But it also saves <em>CPU time</em> by eliminating much of the overhead listed above.</p>
+
+  <div class="callout key">
+    <div class="callout-title">When It Applies</div>
+    <p>If the very last thing a function does is call another function and return whatever that function returns, many of the overhead steps can be skipped:</p>
+    <p>• <strong>No new frame allocation</strong> — reuse the current frame</p>
+    <p>• <strong>No return address copy</strong> — the callee inherits the existing one</p>
+    <p>• <strong>Some register saves can be skipped</strong></p>
+  </div>
+
+  <table>
+    <tr><th>Language</th><th>Tail Call Optimization</th><th>Why</th></tr>
+    <tr><td>Scheme</td><td><strong>Required</strong> by the language spec</td><td>Recursion is the primary looping mechanism</td></tr>
+    <tr><td>C / C++</td><td>Optional (compiler may or may not do it)</td><td>Nice optimization but not guaranteed</td></tr>
+    <tr><td>Java</td><td><strong>Prohibited</strong></td><td>Java allows creating backtrace objects at runtime — tail call optimization would destroy stack frames that backtraces need</td></tr>
+  </table>
+
+  <h3>Tail Calls in Prolog</h3>
+  <p>Prolog has a similar optimization, but it's more restricted. Consider:</p>
+  <pre><code>p(X) :- q(X), r(X).   <span class="cm">% Can we optimize the call to r(X)?</span>
+p(X) :- s(X).          <span class="cm">% Can we optimize the call to s(X)?</span></code></pre>
+
+  <p>For <code>r(X)</code> in the first clause: <strong>not directly</strong>, because if <code>r(X)</code> fails, Prolog might need to backtrack and try the second clause. The system hasn't "committed" to this clause yet.</p>
+  <p>But if we add a <strong>cut</strong> before <code>r(X)</code>: <code>p(X) :- q(X), !, r(X).</code> — now Prolog <em>has</em> committed. The tail call optimization applies.</p>
+  <p>For <code>s(X)</code> in the last clause: <strong>yes</strong>, because there are no more clauses to backtrack to. The optimization applies automatically.</p>
+</section>
+
+<!-- PROLOG EFFICIENCY -->
+<section class="section" id="prolog-efficiency">
+  <h2>Prolog Efficiency: First-Argument Indexing</h2>
+
+  <p>When Prolog tries to match a goal against clauses, you might think it scans every clause in your program. It doesn't — it uses <strong>indexing</strong> to jump directly to the relevant clauses.</p>
+
+  <h3>Two Levels of Indexing</h3>
+  <p><strong>Level 1: Predicate name + arity.</strong> A call to <code>p(A, B)</code> only looks at clauses for <code>p/2</code> (predicate <code>p</code> with 2 arguments). This is implemented via a hash table.</p>
+  <p><strong>Level 2: First argument value.</strong> If the first argument is an atom or number, Prolog hashes on it and only examines clauses whose first argument matches.</p>
+
+  <pre><code>p(a, <span class="num">1</span>).     <span class="cm">% clause 1</span>
+p(b, <span class="num">2</span>).     <span class="cm">% clause 2</span>
+p(c, <span class="num">3</span>).     <span class="cm">% clause 3</span>
+p(d, <span class="num">4</span>).     <span class="cm">% clause 4</span>
+
+?- p(b, X).  <span class="cm">% Prolog hashes on 'b' → jumps directly to clause 2</span>
+             <span class="cm">% Never examines clauses 1, 3, or 4!</span></code></pre>
+
+  <div class="callout warn">
+    <div class="callout-title">When Indexing Doesn't Help</div>
+    <p>First-argument indexing only works when the first argument at the call site is a <strong>simple value</strong> (atom or number). If it's a logical variable or a complex structure, Prolog gives up on hashing and falls back to scanning clauses sequentially.</p>
+    <p><strong>Prolog programming tip:</strong> Put the most "discriminating" argument first in your predicates. If you have many facts that differ in their first argument, indexing makes lookups nearly O(1).</p>
+  </div>
+</section>
+
+<!-- ARRAY COSTS -->
+<section class="section" id="array-costs">
+  <h2>Array Access Costs: The Hidden Math</h2>
+
+  <p>Accessing an array element seems simple — <code>a[i]</code> — but the compiler has to do real work behind the scenes, especially if the language has bounds checking and non-zero-based arrays.</p>
+
+  <h3>The Full Cost</h3>
+  <p>Consider an array of tax rates for years 2001–2026, stored as doubles (8 bytes each), with the array starting at memory address α:</p>
+
+  <pre><code><span class="cm">// To compute the address of a[i]:</span>
+
+<span class="cm">// Step 1: Bounds checking</span>
+<span class="kw">if</span> (i < <span class="num">2001</span>) error();    <span class="cm">// compare + branch</span>
+<span class="kw">if</span> (i > <span class="num">2026</span>) error();    <span class="cm">// compare + branch</span>
+
+<span class="cm">// Step 2: Address calculation</span>
+address = α + (i - <span class="num">2001</span>) * <span class="num">8</span>;  <span class="cm">// subtract + multiply + add</span></code></pre>
+
+  <p>That's 2 compares, 2 branches, 1 subtract, 1 multiply, and 1 add — just to look up one element!</p>
+
+  <h3>Optimization: One Branch Instead of Two</h3>
+  <p>The compiler can reduce the two bounds checks to just one using an unsigned comparison trick:</p>
+  <pre><code><span class="cm">// Instead of two checks:</span>
+<span class="kw">if</span> (i < <span class="num">2001</span>) error();
+<span class="kw">if</span> (i > <span class="num">2026</span>) error();
+
+<span class="cm">// Use ONE unsigned comparison:</span>
+<span class="kw">if</span> ((<span class="kw">unsigned</span>)(i - <span class="num">2001</span>) > <span class="num">25</span>) error();</code></pre>
+
+  <p>Why does this work? If <code>i</code> is less than 2001, then <code>i - 2001</code> is negative. When treated as an unsigned number, a negative value becomes a very large positive number — definitely greater than 25. If <code>i</code> is greater than 2026, then <code>i - 2001</code> is greater than 25. Either way, the single check catches both out-of-bounds conditions!</p>
+
+  <div class="callout good">
+    <div class="callout-title">Why This Matters</div>
+    <p>Array access happens millions of times in typical programs. Saving one branch instruction per access can make a measurable performance difference. This is the kind of low-level optimization that compilers do — and understanding it helps you appreciate why languages make the design choices they do (e.g., zero-based arrays in C eliminate the subtraction step entirely).</p>
+  </div>
+</section>
+
+<!-- COST MODEL QUIZ -->
+<section class="section" id="cost-quiz">
+  <h2>Check Your Understanding: Cost Models</h2>
+
+  <div class="quiz" id="quiz5">
+    <div class="quiz-tag">Question 5</div>
+    <div class="quiz-q">You need to frequently access the 500th element of a sequence. Which data structure is better for this?</div>
+    <ul class="quiz-options">
+      <li onclick="checkQuiz('quiz5', this, false)">A Lisp-style linked list — access is O(1) with direct indexing</li>
+      <li onclick="checkQuiz('quiz5', this, true)">A Python-style dynamic array — access is O(1) via pointer arithmetic</li>
+      <li onclick="checkQuiz('quiz5', this, false)">They're equivalent — both are O(1) for random access</li>
+      <li onclick="checkQuiz('quiz5', this, false)">A Lisp list — it can share structure which makes it faster</li>
+    </ul>
+    <div class="quiz-explain" id="quiz5-explain"></div>
+  </div>
+
+  <div class="quiz" id="quiz6">
+    <div class="quiz-tag">Question 6</div>
+    <div class="quiz-q">Why does Java prohibit tail call optimization?</div>
+    <ul class="quiz-options">
+      <li onclick="checkQuiz('quiz6', this, false)">Java doesn't support recursion</li>
+      <li onclick="checkQuiz('quiz6', this, false)">The JVM is too slow to implement it</li>
+      <li onclick="checkQuiz('quiz6', this, true)">Java allows creating backtrace objects at runtime, which need all stack frames to be preserved</li>
+      <li onclick="checkQuiz('quiz6', this, false)">Java uses call by reference, which is incompatible with tail calls</li>
+    </ul>
+    <div class="quiz-explain" id="quiz6-explain"></div>
+  </div>
+
+  <div class="quiz" id="quiz7">
+    <div class="quiz-tag">Question 7</div>
+    <div class="quiz-q">A Prolog program has 10,000 facts for predicate <code>employee/3</code>. You query <code>?- employee(john, X, Y).</code> How many facts does Prolog need to examine?</div>
+    <ul class="quiz-options">
+      <li onclick="checkQuiz('quiz7', this, false)">All 10,000</li>
+      <li onclick="checkQuiz('quiz7', this, true)">Only the ones whose first argument is 'john' — found via hash table lookup</li>
+      <li onclick="checkQuiz('quiz7', this, false)">Exactly 1 — Prolog always finds the answer immediately</li>
+      <li onclick="checkQuiz('quiz7', this, false)">It depends on whether the predicate uses cut</li>
+    </ul>
+    <div class="quiz-explain" id="quiz7-explain"></div>
+  </div>
+</section>
+
+<!-- CHAPTER NAV -->
+<div class="chapter-nav">
+  <div style="color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 14px;">
+    ← Previous Lecture
+  </div>
+  <div style="color: var(--text-muted); font-family: 'DM Sans', sans-serif; font-size: 14px;">
+    Next: Formal Semantics & PL History →
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// ── STEPPER: CALL BY VALUE ──
+const cbvSteps = [
+  {
+    title: "Step 1: The Caller Evaluates the Arguments",
+    html: `<p style="margin-bottom:12px;font-family:'DM Sans',sans-serif;font-size:15px;">Before anything is passed, the caller computes the values of all argument expressions.</p>
+    <pre style="background:#2b2520;color:#f0e8e0;padding:16px 20px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.6;"><code>int x = 5;
+f(x + 1);  <span style="color:#888;">// Caller evaluates x + 1 → gets the value 6</span></code></pre>
+    <p style="margin-top:12px;font-family:'DM Sans',sans-serif;font-size:14px;color:#6b6560;">The expression <code style="font-size:13px;">x + 1</code> is computed first, producing the value 6.</p>`
+  },
+  {
+    title: "Step 2: The Value Is Copied",
+    html: `<p style="margin-bottom:12px;font-family:'DM Sans',sans-serif;font-size:15px;">A <strong>copy</strong> of the value (6) is placed somewhere the callee can find it — typically a register or a location on the stack.</p>
+    <div style="display:flex;gap:24px;justify-content:center;margin:20px 0;font-family:'DM Sans',sans-serif;">
+      <div style="text-align:center;padding:16px 24px;border:2px solid #2e6b9c;border-radius:8px;background:#e8f0f8;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#2e6b9c;margin-bottom:4px;">Caller's x</div>
+        <div style="font-size:28px;font-weight:700;">5</div>
+      </div>
+      <div style="display:flex;align-items:center;font-size:24px;color:#888;">→ copy →</div>
+      <div style="text-align:center;padding:16px 24px;border:2px solid #c0522e;border-radius:8px;background:#fdf0eb;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#c0522e;margin-bottom:4px;">Callee's y</div>
+        <div style="font-size:28px;font-weight:700;">6</div>
+      </div>
+    </div>
+    <p style="font-family:'DM Sans',sans-serif;font-size:14px;color:#6b6560;">The callee gets the <em>value</em> 6, not a reference to x. The caller's x (which is still 5) is completely separate.</p>`
+  },
+  {
+    title: "Step 3: The Callee Works with Its Copy",
+    html: `<p style="margin-bottom:12px;font-family:'DM Sans',sans-serif;font-size:15px;">Inside the function, the parameter <code style="font-size:13px;">y</code> is just a local variable initialized to 6. The callee can do anything it wants with it.</p>
+    <pre style="background:#2b2520;color:#f0e8e0;padding:16px 20px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.6;"><code>void f(int y) {
+    y = y + 10;  <span style="color:#888;">// y is now 16</span>
+    y = y * 2;   <span style="color:#888;">// y is now 32</span>
+    <span style="color:#888;">// These changes are LOCAL to f</span>
+}</code></pre>`
+  },
+  {
+    title: "Step 4: The Callee Returns",
+    html: `<p style="margin-bottom:12px;font-family:'DM Sans',sans-serif;font-size:15px;">When <code style="font-size:13px;">f</code> returns, its copy of the value (which is now 32) is simply <strong>thrown away</strong>. The caller's original data is untouched.</p>
+    <div style="display:flex;gap:24px;justify-content:center;margin:20px 0;font-family:'DM Sans',sans-serif;">
+      <div style="text-align:center;padding:16px 24px;border:2px solid #3a7a52;border-radius:8px;background:#eaf5ef;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#3a7a52;margin-bottom:4px;">Caller's x</div>
+        <div style="font-size:28px;font-weight:700;">5</div>
+        <div style="font-size:12px;color:#3a7a52;">✓ unchanged</div>
+      </div>
+      <div style="text-align:center;padding:16px 24px;border:2px dashed #ccc;border-radius:8px;background:#f5f5f5;opacity:0.6;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#999;margin-bottom:4px;">Callee's y</div>
+        <div style="font-size:28px;font-weight:700;text-decoration:line-through;color:#999;">32</div>
+        <div style="font-size:12px;color:#999;">discarded</div>
+      </div>
+    </div>`
+  },
+  {
+    title: "Summary",
+    html: `<div style="font-family:'DM Sans',sans-serif;padding:16px 20px;background:#fdf0eb;border-radius:8px;border-left:4px solid #c0522e;">
+      <p style="font-size:15px;margin-bottom:8px;"><strong>Call by Value:</strong> The caller evaluates arguments, copies the values, and passes the copies. The callee works with its own private copies. Changes by the callee do NOT affect the caller.</p>
+      <p style="font-size:14px;color:#6b6560;">This is the most common calling convention, used in C, Java (for primitives), OCaml, Scheme, and many more.</p>
+    </div>`
+  }
+];
+let cbvStep = 0;
+function stepCBV(dir) {
+  cbvStep = Math.max(0, Math.min(cbvSteps.length - 1, cbvStep + dir));
+  renderStepper('cbv', cbvSteps, cbvStep);
+}
+
+// ── STEPPER: ALIASING ──
+const aliasSteps = [
+  {
+    title: "The Code",
+    html: `<p style="margin-bottom:12px;font-family:'DM Sans',sans-serif;font-size:15px;">Here's a simple function with two call-by-reference parameters:</p>
+    <pre style="background:#2b2520;color:#f0e8e0;padding:16px 20px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.6;"><code>void f(int &x, int &y) {
+    x = 0;
+    y = 1;
+    print(x);   <span style="color:#888;">// What gets printed?</span>
+    print(y);
+}</code></pre>
+    <p style="margin-top:12px;font-family:'DM Sans',sans-serif;font-size:14px;color:#6b6560;">Looks like it should print 0 then 1, right? That seems obvious...</p>`
+  },
+  {
+    title: "The Aliasing Trap",
+    html: `<p style="margin-bottom:12px;font-family:'DM Sans',sans-serif;font-size:15px;">Now look at how the caller calls this function:</p>
+    <pre style="background:#2b2520;color:#f0e8e0;padding:16px 20px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.6;"><code>int n = 42;
+f(n, n);   <span style="color:#e8a88c;">// SAME variable passed for BOTH parameters!</span></code></pre>
+    <p style="margin-top:12px;font-family:'DM Sans',sans-serif;font-size:15px;">Now <code style="font-size:13px;">x</code> and <code style="font-size:13px;">y</code> are <strong>two names for the same memory location</strong> — they are <em>aliases</em>.</p>`
+  },
+  {
+    title: "What Actually Happens",
+    html: `<div style="font-family:'DM Sans',sans-serif;">
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="padding:12px 16px;background:#e8f0f8;border-radius:6px;font-size:14px;"><code style="font-size:13px;">x = 0</code> → sets <code style="font-size:13px;">n</code> to 0 (since x is an alias for n)</div>
+      <div style="padding:12px 16px;background:#fdf0eb;border-radius:6px;font-size:14px;"><code style="font-size:13px;">y = 1</code> → sets <code style="font-size:13px;">n</code> to 1 (since y is ALSO an alias for n). <strong>This also changes x!</strong></div>
+      <div style="padding:12px 16px;background:#fde8e8;border-radius:6px;font-size:14px;"><code style="font-size:13px;">print(x)</code> → prints <strong>1</strong>, not 0! Because y=1 also modified x.</div>
+      <div style="padding:12px 16px;background:#eaf5ef;border-radius:6px;font-size:14px;"><code style="font-size:13px;">print(y)</code> → prints <strong>1</strong></div>
+    </div>
+    <p style="margin-top:16px;font-size:15px;">Output: <strong>1, 1</strong> — not 0, 1 as the code "obviously" suggests.</p>
+    </div>`
+  },
+  {
+    title: "Why This Is a Big Deal",
+    html: `<div style="font-family:'DM Sans',sans-serif;">
+    <p style="font-size:15px;margin-bottom:12px;">Aliasing means:</p>
+    <p style="font-size:14px;padding:8px 16px;background:#fdf8e8;border-left:3px solid #b8860b;margin-bottom:8px;border-radius:0 6px 6px 0;"><strong>For humans:</strong> The code looks like it does one thing but actually does another. Bugs are hard to find because the code looks correct.</p>
+    <p style="font-size:14px;padding:8px 16px;background:#fdf8e8;border-left:3px solid #b8860b;margin-bottom:8px;border-radius:0 6px 6px 0;"><strong>For compilers:</strong> The compiler can't optimize <code style="font-size:13px;">print(x)</code> to <code style="font-size:13px;">print(0)</code> because <code style="font-size:13px;">x</code> might have been modified by writing to <code style="font-size:13px;">y</code>. Every optimization involving cached values becomes unsafe.</p>
+    <p style="font-size:14px;padding:8px 16px;background:#fdf8e8;border-left:3px solid #b8860b;border-radius:0 6px 6px 0;"><strong>For performance:</strong> This is one reason C++ can be <em>slower</em> than C — more aliasing possibilities mean fewer safe optimizations.</p>
+    </div>`
+  }
+];
+let aliasStep = 0;
+function stepAlias(dir) {
+  aliasStep = Math.max(0, Math.min(aliasSteps.length - 1, aliasStep + dir));
+  renderStepper('alias', aliasSteps, aliasStep);
+}
+
+// ── STEPPER: CALL BY VALUE-RESULT ──
+const cvrSteps = [
+  {
+    title: "Step 1: Copy In",
+    html: `<p style="margin-bottom:12px;font-family:'DM Sans',sans-serif;font-size:15px;">Just like call by value, the argument is evaluated and a <strong>copy</strong> is passed to the callee.</p>
+    <div style="display:flex;gap:24px;justify-content:center;margin:20px 0;font-family:'DM Sans',sans-serif;">
+      <div style="text-align:center;padding:16px 24px;border:2px solid #2e6b9c;border-radius:8px;background:#e8f0f8;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#2e6b9c;margin-bottom:4px;">Caller's variable</div>
+        <div style="font-size:28px;font-weight:700;">42</div>
+      </div>
+      <div style="display:flex;align-items:center;font-size:20px;color:#888;">→ copy in →</div>
+      <div style="text-align:center;padding:16px 24px;border:2px solid #c0522e;border-radius:8px;background:#fdf0eb;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#c0522e;margin-bottom:4px;">Callee's parameter</div>
+        <div style="font-size:28px;font-weight:700;">42</div>
+      </div>
+    </div>`
+  },
+  {
+    title: "Step 2: Callee Works with Its Copy",
+    html: `<p style="margin-bottom:12px;font-family:'DM Sans',sans-serif;font-size:15px;">The callee modifies its <em>local copy</em>. The caller's original is untouched during this time — no aliasing!</p>
+    <pre style="background:#2b2520;color:#f0e8e0;padding:16px 20px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.6;"><code><span style="color:#888;">// Inside the function:</span>
+param = param + 10;  <span style="color:#888;">// local copy is now 52</span>
+param = param * 2;   <span style="color:#888;">// local copy is now 104</span></code></pre>
+    <p style="margin-top:12px;font-family:'DM Sans',sans-serif;font-size:14px;color:#6b6560;">No aliasing possible — the callee has its own private copy, just like call by value.</p>`
+  },
+  {
+    title: "Step 3: Copy Out (At Return Time)",
+    html: `<p style="margin-bottom:12px;font-family:'DM Sans',sans-serif;font-size:15px;">This is where call by value-result <strong>differs from call by value</strong>. Just before returning, the callee's final value is <strong>copied back</strong> to the caller's variable.</p>
+    <div style="display:flex;gap:24px;justify-content:center;margin:20px 0;font-family:'DM Sans',sans-serif;">
+      <div style="text-align:center;padding:16px 24px;border:2px solid #3a7a52;border-radius:8px;background:#eaf5ef;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#3a7a52;margin-bottom:4px;">Caller's variable</div>
+        <div style="font-size:28px;font-weight:700;">104</div>
+        <div style="font-size:12px;color:#3a7a52;">← updated at return</div>
+      </div>
+      <div style="display:flex;align-items:center;font-size:20px;color:#888;">← copy out ←</div>
+      <div style="text-align:center;padding:16px 24px;border:2px solid #c0522e;border-radius:8px;background:#fdf0eb;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#c0522e;margin-bottom:4px;">Callee's parameter</div>
+        <div style="font-size:28px;font-weight:700;">104</div>
+      </div>
+    </div>`
+  },
+  {
+    title: "Difference from Call by Result",
+    html: `<div style="font-family:'DM Sans',sans-serif;">
+    <p style="font-size:15px;margin-bottom:16px;">Call by value-result = Call by value + Call by result combined:</p>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+      <tr style="border-bottom:2px solid #e0d8d0;"><th style="text-align:left;padding:8px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#6b6560;">Property</th><th style="padding:8px;">Call by Result</th><th style="padding:8px;">Call by Value-Result</th></tr>
+      <tr style="border-bottom:1px solid #e0d8d0;"><td style="padding:8px;">Parameter starts as...</td><td style="padding:8px;text-align:center;">Uninitialized</td><td style="padding:8px;text-align:center;">Copy of the argument</td></tr>
+      <tr style="border-bottom:1px solid #e0d8d0;"><td style="padding:8px;">Return without assigning?</td><td style="padding:8px;text-align:center;">Error (undefined behavior)</td><td style="padding:8px;text-align:center;">OK — original value is written back</td></tr>
+      <tr><td style="padding:8px;">Copy back at return?</td><td style="padding:8px;text-align:center;">Yes</td><td style="padding:8px;text-align:center;">Yes</td></tr>
+    </table>
+    </div>`
+  }
+];
+let cvrStep = 0;
+function stepCVR(dir) {
+  cvrStep = Math.max(0, Math.min(cvrSteps.length - 1, cvrStep + dir));
+  renderStepper('cvr', cvrSteps, cvrStep);
+}
+
+// ── STEPPER: FUNCTION CALL OVERHEAD ──
+const fncallSteps = [
+  {
+    title: "Overview: Who Does What",
+    html: `<div style="font-family:'DM Sans',sans-serif;">
+    <p style="font-size:15px;margin-bottom:16px;">A function call involves work split between the <strong>caller</strong> and the <strong>callee</strong>. Let's walk through every step.</p>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:200px;padding:16px;background:#e8f0f8;border-radius:8px;border-left:4px solid #2e6b9c;">
+        <div style="font-weight:700;font-size:13px;color:#2e6b9c;margin-bottom:4px;">CALLER's job (before)</div>
+        <p style="font-size:13px;">Evaluate args, copy to agreed places, save return address, jump</p>
+      </div>
+      <div style="flex:1;min-width:200px;padding:16px;background:#fdf0eb;border-radius:8px;border-left:4px solid #c0522e;">
+        <div style="font-weight:700;font-size:13px;color:#c0522e;margin-bottom:4px;">CALLEE's job</div>
+        <p style="font-size:13px;">Allocate frame, save registers, compute, restore, return value, deallocate, return</p>
+      </div>
+    </div>
+    <p style="font-size:13px;color:#6b6560;margin-top:12px;">Only the actual computation is useful work. Everything else is <em>overhead</em>.</p>
+    </div>`
+  },
+  {
+    title: "Caller Step 1: Evaluate Arguments",
+    html: `<div style="font-family:'DM Sans',sans-serif;">
+    <p style="font-size:15px;margin-bottom:12px;">The caller computes the value of every argument expression.</p>
+    <pre style="background:#2b2520;color:#f0e8e0;padding:16px 20px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.6;"><code>f(a + b, c * d, lookup(key));
+<span style="color:#888;">// Must evaluate: a+b, c*d, lookup(key)</span>
+<span style="color:#888;">// before anything else happens</span></code></pre>
+    </div>`
+  },
+  {
+    title: "Caller Step 2: Copy Args to Agreed-Upon Places",
+    html: `<div style="font-family:'DM Sans',sans-serif;">
+    <p style="font-size:15px;margin-bottom:12px;">The ABI (Application Binary Interface) specifies where each argument goes.</p>
+    <p style="font-size:14px;margin-bottom:8px;">On x86-64:</p>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:13px;padding:12px 16px;background:#f5f0e8;border-radius:6px;line-height:1.8;">
+    Integer args: RDI, RSI, RDX, RCX, R8, R9 (then stack)<br>
+    Float args: XMM0, XMM1, XMM2, ... XMM7 (then stack)
+    </div>
+    <p style="font-size:14px;color:#6b6560;margin-top:12px;">If there are more arguments than registers, extras go on the stack.</p>
+    </div>`
+  },
+  {
+    title: "Caller Step 3: Save Return Address + Jump",
+    html: `<div style="font-family:'DM Sans',sans-serif;">
+    <p style="font-size:15px;margin-bottom:12px;">The return address tells the callee where to resume when it's done. It's pushed onto the stack, then the CPU jumps to the callee's code.</p>
+    <pre style="background:#2b2520;color:#f0e8e0;padding:16px 20px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.6;"><code><span style="color:#888;">; x86-64 assembly: the CALL instruction does both</span>
+call f    <span style="color:#888;">; pushes return address, jumps to f</span></code></pre>
+    <p style="font-size:14px;padding:12px 16px;background:#f0ebf5;border-radius:6px;border-left:3px solid #6b4c9a;margin-top:12px;">The return address is essentially a <strong>hidden parameter</strong> — just like <code style="font-size:13px;">self</code> in OOP or the environment pointer in closures.</p>
+    </div>`
+  },
+  {
+    title: "Callee Step 1: Allocate the Stack Frame",
+    html: `<div style="font-family:'DM Sans',sans-serif;">
+    <p style="font-size:15px;margin-bottom:12px;">The callee creates space for its local variables by adjusting the stack pointer.</p>
+    <pre style="background:#2b2520;color:#f0e8e0;padding:16px 20px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.6;"><code><span style="color:#888;">; Create 48 bytes of local storage</span>
+sub rsp, 48</code></pre>
+    <p style="font-size:14px;color:#6b6560;margin-top:12px;">The callee knows exactly how much space it needs (computed at compile time). The caller typically doesn't know.</p>
+    </div>`
+  },
+  {
+    title: "Callee Step 2: Save Registers",
+    html: `<div style="font-family:'DM Sans',sans-serif;">
+    <p style="font-size:15px;margin-bottom:12px;">The callee must preserve certain registers (the "callee-saved" registers). If it needs to use them, it saves the original values first.</p>
+    <p style="font-size:14px;margin-bottom:8px;">On x86-64, callee-saved registers are: RBX, RBP, R12–R15</p>
+    <p style="font-size:14px;padding:12px 16px;background:#fdf8e8;border-radius:6px;border-left:3px solid #b8860b;">There are also "caller-saved" registers (RAX, RCX, RDX, etc.) that the <em>caller</em> must save before the call if it still needs their values afterward. This is a contract between caller and callee defined by the ABI.</p>
+    </div>`
+  },
+  {
+    title: "Callee Step 3: ⟨Do the Actual Computation⟩",
+    html: `<div style="font-family:'DM Sans',sans-serif;text-align:center;padding:32px;">
+    <div style="display:inline-block;padding:24px 40px;border:3px solid #3a7a52;border-radius:12px;background:#eaf5ef;">
+      <div style="font-size:20px;font-weight:700;color:#3a7a52;">⟨ Actual Useful Work ⟩</div>
+      <p style="font-size:14px;color:#3a7a52;margin-top:8px;">This is the ONLY part that does something productive.<br>Everything else is overhead.</p>
+    </div>
+    </div>`
+  },
+  {
+    title: "Callee Step 4: Restore Registers",
+    html: `<div style="font-family:'DM Sans',sans-serif;">
+    <p style="font-size:15px;">The callee restores any callee-saved registers it modified, putting back the original values so the caller finds them intact.</p>
+    </div>`
+  },
+  {
+    title: "Callee Step 5: Copy Return Value + Deallocate + Return",
+    html: `<div style="font-family:'DM Sans',sans-serif;">
+    <p style="font-size:15px;margin-bottom:12px;">The return value goes to the agreed-upon place (RAX for integers on x86-64). Then the frame is deallocated and control returns to the caller.</p>
+    <pre style="background:#2b2520;color:#f0e8e0;padding:16px 20px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.6;"><code>mov rax, result   <span style="color:#888;">; put return value in RAX</span>
+add rsp, 48       <span style="color:#888;">; deallocate frame</span>
+ret               <span style="color:#888;">; pop return address, jump back</span></code></pre>
+    </div>`
+  },
+  {
+    title: "The Full Picture",
+    html: `<div style="font-family:'DM Sans',sans-serif;">
+    <p style="font-size:15px;margin-bottom:16px;">Here's everything that happens, in order. The green box is the only useful part:</p>
+    <div style="font-size:13px;line-height:2;">
+      <div style="padding:4px 12px;background:#e8f0f8;border-radius:4px;margin:3px 0;">1. Caller: evaluate arguments</div>
+      <div style="padding:4px 12px;background:#e8f0f8;border-radius:4px;margin:3px 0;">2. Caller: copy args to registers/stack</div>
+      <div style="padding:4px 12px;background:#e8f0f8;border-radius:4px;margin:3px 0;">3. Caller: (maybe) save caller-saved registers</div>
+      <div style="padding:4px 12px;background:#e8f0f8;border-radius:4px;margin:3px 0;">4. Caller: push return address + jump</div>
+      <div style="padding:4px 12px;background:#fdf0eb;border-radius:4px;margin:3px 0;">5. Callee: allocate stack frame</div>
+      <div style="padding:4px 12px;background:#fdf0eb;border-radius:4px;margin:3px 0;">6. Callee: save callee-saved registers</div>
+      <div style="padding:4px 12px;background:#eaf5ef;border-radius:4px;margin:3px 0;border:2px solid #3a7a52;font-weight:700;">7. Callee: ⟨actual computation⟩</div>
+      <div style="padding:4px 12px;background:#fdf0eb;border-radius:4px;margin:3px 0;">8. Callee: restore registers</div>
+      <div style="padding:4px 12px;background:#fdf0eb;border-radius:4px;margin:3px 0;">9. Callee: copy return value to RAX</div>
+      <div style="padding:4px 12px;background:#fdf0eb;border-radius:4px;margin:3px 0;">10. Callee: deallocate frame + return</div>
+    </div>
+    <p style="font-size:14px;color:#6b6560;margin-top:12px;">That's ~9 steps of overhead for 1 step of work. This is why making function calls fast matters so much.</p>
+    </div>`
+  }
+];
+let fncallStep = 0;
+function stepFnCall(dir) {
+  fncallStep = Math.max(0, Math.min(fncallSteps.length - 1, fncallStep + dir));
+  renderStepper('fncall', fncallSteps, fncallStep);
+}
+
+// ── GENERIC STEPPER RENDERER ──
+function renderStepper(prefix, steps, idx) {
+  const display = document.getElementById(prefix + '-display');
+  const prev = document.getElementById(prefix + '-prev');
+  const next = document.getElementById(prefix + '-next');
+  const indicator = document.getElementById(prefix + '-indicator');
+  display.innerHTML = `<div style="font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;color:var(--accent);margin-bottom:12px;">${steps[idx].title}</div>${steps[idx].html}`;
+  prev.disabled = idx === 0;
+  next.disabled = idx === steps.length - 1;
+  indicator.textContent = `Step ${idx + 1} / ${steps.length}`;
+}
+
+// ── EXPLORER TABS ──
+function showExplorerTab(tabEl, panelId) {
+  const explorer = tabEl.closest('.explorer');
+  explorer.querySelectorAll('.explorer-tab').forEach(t => t.classList.remove('active'));
+  explorer.querySelectorAll('.explorer-panel').forEach(p => p.classList.remove('active'));
+  tabEl.classList.add('active');
+  document.getElementById(panelId).classList.add('active');
+}
+
+// ── QUIZ ──
+function checkQuiz(quizId, el, correct) {
+  const quiz = document.getElementById(quizId);
+  if (quiz.dataset.answered) return;
+  quiz.dataset.answered = 'true';
+  const explain = document.getElementById(quizId + '-explain');
+  const options = quiz.querySelectorAll('.quiz-options li');
+  options.forEach(o => { o.style.pointerEvents = 'none'; });
+  if (correct) {
+    el.classList.add('correct');
+    explain.className = 'quiz-explain show correct-expl';
+    const explanations = {
+      quiz1: "Correct! In call by value, the callee works with a copy. Any modifications it makes are local and don't affect the caller's original variable.",
+      quiz2: "Correct! When two names can refer to the same memory location, the compiler can't safely assume that a value it cached in a register is still valid — another alias might have changed it. This prevents many important optimizations.",
+      quiz3: "Correct! In call by result, the output parameter starts uninitialized (the callee can't read the original value). The callee works with a local copy and only copies it back to the caller at return time. This prevents aliasing because the copying is deferred.",
+      quiz4: "Correct! With lazy evaluation, arguments are wrapped in thunks (tiny functions) that are only called when their value is actually needed. If a code path never uses an argument, the thunk is never called, so dangerous operations (like division by zero) never happen.",
+      quiz5: "Correct! A Python-style dynamic array stores elements contiguously in memory, so accessing element i is just base_address + i × element_size — an O(1) operation. A Lisp linked list would require walking through 500 cells — O(500).",
+      quiz6: "Correct! Java's Stack Trace API allows programs to inspect the full call stack at runtime. Tail call optimization removes stack frames, which would break this API by making backtraces incomplete.",
+      quiz7: "Correct! Prolog uses first-argument indexing: since 'john' is an atom, Prolog hashes on it and jumps directly to matching clauses. Only facts whose first argument is 'john' are examined."
+    };
+    explain.innerHTML = explanations[quizId];
+  } else {
+    el.classList.add('wrong');
+    options.forEach(o => { if (!o.classList.contains('wrong')) { /* find correct */ } });
+    explain.className = 'quiz-explain show wrong-expl';
+    const wrongExplanations = {
+      quiz1: "Not quite. In call by value, the callee only gets a copy of the value. Modifying the copy has no effect on the caller's original variable — it remains unchanged.",
+      quiz2: "Not quite. The core issue is that aliasing prevents the compiler from caching values in registers, because another name (alias) might modify the same memory location, invalidating the cached value.",
+      quiz3: "Not quite. The key difference is that in call by result, the parameter starts uninitialized (the callee can't peek at the original value), and copying only happens at return time. This avoids the aliasing problems of call by reference.",
+      quiz4: "Not quite. Lazy evaluation avoids crashes by simply not evaluating expressions until their values are actually needed. If a code path doesn't use an argument (like when n=0 in our printAverage example), the potentially dangerous computation never runs.",
+      quiz5: "Not quite. A Lisp-style linked list requires O(i) time to access element i (walking through i cons cells). A Python-style array uses contiguous memory, so element access is O(1) via direct address calculation.",
+      quiz6: "Not quite. The reason is that Java's Stack Trace API allows creating backtrace objects at runtime that show the complete call chain. Tail call optimization would remove stack frames, making these backtraces incomplete or misleading.",
+      quiz7: "Not quite. Prolog uses first-argument indexing: it hashes on the first argument ('john') and directly looks up only the clauses whose first argument matches 'john'. It doesn't need to scan all 10,000 facts."
+    };
+    explain.innerHTML = wrongExplanations[quizId];
+  }
+}
+
+// ── SCROLL PROGRESS & TOC ──
+function updateProgress() {
+  const scrollTop = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+  document.getElementById('progressBar').style.width = progress + '%';
+
+  // Update active TOC item
+  const sections = document.querySelectorAll('section[id], h2[id], h3[id]');
+  let currentId = '';
+  sections.forEach(s => {
+    if (s.getBoundingClientRect().top < 120) currentId = s.id;
+  });
+  document.querySelectorAll('.toc-item').forEach(item => {
+    item.classList.toggle('active', item.getAttribute('href') === '#' + currentId);
+  });
+
+  // Update nav section label
+  const navSection = document.getElementById('navSection');
+  if (scrollTop < document.getElementById('cost-intro').offsetTop - 200) {
+    navSection.textContent = 'Parameter Passing';
+  } else {
+    navSection.textContent = 'Cost Models';
+  }
+}
+
+window.addEventListener('scroll', updateProgress);
+window.addEventListener('load', () => {
+  updateProgress();
+  // Init all steppers
+  renderStepper('cbv', cbvSteps, 0);
+  renderStepper('alias', aliasSteps, 0);
+  renderStepper('cvr', cvrSteps, 0);
+  renderStepper('fncall', fncallSteps, 0);
+});
+
+// Smooth scroll for TOC
+document.querySelectorAll('.toc-item').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Close mobile sidebar
+    document.querySelector('.sidebar').classList.remove('open');
+  });
+});
+</script>
+
+</body>
+</html>
