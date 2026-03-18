@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Programming Languages: Types, Floating Point & Polymorphism</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,400&family=Source+Sans+3:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf8f5;
+  --bg-warm: #f5f0ea;
+  --bg-code: #1e1e2e;
+  --text: #2c2420;
+  --text-secondary: #6b5e54;
+  --accent: #c44b2b;
+  --accent-soft: #e8734f;
+  --accent-bg: #fef0eb;
+  --green: #2d7a4f;
+  --green-bg: #edf7f0;
+  --blue: #2b5fc4;
+  --blue-bg: #ebf0fe;
+  --purple: #7b3fa0;
+  --purple-bg: #f4ecf9;
+  --gold: #a67c00;
+  --gold-bg: #fef8e8;
+  --border: #e0d6cc;
+  --shadow: rgba(44,36,32,0.08);
+  --radius: 10px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Source Sans 3', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.72;
+  font-size: 17px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* === NAVIGATION === */
+.nav-sidebar {
+  position: fixed;
+  left: 0; top: 0;
+  width: 280px;
+  height: 100vh;
+  background: #2c2420;
+  color: #e0d6cc;
+  overflow-y: auto;
+  z-index: 100;
+  padding: 28px 0;
+  transition: transform 0.3s ease;
+}
+.nav-sidebar.collapsed { transform: translateX(-280px); }
+.nav-header {
+  padding: 0 24px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  margin-bottom: 12px;
+}
+.nav-header h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 500;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+.nav-header p {
+  font-size: 12px;
+  color: #a09488;
+  margin-top: 4px;
+}
+.nav-section-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #7a6e64;
+  padding: 16px 24px 6px;
+  font-weight: 600;
+}
+.nav-item {
+  display: block;
+  padding: 8px 24px 8px 32px;
+  font-size: 14px;
+  color: #b0a498;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-left: 3px solid transparent;
+}
+.nav-item:hover { color: #fff; background: rgba(255,255,255,0.04); }
+.nav-item.active {
+  color: #fff;
+  background: rgba(196,75,43,0.15);
+  border-left-color: var(--accent);
+}
+
+.toggle-nav {
+  position: fixed;
+  top: 16px; left: 16px;
+  z-index: 101;
+  background: var(--text);
+  color: #fff;
+  border: none;
+  width: 40px; height: 40px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 18px;
+  display: none;
+}
+
+/* === MAIN CONTENT === */
+.main-content {
+  margin-left: 280px;
+  max-width: 780px;
+  padding: 48px 48px 120px;
+}
+
+/* === TYPOGRAPHY === */
+h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--text);
+  margin-bottom: 12px;
+  letter-spacing: -1px;
+}
+.subtitle {
+  font-size: 19px;
+  color: var(--text-secondary);
+  font-weight: 300;
+  margin-bottom: 40px;
+  line-height: 1.6;
+}
+h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 30px;
+  font-weight: 500;
+  margin-top: 64px;
+  margin-bottom: 8px;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+h2 .section-num {
+  color: var(--accent);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  display: block;
+  margin-bottom: 4px;
+  font-family: 'Source Sans 3', sans-serif;
+  text-transform: uppercase;
+}
+h3 {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 500;
+  margin-top: 40px;
+  margin-bottom: 10px;
+  color: var(--text);
+}
+p { margin-bottom: 16px; }
+
+/* === SPECIAL BLOCKS === */
+.big-idea {
+  background: var(--accent-bg);
+  border-left: 4px solid var(--accent);
+  padding: 20px 24px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 24px 0;
+}
+.big-idea .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.why-box {
+  background: var(--blue-bg);
+  border-left: 4px solid var(--blue);
+  padding: 20px 24px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 24px 0;
+}
+.why-box .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--blue);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.definition {
+  background: var(--purple-bg);
+  border-left: 4px solid var(--purple);
+  padding: 20px 24px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 24px 0;
+}
+.definition .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--purple);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.example-box {
+  background: var(--green-bg);
+  border-left: 4px solid var(--green);
+  padding: 20px 24px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 24px 0;
+}
+.example-box .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--green);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.warning-box {
+  background: var(--gold-bg);
+  border-left: 4px solid var(--gold);
+  padding: 20px 24px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 24px 0;
+}
+.warning-box .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--gold);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.connector {
+  background: var(--bg-warm);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin: 28px 0;
+  position: relative;
+}
+.connector::before {
+  content: '🔗';
+  position: absolute;
+  top: -14px; left: 20px;
+  background: var(--bg-warm);
+  padding: 0 8px;
+  font-size: 18px;
+}
+.connector .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-secondary);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+/* === CODE === */
+pre {
+  background: var(--bg-code);
+  color: #cdd6f4;
+  padding: 20px 24px;
+  border-radius: var(--radius);
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  line-height: 1.65;
+  margin: 20px 0;
+}
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.88em;
+  background: rgba(44,36,32,0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+pre code { background: none; padding: 0; font-size: 1em; }
+.cm { color: #6c7086; font-style: italic; }
+.kw { color: #cba6f7; }
+.tp { color: #89b4fa; }
+.fn { color: #a6e3a1; }
+.st { color: #f9e2af; }
+.nu { color: #fab387; }
+.op { color: #f38ba8; }
+
+/* === INTERACTIVE QUIZ === */
+.quiz {
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  margin: 32px 0;
+  background: #fff;
+}
+.quiz-header {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.quiz-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.quiz p { margin-bottom: 16px; color: var(--text-secondary); }
+.quiz-options { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+.quiz-option {
+  display: block;
+  padding: 12px 18px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 15px;
+  background: #fff;
+  text-align: left;
+  font-family: inherit;
+  color: var(--text);
+}
+.quiz-option:hover { border-color: var(--accent-soft); background: var(--accent-bg); }
+.quiz-option.correct {
+  border-color: var(--green);
+  background: var(--green-bg);
+  pointer-events: none;
+}
+.quiz-option.wrong {
+  border-color: #d44;
+  background: #fef0f0;
+  pointer-events: none;
+}
+.quiz-option.dimmed { opacity: 0.5; pointer-events: none; }
+.quiz-feedback {
+  margin-top: 14px;
+  padding: 14px 18px;
+  border-radius: 8px;
+  font-size: 15px;
+  line-height: 1.6;
+  display: none;
+}
+.quiz-feedback.show { display: block; }
+.quiz-feedback.correct-fb { background: var(--green-bg); color: #1a5c34; }
+.quiz-feedback.wrong-fb { background: #fef0f0; color: #993333; }
+
+/* === COMPARISON TABLE === */
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 24px 0;
+  font-size: 15px;
+}
+.compare-table th {
+  background: var(--text);
+  color: #fff;
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.compare-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.compare-table tr:nth-child(even) td { background: var(--bg-warm); }
+
+/* === DIAGRAM === */
+.diagram {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin: 24px 0;
+  text-align: center;
+}
+.diagram-caption {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 12px;
+  font-style: italic;
+}
+.bit-diagram {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+.bit-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.bit-cells {
+  display: flex;
+  gap: 1px;
+}
+.bit-cell {
+  width: 28px; height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+  border-radius: 3px;
+}
+.bit-cell.sign { background: var(--accent); }
+.bit-cell.exp { background: var(--blue); }
+.bit-cell.frac { background: var(--green); }
+.bit-label {
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.bit-label.sign-l { color: var(--accent); }
+.bit-label.exp-l { color: var(--blue); }
+.bit-label.frac-l { color: var(--green); }
+
+/* === SECTION DIVIDER === */
+.section-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 56px 0;
+}
+
+/* === PROGRESS BAR === */
+.progress-bar {
+  position: fixed;
+  top: 0; left: 280px; right: 0;
+  height: 3px;
+  background: rgba(0,0,0,0.05);
+  z-index: 99;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  width: 0%;
+  transition: width 0.1s;
+}
+
+/* === ROADMAP === */
+.roadmap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 28px 0;
+}
+.roadmap-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  position: relative;
+  padding-bottom: 20px;
+}
+.roadmap-item:last-child { padding-bottom: 0; }
+.roadmap-dot {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+  margin-top: 5px;
+  position: relative;
+  z-index: 1;
+}
+.roadmap-item:not(:last-child) .roadmap-dot::after {
+  content: '';
+  position: absolute;
+  top: 14px; left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: calc(100% + 8px);
+  background: var(--border);
+}
+.roadmap-text strong { display: block; font-size: 16px; }
+.roadmap-text span { color: var(--text-secondary); font-size: 14px; }
+
+/* === REVEAL SECTION === */
+.reveal-section { margin: 24px 0; }
+.reveal-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: #fff;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.reveal-toggle:hover { border-color: var(--accent-soft); }
+.reveal-toggle .arrow { transition: transform 0.2s; }
+.reveal-toggle.open .arrow { transform: rotate(90deg); }
+.reveal-body {
+  display: none;
+  padding: 20px;
+  border: 2px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: #fff;
+}
+.reveal-body.open { display: block; }
+
+/* === RESPONSIVE === */
+@media (max-width: 900px) {
+  .nav-sidebar { transform: translateX(-280px); }
+  .nav-sidebar.open { transform: translateX(0); }
+  .toggle-nav { display: block; }
+  .main-content { margin-left: 0; padding: 48px 24px 120px; }
+  .progress-bar { left: 0; }
+  h1 { font-size: 32px; }
+}
+</style>
+
+<style>
+/* === Printable Override === */
+
+/* Hide non-content elements */
+.sidebar, .sidebar-toggle, .progress-bar, .quiz, .quiz-btn { display: none !important; }
+
+/* Base typography */
+html { font-size: 12px !important; }
+body { line-height: 1.3 !important; }
+
+/* Layout */
+.main {
+  margin-left: 0 !important;
+  padding: 0.5rem !important;
+  max-width: 100% !important;
+}
+
+/* Headings */
+h1 { font-size: 1.4rem !important; }
+h2 { font-size: 1.15rem !important; margin-top: 0.5rem !important; }
+h3 { font-size: 1.05rem !important; margin-top: 0.4rem !important; }
+
+/* Spacing */
+p { margin-bottom: 0.25rem !important; }
+ul, ol { margin-bottom: 0.25rem !important; }
+li { margin-bottom: 0.1rem !important; }
+
+.callout {
+  padding: 0.3rem 0.5rem !important;
+  margin: 0.3rem 0 !important;
+}
+
+.code-block {
+  margin: 0.3rem 0 !important;
+  overflow: visible !important;
+}
+.code-block pre {
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+}
+.code-body, .code-block code {
+  padding: 0.3rem 0.5rem !important;
+  font-size: 0.85rem !important;
+}
+
+section, .section { margin-bottom: 0.3rem !important; }
+.subtitle { margin-bottom: 0.3rem !important; }
+
+/* Force expandables open and remove toggle UI */
+.expandable-content {
+  display: block !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+.expandable-arrow { display: none !important; }
+.expandable-header { cursor: default !important; }
+
+/* Kill animations */
+* {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+}
+</style>
+
+</head>
+<body>
+
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+<button class="toggle-nav" id="toggleNav">☰</button>
+
+<nav class="nav-sidebar" id="navSidebar">
+  <div class="nav-header">
+    <h2>Types & Polymorphism</h2>
+    <p>CS Programming Languages</p>
+  </div>
+  
+  <div class="nav-section-title">Part 1 — Foundations</div>
+  <a class="nav-item" data-target="intro">The Big Picture</a>
+  <a class="nav-item" data-target="what-is-type">What Is a Type?</a>
+  <a class="nav-item" data-target="primitive-constructed">Primitive vs. Constructed</a>
+  <a class="nav-item" data-target="type-annotations">Type Annotations in OCaml</a>
+  
+  <div class="nav-section-title">Part 2 — Building Your Own Types</div>
+  <a class="nav-item" data-target="discriminated-unions">Discriminated Unions</a>
+  <a class="nav-item" data-target="unions-c">Unions in C/C++ (The Dangerous Kind)</a>
+  <a class="nav-item" data-target="option-type">The Option Type & Null</a>
+  <a class="nav-item" data-target="compile-vs-runtime">Compile-Time vs. Runtime Safety</a>
+  
+  <div class="nav-section-title">Part 3 — Floating Point Deep Dive</div>
+  <a class="nav-item" data-target="float-intro">Why Study Float as a Type?</a>
+  <a class="nav-item" data-target="float-layout">IEEE 754 Bit Layout</a>
+  <a class="nav-item" data-target="hidden-bit">The Hidden One Bit</a>
+  <a class="nav-item" data-target="representing-zero">Representing Zero</a>
+  <a class="nav-item" data-target="denormalized">Denormalized Numbers</a>
+  <a class="nav-item" data-target="overflow-infinity">Overflow & Infinity</a>
+  <a class="nav-item" data-target="nan">NaN — Not a Number</a>
+  <a class="nav-item" data-target="nan-comparison">NaN & Broken Comparisons</a>
+  <a class="nav-item" data-target="three-strategies">Three Strategies for Bad Values</a>
+  
+  <div class="nav-section-title">Part 4 — Type Equivalence</div>
+  <a class="nav-item" data-target="abstract-concrete">Abstract vs. Concrete Types</a>
+  <a class="nav-item" data-target="structural-equiv">Structural Equivalence</a>
+  <a class="nav-item" data-target="name-equiv">Name Equivalence</a>
+  <a class="nav-item" data-target="c-both">C/C++: Uses Both!</a>
+  
+  <div class="nav-section-title">Part 5 — Subtypes</div>
+  <a class="nav-item" data-target="subtype-intro">What Is a Subtype?</a>
+  <a class="nav-item" data-target="int-long">Example: int vs. long</a>
+  <a class="nav-item" data-target="class-subtyping">Example: Class Inheritance</a>
+  <a class="nav-item" data-target="const-pointers">Example: const Pointers</a>
+  <a class="nav-item" data-target="volatile">Example: volatile</a>
+  
+  <div class="nav-section-title">Part 6 — Polymorphism</div>
+  <a class="nav-item" data-target="poly-intro">What Is Polymorphism?</a>
+  <a class="nav-item" data-target="overloading">Overloading (Ad Hoc)</a>
+  <a class="nav-item" data-target="coercion">Coercion & Its Dangers</a>
+  <a class="nav-item" data-target="parametric">Parametric Polymorphism</a>
+  <a class="nav-item" data-target="old-java">Old Java (Before Generics)</a>
+  <a class="nav-item" data-target="new-java">New Java (With Generics)</a>
+</nav>
+
+<main class="main-content">
+
+<!-- ============================== -->
+<!-- INTRO -->
+<!-- ============================== -->
+<section id="intro">
+<h1>Types, Floating Point,<br>& Polymorphism</h1>
+<p class="subtitle">How programming languages decide what data <em>is</em>, what you can <em>do</em> with it, and how they catch your mistakes — before or after you run the program.</p>
+
+<div class="why-box">
+<div class="label">Why This Matters</div>
+<p style="margin-bottom:0">Every piece of data in every program you'll ever write has a <strong>type</strong>. The rules a language uses for types determine whether your programs crash at 3 AM in production or get caught by the compiler before you even ship. This lecture ties together ideas from low-level hardware (IEEE floating point), language design (OCaml, C, C++, Java, Python), and the theory behind making software more reliable. By the end, you'll understand the deep design decisions behind types — and why different languages made different trade-offs.</p>
+</div>
+
+<p>Here's the roadmap for everything we'll cover:</p>
+
+<div class="roadmap">
+  <div class="roadmap-item"><div class="roadmap-dot"></div><div class="roadmap-text"><strong>What is a type?</strong><span>The fundamental idea and why it exists</span></div></div>
+  <div class="roadmap-item"><div class="roadmap-dot"></div><div class="roadmap-text"><strong>Building your own types</strong><span>Discriminated unions, the option type, and escaping null pointers</span></div></div>
+  <div class="roadmap-item"><div class="roadmap-dot"></div><div class="roadmap-text"><strong>Floating point as a case study</strong><span>IEEE 754, zero, infinity, NaN — the hardest built-in type</span></div></div>
+  <div class="roadmap-item"><div class="roadmap-dot"></div><div class="roadmap-text"><strong>Type equivalence</strong><span>When are two types "the same"? Structural vs. name equivalence</span></div></div>
+  <div class="roadmap-item"><div class="roadmap-dot"></div><div class="roadmap-text"><strong>Subtypes</strong><span>When one type is a "kind of" another — and the tricky cases</span></div></div>
+  <div class="roadmap-item"><div class="roadmap-dot"></div><div class="roadmap-text"><strong>Polymorphism</strong><span>Overloading, coercion, and parametric polymorphism (generics)</span></div></div>
+</div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ============================== -->
+<!-- PART 1: FOUNDATIONS -->
+<!-- ============================== -->
+<section id="what-is-type">
+<h2><span class="section-num">Part 1 — Foundations</span>What Is a Type?</h2>
+
+<p>Before we can talk about anything else, we need to be crystal clear about what a "type" actually is in programming.</p>
+
+<div class="definition">
+<div class="label">Definition — Type</div>
+<p style="margin-bottom:0">A <strong>type</strong> is a <em>set of values</em>, where all elements in the set share a <strong>common representation</strong> in memory and support the <strong>same collection of operations</strong>.</p>
+</div>
+
+<p>Let's unpack that piece by piece, because every word matters.</p>
+
+<p><strong>"A set of values"</strong> — When you say a variable has type <code>int</code>, you're saying that variable can hold any value from the set of integers the machine can represent (like -2,147,483,648 through 2,147,483,647 for a 32-bit int). It <em>cannot</em> hold the string "hello" or the floating-point number 3.14. The type restricts which values are allowed.</p>
+
+<p><strong>"Common representation in memory"</strong> — All integers are stored using the same number of bits, in the same format (e.g., two's complement). All floats are stored using the IEEE 754 format. The representation is consistent across all values of that type.</p>
+
+<p><strong>"Same collection of operations"</strong> — If something is an <code>int</code>, you can add it, subtract it, multiply it, compare it, etc. If something is a <code>string</code>, you can concatenate it, take its length, access characters by index. The type tells you <em>what you're allowed to do</em> with a value.</p>
+
+<div class="example-box">
+<div class="label">Example — Type as a Set</div>
+<p>If you write <code>int n;</code> in C, you're telling the compiler: "n can be any value from the set of 32-bit integers. I should be able to do arithmetic on it. It must <em>never</em> contain the string 'hello' or the value 3.14."</p>
+<p style="margin-bottom:0">The compiler uses this promise to (a) allocate the right amount of memory, (b) generate the right machine instructions for operations, and (c) catch mistakes if you accidentally use n in a way that doesn't make sense for integers.</p>
+</div>
+
+<div class="quiz" id="quiz-type1">
+<div class="quiz-label">Check Your Understanding</div>
+<div class="quiz-header">Why do types exist in programming languages?</div>
+<p>Pick the most complete answer:</p>
+<div class="quiz-options">
+  <button class="quiz-option" onclick="checkQuiz('quiz-type1', this, false)">To make programming harder and force you to memorize rules</button>
+  <button class="quiz-option" onclick="checkQuiz('quiz-type1', this, true)">To define what values a variable can hold, how it's stored in memory, and what operations are valid on it</button>
+  <button class="quiz-option" onclick="checkQuiz('quiz-type1', this, false)">To speed up programs by using less memory</button>
+  <button class="quiz-option" onclick="checkQuiz('quiz-type1', this, false)">To make code look nicer and more organized</button>
+</div>
+<div class="quiz-feedback" id="quiz-type1-fb"></div>
+</div>
+</section>
+
+<section id="primitive-constructed">
+<h3>Primitive vs. Constructed Types</h3>
+
+<p>Types come in two flavors:</p>
+
+<div class="definition">
+<div class="label">Definition — Primitive Type</div>
+<p style="margin-bottom:0">A <strong>primitive type</strong> is a type built into the language that you cannot define yourself. The language just <em>has</em> it. Examples: <code>int</code>, <code>float</code>, <code>bool</code>, <code>char</code>.</p>
+</div>
+
+<div class="definition">
+<div class="label">Definition — Constructed Type</div>
+<p style="margin-bottom:0">A <strong>constructed type</strong> is a type that you build using primitive types (or other constructed types). Examples: arrays, structs, lists, tuples, classes.</p>
+</div>
+
+<div class="example-box">
+<div class="label">Example</div>
+<p style="margin-bottom:0">In OCaml, <code>int</code> is primitive. But <code>type intpair = int * int</code> is a constructed type — you've built a new type (a pair of two integers) out of the primitive type <code>int</code>.</p>
+</div>
+
+<p>An important subtlety: different compilers for the same language might implement primitive types differently. A C compiler on a 64-bit machine might make <code>long</code> 8 bytes, while a 32-bit compiler might make it 4 bytes. The language <em>definition</em> specifies the rules, but leaves room for different implementations — this is what allows the same language to work efficiently on different hardware.</p>
+</section>
+
+<section id="type-annotations">
+<h3>Type Annotations in OCaml</h3>
+
+<div class="connector">
+<div class="label">Connecting to the Bigger Picture</div>
+<p style="margin-bottom:0">We've just learned what types are. Now let's see how a specific language — OCaml — handles types. OCaml is special because it can <em>figure out</em> your types automatically, but it also lets you write them down explicitly. This leads to an interesting design question: should a programmer <em>have</em> to write types, or should the language infer them?</p>
+</div>
+
+<p>In OCaml, when you define a function, you don't <em>have</em> to write down what types the arguments are. OCaml has a feature called <strong>type inference</strong> — it looks at how you use a variable and figures out what type it must be.</p>
+
+<div class="example-box">
+<div class="label">Example — Type Inference in Action</div>
+<p>Suppose you write a function that reverses a list:</p>
+<pre><code><span class="kw">let rec</span> <span class="fn">reverse</span> l = ...  <span class="cm">(* OCaml figures out: l must be 'a list *)</span></code></pre>
+<p>OCaml sees that you're pattern matching on a list, calling list operations, etc. It concludes: "l has to be a list. And since you never do anything specific to the elements (like adding them), the elements can be of any type." So it infers the type <code>'a list</code> — a list of "anything."</p>
+<p style="margin-bottom:0">The <code>'a</code> (pronounced "alpha" or "tick-a") is a <strong>type variable</strong>. It's a placeholder that means "any type." We'll explore this more deeply when we get to parametric polymorphism.</p>
+</div>
+
+<p>But OCaml also lets you <em>explicitly</em> annotate types:</p>
+
+<pre><code><span class="cm">(* Annotating with the general type — same as what OCaml infers *)</span>
+<span class="kw">let rec</span> <span class="fn">reverse</span> (l: <span class="tp">'a list</span>) = ...
+
+<span class="cm">(* Annotating with a MORE SPECIFIC type *)</span>
+<span class="kw">let rec</span> <span class="fn">reverse</span> (l: <span class="tp">int list</span>) = ...</code></pre>
+
+<p>The first annotation just restates what OCaml already knows. The second one is more interesting — it <strong>restricts</strong> the function. Now <code>reverse</code> only works on lists of integers, even though the algorithm works on lists of <em>anything</em>.</p>
+
+<div class="warning-box">
+<div class="label">Watch Out</div>
+<p style="margin-bottom:0">If you annotate a function with a type that's more specific than necessary (like <code>int list</code> when the function could work on <code>'a list</code>), you've made your function <strong>less reusable</strong>. It could work on any kind of list, but your annotation has locked it to only integers. As a general rule: let OCaml infer the most general type, unless you have a specific reason to restrict it.</p>
+</div>
+
+<p><strong>So when <em>should</em> you annotate types?</strong></p>
+
+<p>Once programs get large, annotations serve as documentation for the human reader. You might forget what a function expects, and the annotation reminds you. It's like leaving a note for yourself. But in small programs, OCaml's inference is usually enough.</p>
+
+<p>However, there are cases where OCaml <em>can't</em> infer types — specifically when you're defining your own custom types. That's what we'll learn next.</p>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ============================== -->
+<!-- PART 2: BUILDING YOUR OWN TYPES -->
+<!-- ============================== -->
+<section id="discriminated-unions">
+<h2><span class="section-num">Part 2 — Building Your Own Types</span>Discriminated Unions</h2>
+
+<div class="why-box">
+<div class="label">Why Are We Learning This?</div>
+<p style="margin-bottom:0">We've seen primitive types (int, float) and the idea of constructed types. Now we get to the real power of a language like OCaml: <strong>defining your own types from scratch</strong>. This is how you model real-world data — like a list that's either empty or has elements, a value that might exist or might not, or a tree that has branches and leaves. The mechanism for this is called a <strong>discriminated union</strong> (also called a "variant" or "tagged union" or "algebraic data type" depending on the language).</p>
+</div>
+
+<p>Let's build up to this concept step by step. Imagine you want to create your own version of a list — not OCaml's built-in list, but your own.</p>
+
+<p>A list is one of two things:</p>
+<p>1. <strong>Empty</strong> — there's nothing in it, or</p>
+<p>2. <strong>Non-empty</strong> — it has a value, followed by the rest of the list.</p>
+
+<p>In OCaml, you express this directly:</p>
+
+<pre><code><span class="kw">type</span> <span class="tp">'a mylist</span> =
+  | <span class="fn">Empty</span>                          <span class="cm">(* case 1: nothing here *)</span>
+  | <span class="fn">Nonempty</span> <span class="kw">of</span> <span class="tp">'a</span> * <span class="tp">'a mylist</span>    <span class="cm">(* case 2: a value AND more list *)</span></code></pre>
+
+<p>Let's break down every piece of this syntax:</p>
+
+<p><code>type 'a mylist =</code> — We're defining a new type called <code>mylist</code>. The <code>'a</code> means it's <em>parameterized</em> — it works for any type. An <code>int mylist</code> is a list of integers. A <code>string mylist</code> is a list of strings.</p>
+
+<p><code>| Empty</code> — This is one possible "shape" the data can take. <code>Empty</code> is called a <strong>constructor</strong>. It takes no arguments — it just <em>is</em>. It's a value of type <code>'a mylist</code> that represents an empty list.</p>
+
+<p><code>| Nonempty of 'a * 'a mylist</code> — This is another constructor. Unlike <code>Empty</code>, this one takes an <em>argument</em>: a pair consisting of a value of type <code>'a</code> (the head of the list) and another <code>'a mylist</code> (the rest of the list). So <code>Nonempty(5, Nonempty(3, Empty))</code> represents the list [5, 3].</p>
+
+<div class="definition">
+<div class="label">Definition — Discriminated Union</div>
+<p>A <strong>discriminated union</strong> (also called a "tagged union" or "variant") is a type that can have multiple different "shapes." Each shape has a <strong>tag</strong> (like <code>Empty</code> or <code>Nonempty</code>) that identifies which shape it is.</p>
+<p style="margin-bottom:0">The key word is <strong>discriminated</strong> — at runtime, the system can always tell which variant you have by reading the tag. This is fundamentally different from C/C++ unions (which we'll see next), where there's NO tag and the programmer has to remember which shape the data is in.</p>
+</div>
+
+<p>The <strong>tag</strong> is an implicit marker stored alongside the data. When you write <code>Nonempty(5, Empty)</code>, the runtime stores something like:</p>
+
+<div class="diagram">
+<div style="display:inline-flex;gap:2px;font-family:'JetBrains Mono',monospace;font-size:13px;">
+<div style="background:var(--accent);color:#fff;padding:8px 14px;border-radius:6px 0 0 6px;">tag: Nonempty</div>
+<div style="background:var(--blue);color:#fff;padding:8px 14px;">value: 5</div>
+<div style="background:var(--green);color:#fff;padding:8px 14px;border-radius:0 6px 6px 0;">next: →Empty</div>
+</div>
+<div class="diagram-caption">A Nonempty node stores a tag, a value, and a pointer to the rest of the list</div>
+</div>
+
+<p>Because of the tag, the system always knows what it's looking at. When you write a <code>match</code> expression, OCaml reads the tag and goes to the right case:</p>
+
+<pre><code><span class="kw">match</span> mylist <span class="kw">with</span>
+| <span class="fn">Empty</span> -> <span class="st">"list is empty"</span>
+| <span class="fn">Nonempty</span>(head, tail) -> <span class="st">"first element is "</span> ^ string_of_int head</code></pre>
+
+<p>And here's the crucial safety property: <strong>OCaml forces you to handle every case.</strong> If you forget to handle <code>Empty</code>, the compiler warns you. This is what makes discriminated unions so much safer than C-style unions.</p>
+</section>
+
+<section id="unions-c">
+<h3>Unions in C/C++ — The Dangerous Kind</h3>
+
+<p>Now let's see the alternative approach that C and C++ take, so you can appreciate why discriminated unions are better.</p>
+
+<p>In C/C++, a <code>union</code> looks like this:</p>
+
+<pre><code><span class="kw">union</span> {
+    <span class="tp">int</span> i;
+    <span class="tp">float</span> f;      <span class="cm">// allocates enough memory for the largest member</span>
+};</code></pre>
+
+<p>A C union stores all its members <strong>at the same memory location</strong>. The size of the union is the size of its <em>largest</em> member. So if <code>int</code> is 4 bytes and <code>float</code> is 4 bytes, the union is 4 bytes — and the integer and the float literally share the same 4 bytes of memory.</p>
+
+<div class="diagram">
+<div style="display:inline-flex;font-family:'JetBrains Mono',monospace;font-size:13px;">
+<div style="position:relative;width:200px;height:60px;border:2px solid var(--text);border-radius:6px;overflow:hidden;">
+<div style="position:absolute;top:0;left:0;right:0;height:28px;background:var(--blue-bg);border-bottom:1px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--blue);">int i — at offset 0</div>
+<div style="position:absolute;bottom:0;left:0;right:0;height:28px;background:var(--green-bg);display:flex;align-items:center;justify-content:center;color:var(--green);">float f — at offset 0</div>
+</div>
+</div>
+<div class="diagram-caption">Both members occupy the exact same memory. There's NO tag to tell them apart.</div>
+</div>
+
+<p><strong>The critical difference:</strong> there is <strong>no tag</strong>. Nothing in memory tells you whether this 4-byte block currently holds an integer or a float. The only way to know is to track in your head (or in your code) which member you last stored. If you store an <code>int</code> and then read it as a <code>float</code>, you get <strong>undefined behavior</strong> — the program can crash, produce garbage, or appear to work but be subtly wrong.</p>
+
+<div class="warning-box">
+<div class="label">Why This Is Dangerous</div>
+<p style="margin-bottom:0">Accessing the wrong member of a C union is exactly like reading an uninitialized variable. The bits are there, but they don't mean what you think they mean. This is one of the most common sources of bugs in C/C++ programs, especially when unions are passed between functions and the "which member is active" information gets lost.</p>
+</div>
+
+<div class="quiz" id="quiz-union1">
+<div class="quiz-label">Check Your Understanding</div>
+<div class="quiz-header">What is the key difference between a discriminated union (OCaml) and a C union?</div>
+<div class="quiz-options">
+  <button class="quiz-option" onclick="checkQuiz('quiz-union1', this, false)">C unions are faster because they use less memory</button>
+  <button class="quiz-option" onclick="checkQuiz('quiz-union1', this, false)">Discriminated unions can only hold two types; C unions can hold any number</button>
+  <button class="quiz-option" onclick="checkQuiz('quiz-union1', this, true)">Discriminated unions have a runtime tag that identifies which variant is active; C unions have no tag, so the programmer must track it manually</button>
+  <button class="quiz-option" onclick="checkQuiz('quiz-union1', this, false)">They're the same thing with different syntax</button>
+</div>
+<div class="quiz-feedback" id="quiz-union1-fb"></div>
+</div>
+</section>
+
+<section id="option-type">
+<h3>The Option Type — Goodbye, Null Pointers</h3>
+
+<div class="connector">
+<div class="label">Connecting to the Bigger Picture</div>
+<p style="margin-bottom:0">We've seen how discriminated unions let you define data with multiple shapes. Now let's look at one of the most important uses of this idea: solving the infamous <strong>null pointer problem</strong>. This connects our abstract discussion of types to real-world reliability.</p>
+</div>
+
+<p>In languages like C, C++, Java, and Python, there's a special value that means "nothing is here":</p>
+
+<p>In C/C++, it's <code>NULL</code> (or <code>nullptr</code>). In Java, it's <code>null</code>. In Python, it's <code>None</code>.</p>
+
+<p>The problem? If you have a pointer or reference, and someone passes you <code>null</code>, and you try to use it (call a method, access a field), your program <strong>crashes at runtime</strong>. This is so common that Tony Hoare, the inventor of null references, famously called it his "billion-dollar mistake."</p>
+
+<p>OCaml's solution is the <strong>option type</strong>:</p>
+
+<pre><code><span class="kw">type</span> <span class="tp">'a option</span> =
+  | <span class="fn">None</span>            <span class="cm">(* nothing here — like null *)</span>
+  | <span class="fn">Some</span> <span class="kw">of</span> <span class="tp">'a</span>     <span class="cm">(* a value exists, and it's wrapped inside Some *)</span></code></pre>
+
+<p>At first glance, this looks the same as Python's <code>None</code>. But there's a crucial difference: <strong>the compiler enforces that you handle both cases.</strong></p>
+
+<p>Suppose you have a value of type <code>int option</code>. You <em>cannot</em> just add 1 to it:</p>
+
+<pre><code><span class="kw">let</span> x : <span class="tp">int option</span> = <span class="fn">Some</span> <span class="nu">42</span>
+
+<span class="cm">(* THIS DOES NOT COMPILE: *)</span>
+<span class="kw">let</span> y = x + <span class="nu">1</span>   <span class="cm">(* Error! x is int option, not int *)</span>
+
+<span class="cm">(* You MUST pattern match to extract the value: *)</span>
+<span class="kw">let</span> y = <span class="kw">match</span> x <span class="kw">with</span>
+  | <span class="fn">None</span>   -> <span class="nu">0</span>           <span class="cm">(* handle the "nothing" case *)</span>
+  | <span class="fn">Some</span> n -> n + <span class="nu">1</span>       <span class="cm">(* only here can you use the value *)</span></code></pre>
+
+<p>The compiler <em>refuses</em> to let you use the value without first checking whether it exists. This turns what would be a <strong>runtime crash</strong> in other languages into a <strong>compile-time error</strong> in OCaml. You physically cannot forget to handle the null case — the program won't compile until you do.</p>
+
+<div class="big-idea">
+<div class="label">Key Insight</div>
+<p style="margin-bottom:0">The same logic applies to lists. In Python, if you accidentally walk past the end of a list, you get a runtime error. In OCaml, because lists are discriminated unions (<code>[]</code> or <code>head :: tail</code>), the compiler forces you to handle the empty case. As long as you use <code>match</code> expressions (and not unsafe helper functions), you <strong>cannot</strong> fall off the end of a list — it's a compile-time guarantee.</p>
+</div>
+</section>
+
+<section id="compile-vs-runtime">
+<h3>Compile-Time vs. Runtime Error Catching</h3>
+
+<p>This gives us a spectrum of how languages handle "bad things happening":</p>
+
+<table class="compare-table">
+<tr><th>Approach</th><th>What Happens</th><th>Example Language</th></tr>
+<tr><td><strong>Compile-time checking</strong></td><td>The compiler prevents the error before you run the program</td><td>OCaml (match on option/list)</td></tr>
+<tr><td><strong>Runtime error</strong></td><td>The program crashes when the bad thing happens</td><td>Python (accessing None), C (null pointer)</td></tr>
+<tr><td><strong>Special values</strong></td><td>Return a sentinel value (like NaN, infinity) instead of crashing</td><td>IEEE floating point</td></tr>
+</table>
+
+<p>Each approach has trade-offs. Compile-time checking is the safest — bugs are caught before the code ever runs. But it can make programs longer and more tedious to write (you have to handle every case). Runtime errors are simpler to code around, but they can slip through testing. Special values let computation continue but can silently propagate garbage through your program.</p>
+
+<p>We're about to see all three approaches in action through the lens of floating-point numbers.</p>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ============================== -->
+<!-- PART 3: FLOATING POINT -->
+<!-- ============================== -->
+<section id="float-intro">
+<h2><span class="section-num">Part 3 — Floating Point Deep Dive</span>Why Study Float as a Type?</h2>
+
+<div class="why-box">
+<div class="label">Why Are We Learning This?</div>
+<p>You might wonder: why is a programming languages class talking about floating-point hardware? Here's why: <strong>float is a type.</strong> And it's a type with some of the trickiest design decisions in all of computing. By studying how float handles its edge cases (zero, overflow, undefined operations), we learn lessons about how to design <em>any</em> type — including types you'll invent yourself.</p>
+<p style="margin-bottom:0">The design choices made for float (use special values like infinity and NaN instead of crashing) are the exact same kinds of choices you'll face when designing your own data structures. Should popping an empty stack return a special value? Crash? Be caught at compile time? Float's designers faced these questions decades ago, and their answers affect every program running on every computer today.</p>
+</div>
+
+<p>Float is also an <strong>abstract type</strong> — languages don't let you directly manipulate the individual bits. You interact with it through operations (add, multiply, compare), and the representation is hidden. This is the same abstraction principle that applies to any well-designed type.</p>
+</section>
+
+<section id="float-layout">
+<h3>IEEE 754: The Bit Layout</h3>
+
+<p>A 32-bit float (called "single precision" in IEEE 754) is split into three parts:</p>
+
+<div class="diagram">
+<div class="bit-diagram">
+  <div class="bit-group">
+    <div class="bit-cells"><div class="bit-cell sign">s</div></div>
+    <div class="bit-label sign-l">Sign (1 bit)</div>
+  </div>
+  <div class="bit-group">
+    <div class="bit-cells">
+      <div class="bit-cell exp">e</div><div class="bit-cell exp">e</div><div class="bit-cell exp">e</div><div class="bit-cell exp">e</div>
+      <div class="bit-cell exp">e</div><div class="bit-cell exp">e</div><div class="bit-cell exp">e</div><div class="bit-cell exp">e</div>
+    </div>
+    <div class="bit-label exp-l">Exponent (8 bits)</div>
+  </div>
+  <div class="bit-group">
+    <div class="bit-cells">
+      <div class="bit-cell frac">f</div><div class="bit-cell frac">f</div><div class="bit-cell frac">f</div><div class="bit-cell frac">f</div>
+      <div class="bit-cell frac">f</div><div class="bit-cell frac">f</div><div class="bit-cell frac">f</div><div class="bit-cell frac">f</div>
+      <div class="bit-cell frac">f</div><div class="bit-cell frac">f</div><div class="bit-cell frac">f</div><div class="bit-cell frac">f</div>
+      <div class="bit-cell frac">f</div><div class="bit-cell frac">f</div><div class="bit-cell frac">f</div><div class="bit-cell frac">f</div>
+      <div class="bit-cell frac">f</div><div class="bit-cell frac">f</div><div class="bit-cell frac">f</div><div class="bit-cell frac">f</div>
+      <div class="bit-cell frac">f</div><div class="bit-cell frac">f</div><div class="bit-cell frac">f</div>
+    </div>
+    <div class="bit-label frac-l">Fraction (23 bits)</div>
+  </div>
+</div>
+<div class="diagram-caption">32 bits total: 1 sign + 8 exponent + 23 fraction</div>
+</div>
+
+<p><strong>Sign (s)</strong> — 1 bit. If it's 0, the number is positive. If it's 1, the number is negative. Simple.</p>
+
+<p><strong>Exponent (e)</strong> — 8 bits. This determines the <em>scale</em> of the number — how big or small it is. But it's not used directly. The actual exponent used in the formula is <code>e - 127</code>. This "bias" of 127 means that an exponent field of 127 means 2⁰ = 1, an exponent field of 128 means 2¹ = 2, and so on. This lets us represent both very large and very small numbers.</p>
+
+<p><strong>Fraction (f)</strong> — 23 bits. This is the <em>precision</em> — the significant digits of the number. It represents the fractional part after a binary point.</p>
+
+<p>For <strong>normal numbers</strong> (when 0 &lt; e &lt; 255), the formula is:</p>
+
+<div class="diagram">
+<div style="font-family:'Fraunces',serif;font-size:22px;padding:12px;">
+  value = ±2<sup>(e−127)</sup> × 1.f<sub style="font-size:12px">binary</sub>
+</div>
+<div class="diagram-caption">The "1." before f is the hidden one bit — it's implied, not stored</div>
+</div>
+
+<p>The <code>1.f</code> means: take the binary string <code>f</code>, put a "1." in front of it, and interpret that as a binary number. For example, if f = 01000...0, then 1.f = 1.01 in binary = 1.25 in decimal.</p>
+</section>
+
+<section id="hidden-bit">
+<h3>The Hidden One Bit</h3>
+
+<p>Here's a clever trick. Since we're representing <em>normalized</em> numbers (where the leading digit is non-zero), and since in binary the only non-zero digit is 1, the leading digit is <em>always</em> 1. So why waste a bit storing it? We don't. We just <em>assume</em> it's there.</p>
+
+<p>This gives us an extra bit of precision for free. Instead of 23 bits of precision, we effectively get <strong>24 bits</strong> (the 23 stored bits plus the hidden 1). For 32-bit floats, that's roughly 3% more precision — and in machine learning, where 16-bit and even 8-bit floats are common, this extra bit matters even more.</p>
+
+<div class="warning-box">
+<div class="label">The Problem</div>
+<p style="margin-bottom:0">But the hidden one bit creates a huge problem: if every number is of the form 1.something, then <strong>every number is non-zero</strong>. We can't represent zero! We can get close (make the exponent as small as possible), but 1.000...0 × 2<sup>-127</sup> is still not zero. This is the most important floating-point number, and our representation can't handle it.</p>
+</div>
+
+<p>This leads us to the first "special case" in the float design — and the broader lesson that when you design a type, you'll often need special cases for important edge values.</p>
+</section>
+
+<section id="representing-zero">
+<h3>Representing Zero (and ±0.0)</h3>
+
+<p>To represent zero, IEEE 754 carves out a special case: <strong>when e = 0</strong>, the rules change.</p>
+
+<p>When e = 0 and f = 0: the value is <strong>zero</strong>. Since the sign bit can still be 0 or 1, we get <em>two</em> zeros: <strong>+0.0</strong> and <strong>-0.0</strong>.</p>
+
+<div class="big-idea">
+<div class="label">Key Design Decision</div>
+<p>Having two zeros is mathematically weird — there's only one zero in real mathematics. This was actually <em>controversial</em> when the standard was being designed in the 1970s-80s. Professor Kahan at UC Berkeley (who led the IEEE 754 effort) argued for keeping -0.0 because it preserves useful information about the <em>direction</em> from which a computation approached zero.</p>
+<p style="margin-bottom:0">The practical result: <code>+0.0 == -0.0</code> evaluates to <strong>true</strong> (they compare as equal), but they have different bit patterns and can behave differently in certain operations. This means <strong>two values with different bit representations compare as equal</strong> — remember this, because NaN will give us the exact opposite problem.</p>
+</div>
+
+<p>How can you tell them apart? Division:</p>
+
+<pre><code><span class="nu">1.0</span> / +<span class="nu">0.0</span> = +infinity
+<span class="nu">1.0</span> / -<span class="nu">0.0</span> = -infinity</code></pre>
+
+<p>The sign of zero matters when you divide by it — it determines whether you get positive or negative infinity. This was Kahan's key argument for why -0.0 should exist.</p>
+</section>
+
+<section id="denormalized">
+<h3>Denormalized Numbers</h3>
+
+<p>When e = 0 but f ≠ 0, we get <strong>denormalized numbers</strong> (also called "subnormal" numbers). The formula changes:</p>
+
+<div class="diagram">
+<div style="font-family:'Fraunces',serif;font-size:22px;padding:12px;">
+  value = ±2<sup>−126</sup> × 0.f<sub style="font-size:12px">binary</sub>
+</div>
+<div class="diagram-caption">Notice: the hidden bit is now 0, not 1. And the exponent is fixed at -126.</div>
+</div>
+
+<p>Two critical changes: (1) the hidden bit becomes <strong>0</strong> instead of 1, and (2) the exponent is fixed at -126 (not -127, as you might expect from e-127 = 0-127 = -127 — this is a deliberate choice to avoid a gap in representable numbers).</p>
+
+<p><strong>Why do denormalized numbers exist?</strong> They solve a subtle but devastating bug called <strong>catastrophic cancellation underflow</strong>:</p>
+
+<div class="example-box">
+<div class="label">The Problem They Solve</div>
+<p>Without denormalized numbers, the smallest positive representable number would be 2<sup>-126</sup>. Anything smaller gets rounded to 0.</p>
+<p>Now imagine two numbers that are very close together: a = 2<sup>-126</sup> and b = 2<sup>-126</sup> - 2<sup>-150</sup>. These are <em>different numbers</em> (a ≠ b). But without denormalized numbers, both would be rounded to 2<sup>-126</sup>, and their difference a - b would be 0.</p>
+<p style="margin-bottom:0">This means <code>a != b</code> but <code>a - b == 0</code> — a direct violation of basic arithmetic that breaks many algorithms. Denormalized numbers prevent this by allowing numbers <em>smaller</em> than 2<sup>-126</sup> to be represented, so the difference between close-but-different numbers is always non-zero.</p>
+</div>
+
+<table class="compare-table">
+<tr><th></th><th>Normalized</th><th>Denormalized</th></tr>
+<tr><td><strong>Precision</strong></td><td>Higher — hidden 1 gives 24 bits total</td><td>Lower — leading 0 means fewer significant bits</td></tr>
+<tr><td><strong>CPU Speed</strong></td><td>Faster — CPUs are optimized for normalized floats</td><td>Slower — CPU must handle the special case</td></tr>
+<tr><td><strong>Purpose</strong></td><td>Represents most everyday floating-point values</td><td>Represents tiny values near zero; prevents catastrophic cancellation</td></tr>
+</table>
+</section>
+
+<section id="overflow-infinity">
+<h3>Overflow & Infinity</h3>
+
+<p>The largest representable normal float has e = 254 (not 255 — that's reserved) and all fraction bits set to 1, giving roughly 3.4 × 10<sup>38</sup>. What happens when a computation exceeds this?</p>
+
+<p><strong>In older systems and with integers:</strong> the behavior is <em>undefined</em>. The program might crash, produce garbage, or (with signed integer overflow in C) literally anything can happen.</p>
+
+<p><strong>In IEEE 754 floating point:</strong> you get <strong>infinity</strong>, which is the special case where e = 255 and f = 0.</p>
+
+<pre><code><span class="cm">// Overflow produces infinity, not a crash</span>
+<span class="nu">3.4e38</span> * <span class="nu">2.0</span>  →  +infinity
+
+<span class="cm">// Division by zero also produces infinity</span>
+<span class="nu">1.0</span> / <span class="nu">0.0</span>    →  +infinity
+<span class="nu">-1.0</span> / <span class="nu">0.0</span>   →  -infinity
+
+<span class="cm">// Infinity arithmetic is defined</span>
+infinity + <span class="nu">42</span>  →  infinity
+infinity * <span class="nu">-1</span>  →  -infinity</code></pre>
+
+<p>The sign of infinity follows the same rule as normal arithmetic — the sign of the result is the XOR of the operand signs.</p>
+
+<div class="connector">
+<div class="label">Connection to Type Design</div>
+<p style="margin-bottom:0">This is the "special values" approach from our three strategies. Instead of crashing (runtime error) or preventing overflow at compile time (which would be too restrictive for most programs), IEEE 754 uses a special value that propagates through computations. The program keeps running, and you can check for infinity later if you want.</p>
+</div>
+</section>
+
+<section id="nan">
+<h3>NaN — Not a Number</h3>
+
+<p>But infinity can't handle everything. What about:</p>
+
+<pre><code>infinity - infinity  →  ???  <span class="cm">(could be any number!)</span>
+<span class="nu">0.0</span> / <span class="nu">0.0</span>          →  ???  <span class="cm">(undefined in math)</span>
+sqrt(-<span class="nu">1.0</span>)         →  ???  <span class="cm">(no real answer)</span></code></pre>
+
+<p>For these, IEEE 754 has one more special case: e = 255 and f ≠ 0. This is <strong>NaN</strong> (Not a Number).</p>
+
+<div class="definition">
+<div class="label">Definition — NaN</div>
+<p style="margin-bottom:0"><strong>NaN</strong> represents a computation that has gone so far off the rails that the result isn't even a number anymore. It's a floating-point <em>value</em>, but it is <strong>not a number</strong>. Once a NaN appears, it "infects" all further arithmetic: NaN + x = NaN, NaN * x = NaN, and so on.</p>
+</div>
+
+<p>There are actually many different NaN values — since f can be any non-zero 23-bit value and the sign can be 0 or 1, there are roughly 2<sup>24</sup> - 2 different NaN bit patterns. The standard doesn't specify exactly which NaN you get from a given operation — that's up to the hardware.</p>
+
+<p><strong>Real-world consequence:</strong> Weather maps sometimes display "NaN" where a sensor stopped working and the software divided zero by zero (or did some other undefined computation). The NaN propagated through the entire weather calculation pipeline and showed up in the final display. Wouldn't it be nice if the compiler caught this before the program ever ran?</p>
+</section>
+
+<section id="nan-comparison">
+<h3>NaN & Broken Comparisons</h3>
+
+<p>Here's where NaN gets truly weird, and where it reveals deep problems for type systems.</p>
+
+<p>If x is NaN, what should <code>x &lt; 1</code> return? The "correct" answer is <em>neither true nor false</em> — the comparison itself is meaningless, because NaN isn't on the number line. But booleans only have two values! The designers couldn't return a "third value" without breaking every if-statement ever written.</p>
+
+<p>Their solution: <strong>all comparisons involving NaN return false.</strong></p>
+
+<pre><code><span class="cm">// If x is NaN:</span>
+x < <span class="nu">1</span>    →  <span class="kw">false</span>
+x > <span class="nu">1</span>    →  <span class="kw">false</span>
+x == <span class="nu">1</span>   →  <span class="kw">false</span>
+x == x   →  <span class="kw">false</span>   <span class="cm">// NaN is not equal to ITSELF!</span></code></pre>
+
+<p>Read that last line again. A NaN value, compared to <em>itself</em> — the exact same bit pattern in the exact same register — returns <strong>false</strong>. This means:</p>
+
+<div class="warning-box">
+<div class="label">Two Broken Rules of Normal Logic</div>
+<p><strong>1. ±0.0:</strong> Two <em>different</em> bit patterns compare as <em>equal</em> (+0.0 == -0.0 is true).</p>
+<p style="margin-bottom:0"><strong>2. NaN:</strong> Two <em>identical</em> bit patterns compare as <em>not equal</em> (NaN == NaN is false).</p>
+</div>
+
+<p>This also means that <code>!(x &lt; y)</code> is <strong>not the same</strong> as <code>x &gt;= y</code> when NaN is involved:</p>
+
+<pre><code><span class="cm">// If x is NaN:</span>
+x < y        →  <span class="kw">false</span>
+!(x < y)     →  !(<span class="kw">false</span>)  →  <span class="kw">true</span>   <span class="cm">// suggests x >= y</span>
+
+x >= y       →  <span class="kw">false</span>          <span class="cm">// but this is also false!</span>
+
+<span class="cm">// So: !(x < y) ≠ (x >= y)  — basic logic is broken!</span></code></pre>
+
+<p>You can actually exploit this weirdness to detect NaN:</p>
+
+<pre><code><span class="tp">bool</span> <span class="fn">isNaN</span>(<span class="tp">float</span> x) {
+    <span class="kw">return</span> x != x;  <span class="cm">// only true if x is NaN</span>
+}</code></pre>
+
+<div class="quiz" id="quiz-nan1">
+<div class="quiz-label">Check Your Understanding</div>
+<div class="quiz-header">If x is NaN, what does <code>x == x</code> evaluate to?</div>
+<div class="quiz-options">
+  <button class="quiz-option" onclick="checkQuiz('quiz-nan1', this, false)">true — a value always equals itself</button>
+  <button class="quiz-option" onclick="checkQuiz('quiz-nan1', this, true)">false — NaN doesn't compare equal to anything, including itself</button>
+  <button class="quiz-option" onclick="checkQuiz('quiz-nan1', this, false)">It causes a runtime error</button>
+  <button class="quiz-option" onclick="checkQuiz('quiz-nan1', this, false)">It depends on the specific NaN bit pattern</button>
+</div>
+<div class="quiz-feedback" id="quiz-nan1-fb"></div>
+</div>
+</section>
+
+<section id="three-strategies">
+<h3>Three Strategies for Handling Bad Values</h3>
+
+<p>Let's zoom out and see what we've learned about handling errors in types:</p>
+
+<table class="compare-table">
+<tr><th>Strategy</th><th>How It Works</th><th>Pros</th><th>Cons</th></tr>
+<tr><td><strong>Runtime error (crash)</strong></td><td>When bad things happen, the program stops immediately</td><td>Can't do any damage with garbage data</td><td>Program crashes — maybe at 3 AM in production</td></tr>
+<tr><td><strong>Special values</strong> (NaN, infinity)</td><td>Return a sentinel value and keep going</td><td>Program doesn't crash; computations continue</td><td>Garbage can propagate silently; broken comparison logic</td></tr>
+<tr><td><strong>Compile-time checking</strong></td><td>The compiler prevents the error before the program runs</td><td>Safest — bugs caught before deployment</td><td>Programs get longer/harder to write; impractical for floats</td></tr>
+</table>
+
+<p>Why doesn't float use compile-time checking? Because it would require you to prove at compile time that no overflow, underflow, or undefined operation is possible — which would roughly double program size and make float arithmetic painfully verbose. The users of floating point (scientists, ML engineers) don't want that. They want to throw numbers together and deal with problems later. Many machine learning algorithms actually <em>don't care</em> about rounding errors because the numbers are approximate anyway.</p>
+
+<p>Hardware actually gives you a choice: every x86 and ARM chip has a special bit you can turn on that switches from "special values" mode to "crash on error" mode. Almost nobody turns it on — but it's there.</p>
+
+<p>When you design your own types, you'll face the same three choices. The right answer depends on your users and your use case.</p>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ============================== -->
+<!-- PART 4: TYPE EQUIVALENCE -->
+<!-- ============================== -->
+<section id="abstract-concrete">
+<h2><span class="section-num">Part 4 — Type Equivalence</span>Abstract vs. Concrete Types</h2>
+
+<div class="why-box">
+<div class="label">Why Are We Learning This?</div>
+<p style="margin-bottom:0">We've been designing and exploring individual types. Now we ask a bigger question: when you have <em>two</em> types, <strong>are they the same?</strong> This sounds simple, but the answer has profound implications for how languages work — and different languages answer it differently.</p>
+</div>
+
+<p>First, a quick distinction. A <strong>concrete type</strong> is one where you can see and manipulate the internal representation. A <strong>abstract type</strong> is one where the internal structure is hidden — you interact with it only through defined operations.</p>
+
+<p><code>float</code> is an <strong>abstract type</strong> in most languages. You can't peek at the individual bits (sign, exponent, fraction) directly. You just use operations like +, -, *, /. In fact, different hardware might arrange the bits in a different order, and your program would still work, because you never look at the bits directly.</p>
+</section>
+
+<section id="structural-equiv">
+<h3>Structural Equivalence</h3>
+
+<div class="definition">
+<div class="label">Definition — Structural Equivalence</div>
+<p style="margin-bottom:0">Two types are <strong>structurally equivalent</strong> if they have the same structure — they're built the same way from the same primitives. It doesn't matter what they're <em>named</em>; if they're constructed identically, they're the same type.</p>
+</div>
+
+<div class="example-box">
+<div class="label">Example</div>
+<pre><code><span class="cm">(* OCaml — both are really just ints underneath *)</span>
+<span class="kw">type</span> <span class="tp">A</span> = <span class="tp">int</span>
+<span class="kw">type</span> <span class="tp">B</span> = <span class="tp">int</span></code></pre>
+<p style="margin-bottom:0">Under structural equivalence, A and B are the <strong>same type</strong> — because they're both built from <code>int</code> in the same way. You could assign a value of type A to a variable of type B with no problem.</p>
+</div>
+
+<p><strong>Advantage:</strong> Flexible. You don't need to worry about naming conflicts.</p>
+<p><strong>Disadvantage:</strong> Semantically dangerous. Just because two types have the same structure doesn't mean they represent the same <em>concept</em>.</p>
+</section>
+
+<section id="name-equiv">
+<h3>Name Equivalence</h3>
+
+<div class="definition">
+<div class="label">Definition — Name Equivalence</div>
+<p style="margin-bottom:0">Two types are <strong>name-equivalent</strong> if and only if they have the <strong>same name</strong>. Different names = different types, even if they're structured identically.</p>
+</div>
+
+<div class="example-box">
+<div class="label">Example</div>
+<pre><code><span class="cm">// C++ — two structs with identical internals</span>
+<span class="kw">struct</span> <span class="tp">X</span> { <span class="tp">int</span> data; <span class="tp">X</span>* next; };
+<span class="kw">struct</span> <span class="tp">Y</span> { <span class="tp">int</span> data; <span class="tp">Y</span>* next; };</code></pre>
+<p style="margin-bottom:0">Under name equivalence (which C++ uses for structs), X and Y are <strong>different types</strong> — even though they have exactly the same fields in the same order. You cannot pass a <code>struct X</code> to a function expecting <code>struct Y</code>.</p>
+</div>
+
+<p><strong>Advantage:</strong> Safe. Prevents accidentally mixing up types that happen to have the same structure but mean different things.</p>
+<p><strong>Disadvantage:</strong> Restrictive. Sometimes you <em>want</em> two identically-structured types to be interchangeable.</p>
+
+<table class="compare-table">
+<tr><th></th><th>Structural Equivalence</th><th>Name Equivalence</th></tr>
+<tr><td><strong>How compared</strong></td><td>By internal structure / shape</td><td>By the name of the type</td></tr>
+<tr><td><strong>Flexibility</strong></td><td>More flexible</td><td>More restrictive</td></tr>
+<tr><td><strong>Safety</strong></td><td>Less safe — easy to mix up semantics</td><td>Very safe — prevents semantic bugs</td></tr>
+<tr><td><strong>Example languages</strong></td><td>OCaml, ML, TypeScript</td><td>C, C++, Java</td></tr>
+</table>
+</section>
+
+<section id="c-both">
+<h3>C/C++: Uses Both!</h3>
+
+<p>Here's the twist: C and C++ actually use <em>both</em> forms of equivalence in different situations.</p>
+
+<p><strong>Name equivalence</strong> for <code>struct</code> and <code>class</code>:</p>
+<pre><code><span class="kw">struct</span> <span class="tp">X</span> { <span class="tp">int</span> data; <span class="tp">X</span>* next; };
+<span class="kw">struct</span> <span class="tp">Y</span> { <span class="tp">int</span> data; <span class="tp">Y</span>* next; };
+<span class="cm">// X and Y are DIFFERENT types (name equivalence)</span></code></pre>
+
+<p><strong>Structural equivalence</strong> for <code>typedef</code>:</p>
+<pre><code><span class="kw">typedef</span> <span class="tp">int</span> <span class="tp">pid_t</span>;
+<span class="kw">typedef</span> <span class="tp">int</span> <span class="tp">uid_t</span>;
+<span class="cm">// pid_t and uid_t are the SAME type (structural equivalence)</span>
+<span class="cm">// Both are just int underneath</span>
+
+<span class="tp">pid_t</span> x;
+<span class="tp">uid_t</span> y;
+x = y + <span class="nu">1</span>;  <span class="cm">// This compiles! Even though PIDs and UIDs are different concepts</span></code></pre>
+
+<p>Why the inconsistency? <strong>Convenience.</strong> If <code>typedef</code> used name equivalence, you couldn't add 1 to a uid_t to iterate through user IDs. C's designers decided that <code>typedef</code> is just an alias — a shorthand name for an existing type — not a new type.</p>
+
+<p>The result: <code>pid_t</code> and <code>uid_t</code> are semantically different things (process IDs and user IDs), but C treats them as the same type. You can accidentally assign a PID to a UID variable, and the compiler won't complain. This is the trade-off C made: convenience over safety.</p>
+
+<div class="quiz" id="quiz-equiv1">
+<div class="quiz-label">Check Your Understanding</div>
+<div class="quiz-header">In C, if you write <code>typedef int pid_t;</code> and <code>typedef int uid_t;</code>, are pid_t and uid_t the same type?</div>
+<div class="quiz-options">
+  <button class="quiz-option" onclick="checkQuiz('quiz-equiv1', this, true)">Yes — C uses structural equivalence for typedef, and both are just int</button>
+  <button class="quiz-option" onclick="checkQuiz('quiz-equiv1', this, false)">No — they have different names, so they're different types</button>
+  <button class="quiz-option" onclick="checkQuiz('quiz-equiv1', this, false)">It depends on the compiler</button>
+</div>
+<div class="quiz-feedback" id="quiz-equiv1-fb"></div>
+</div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ============================== -->
+<!-- PART 5: SUBTYPES -->
+<!-- ============================== -->
+<section id="subtype-intro">
+<h2><span class="section-num">Part 5 — Subtypes</span>What Is a Subtype?</h2>
+
+<div class="connector">
+<div class="label">Connecting to the Bigger Picture</div>
+<p style="margin-bottom:0">Type equivalence asks "are these two types the same?" But there's a more general and more important question: "is type T a <em>kind of</em> type U?" This is the <strong>subtype</strong> question, and it's the foundation of how inheritance works in object-oriented programming — and much more.</p>
+</div>
+
+<div class="definition">
+<div class="label">Definition — Subtype</div>
+<p style="margin-bottom:0">Type T is a <strong>subtype</strong> of type U (written T ⊆ U) if every value of type T can safely be used wherever a value of type U is expected. In other words: every T value is also a valid U value.</p>
+</div>
+
+<p>If T is a subtype of U, and U is a subtype of T, then T and U are <em>equivalent</em> types. So subtyping is a generalization of type equivalence.</p>
+
+<p>Subtyping is fundamentally about <strong>safe substitution</strong>: can I take a value of type T and use it anywhere type U is expected, without anything breaking? Let's see why this is trickier than it sounds.</p>
+</section>
+
+<section id="int-long">
+<h3>Example: int vs. long</h3>
+
+<p>Is <code>int</code> a subtype of <code>long</code>? Every int value fits inside a long (a long is at least as big as an int). So intuitively, yes — every int value is a valid long value.</p>
+
+<p>But now: is <code>int[]</code> (an array of ints) a subtype of <code>long[]</code> (an array of longs)?</p>
+
+<p>Intuitively, it seems like it should be. But in C-like languages, the answer is <strong>no</strong>, and here's why:</p>
+
+<p>Arrays in C are represented as a pointer to the first element. To access element N, you do: <code>base_address + N × element_size</code>. For <code>int[]</code>, each element is 4 bytes, so you jump by 4 bytes. For <code>long[]</code>, each element is 8 bytes, so you jump by 8 bytes.</p>
+
+<p>If you passed an <code>int[]</code> to a function expecting <code>long[]</code>, the function would try to read 8 bytes per element from an array where elements are only 4 bytes wide — it would read garbage. The internal representation is physically incompatible.</p>
+
+<div class="big-idea">
+<div class="label">Key Insight</div>
+<p style="margin-bottom:0">Subtyping is about <strong>safe substitution</strong>, not just value ranges. Even though every int value fits in a long, arrays of int and arrays of long have different memory layouts and cannot be safely substituted.</p>
+</div>
+</section>
+
+<section id="class-subtyping">
+<h3>Example: Class Inheritance</h3>
+
+<p>The most familiar form of subtyping is class inheritance in object-oriented programming:</p>
+
+<pre><code><span class="kw">class</span> <span class="tp">C</span> <span class="kw">extends</span> <span class="tp">D</span> {
+    <span class="cm">// C has everything D has, plus more</span>
+}</code></pre>
+
+<p>Here, C is a <strong>subtype</strong> of D. Every C object is also a valid D object. If a function expects a D, you can pass it a C — because C has all of D's methods (and more).</p>
+
+<p>Notice the pattern:</p>
+
+<div class="diagram">
+<div style="display:inline-flex;flex-direction:column;gap:8px;font-family:'JetBrains Mono',monospace;font-size:14px;align-items:center;">
+<div style="background:var(--blue-bg);border:2px solid var(--blue);padding:10px 40px;border-radius:8px;">D — supertype (parent)<br><span style="font-size:12px;color:var(--text-secondary)">has method m()</span></div>
+<div style="font-size:20px;">↑ extends</div>
+<div style="background:var(--green-bg);border:2px solid var(--green);padding:10px 40px;border-radius:8px;">C — subtype (child)<br><span style="font-size:12px;color:var(--text-secondary)">has methods m(), n(), o(), p()</span></div>
+</div>
+<div class="diagram-caption">Subtypes are MORE SPECIFIC and have MORE operations than their supertypes</div>
+</div>
+
+<p>This is counterintuitive: the <strong>subtype</strong> has a <strong>superset</strong> of operations. D is vague and generic (few methods). C is specific and powerful (many methods). Since C can do everything D can do (and more), a C value is always safe to use where a D is expected.</p>
+</section>
+
+<section id="const-pointers">
+<h3>Example: const Pointers in C</h3>
+
+<p>This is where subtyping gets tricky and interesting. Consider these two types:</p>
+
+<pre><code><span class="tp">char</span>*          <span class="cm">// pointer to char — can read AND write through the pointer</span>
+<span class="tp">char const</span>*    <span class="cm">// pointer to const char — can only READ through the pointer</span></code></pre>
+
+<p>First, let's be precise about what <code>char const*</code> means. It does <strong>not</strong> mean "a pointer to a character that can never change." It means "I promise not to modify the character <em>through this pointer</em>." The character itself might be modified by other means:</p>
+
+<pre><code><span class="tp">char</span> c = <span class="st">'x'</span>;
+<span class="tp">char const</span>* p = &c;    <span class="cm">// p promises not to modify c through p</span>
+
+<span class="tp">char</span> d = *p;            <span class="cm">// reading through p is fine</span>
+<span class="cm">// *p = 'y';            // ILLEGAL — can't write through a const pointer</span>
+
+c = <span class="st">'y'</span>;                <span class="cm">// perfectly legal! c can be modified directly</span>
+<span class="tp">char</span> e = *p;            <span class="cm">// now e is 'y' — the value changed, even though p is const</span></code></pre>
+
+<p>Now: is <code>char*</code> a subtype of <code>char const*</code>, or the other way around?</p>
+
+<p>Apply the subtyping rule from class inheritance: the subtype has <em>more</em> capabilities. <code>char*</code> can do everything <code>char const*</code> can do (read) <strong>plus more</strong> (write). So <code>char*</code> is more powerful, more specific — it's the <strong>subtype</strong>.</p>
+
+<p style="text-align:center;font-family:'Fraunces',serif;font-size:20px;margin:20px 0;"><code>char*</code> ⊆ <code>char const*</code></p>
+
+<p>This means you can assign a <code>char*</code> to a <code>char const*</code> variable (you're giving up write capability — safe), but NOT the other way around (you'd be gaining write capability that wasn't promised — unsafe).</p>
+
+<div class="quiz" id="quiz-subtype1">
+<div class="quiz-label">Check Your Understanding</div>
+<div class="quiz-header">Why is <code>char*</code> a subtype of <code>char const*</code>?</div>
+<div class="quiz-options">
+  <button class="quiz-option" onclick="checkQuiz('quiz-subtype1', this, false)">Because char* takes up less memory</button>
+  <button class="quiz-option" onclick="checkQuiz('quiz-subtype1', this, true)">Because char* can do everything char const* can do (read), plus more (write) — so every char* value can safely be used as a char const*</button>
+  <button class="quiz-option" onclick="checkQuiz('quiz-subtype1', this, false)">Because const means "constant" so it's a subset of all characters</button>
+  <button class="quiz-option" onclick="checkQuiz('quiz-subtype1', this, false)">They're actually the same type, not subtypes</button>
+</div>
+<div class="quiz-feedback" id="quiz-subtype1-fb"></div>
+</div>
+</section>
+
+<section id="volatile">
+<h3>Example: volatile</h3>
+
+<p><code>char volatile*</code> is a pointer that tells the compiler: "the value at this memory address can change at any time, for reasons you can't see in the code — don't optimize away reads or writes."</p>
+
+<p>This is used for hardware device registers (where the hardware can change the value) and multithreaded programs (where another thread can change the value).</p>
+
+<p>The subtyping question: <code>volatile</code> places restrictions on what the <em>compiler</em> can do (no caching reads, no reordering writes). Since it adds restrictions, the same logic applies as with <code>const</code>:</p>
+
+<p style="text-align:center;font-family:'Fraunces',serif;font-size:20px;margin:20px 0;"><code>char*</code> ⊆ <code>char volatile*</code></p>
+
+<p>A regular <code>char*</code> doesn't promise volatile semantics, so it can be used anywhere volatile is expected (the compiler will just be more cautious). But a <code>char volatile*</code> shouldn't be used where a regular <code>char*</code> is expected, because optimizations that assume the value doesn't change would be unsafe.</p>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ============================== -->
+<!-- PART 6: POLYMORPHISM -->
+<!-- ============================== -->
+<section id="poly-intro">
+<h2><span class="section-num">Part 6 — Polymorphism</span>What Is Polymorphism?</h2>
+
+<div class="why-box">
+<div class="label">Why Are We Learning This?</div>
+<p style="margin-bottom:0">We've spent the whole lecture building up from "what is a type" to how types relate to each other (equivalence, subtypes). Now we ask: what happens when a single function or operator can work with <em>multiple</em> types? This is <strong>polymorphism</strong> — literally "many forms" from Greek — and it's one of the most powerful ideas in programming language design. It's the reason you can use <code>+</code> on both integers and floats, and the reason Java generics and OCaml's <code>'a list</code> work.</p>
+</div>
+
+<div class="definition">
+<div class="label">Definition — Polymorphism</div>
+<p style="margin-bottom:0">A function or operator is <strong>polymorphic</strong> if it can accept arguments of different types and/or return different types, depending on context. The same symbol or name has "many forms."</p>
+</div>
+
+<p>There are three main kinds of polymorphism, each with different mechanisms and trade-offs:</p>
+
+<div class="roadmap">
+  <div class="roadmap-item"><div class="roadmap-dot"></div><div class="roadmap-text"><strong>Overloading (ad hoc polymorphism)</strong><span>Same name, different implementations for different types</span></div></div>
+  <div class="roadmap-item"><div class="roadmap-dot"></div><div class="roadmap-text"><strong>Coercion</strong><span>Implicit type conversion to make things "just work"</span></div></div>
+  <div class="roadmap-item"><div class="roadmap-dot"></div><div class="roadmap-text"><strong>Parametric polymorphism</strong><span>One implementation that works for ALL types (generics)</span></div></div>
+</div>
+</section>
+
+<section id="overloading">
+<h3>Overloading (Ad Hoc Polymorphism)</h3>
+
+<div class="definition">
+<div class="label">Definition — Overloading</div>
+<p style="margin-bottom:0"><strong>Overloading</strong> means a single function name or operator symbol has <strong>multiple definitions</strong> that are distinguished by the types of their arguments. The compiler picks the right one based on what types you pass.</p>
+</div>
+
+<p>The simplest example: the <code>+</code> operator.</p>
+
+<pre><code><span class="cm">// The + operator is "overloaded" — it means different things</span>
+<span class="cm">// for different types:</span>
+
+<span class="nu">3</span> + <span class="nu">5</span>           <span class="cm">// integer addition (uses ADD instruction)</span>
+<span class="nu">3.0</span> + <span class="nu">5.0</span>       <span class="cm">// floating-point addition (uses FADD instruction)</span>
+<span class="st">"hi"</span> + <span class="st">"there"</span>  <span class="cm">// string concatenation (calls a function)</span></code></pre>
+
+<p>Even though all three use <code>+</code>, they're doing <strong>completely different things</strong> at the machine level — different instructions, different hardware units. The compiler looks at the types of the operands and generates the appropriate code.</p>
+
+<p>You can also overload functions explicitly:</p>
+
+<pre><code><span class="cm">// C++ — two different functions with the same name</span>
+<span class="tp">int</span> <span class="fn">square</span>(<span class="tp">int</span> x)    { <span class="kw">return</span> x * x; }
+<span class="tp">double</span> <span class="fn">square</span>(<span class="tp">double</span> x) { <span class="kw">return</span> x * x; }
+
+<span class="fn">square</span>(<span class="nu">5</span>);     <span class="cm">// calls the int version</span>
+<span class="fn">square</span>(<span class="nu">5.0</span>);   <span class="cm">// calls the double version</span></code></pre>
+
+<p><strong>How is overloading implemented?</strong> At the machine level, the compiler uses <strong>name mangling</strong> — it takes the function name and appends the argument types to create a unique name. So <code>square(int)</code> might become <code>square$int</code> and <code>square(double)</code> becomes <code>square$double</code> internally. These are actually two completely separate functions that just share a name in the source code.</p>
+
+<p>This has been around since the very first programming languages. Fortran (1957) had overloaded arithmetic operators and even overloaded math functions like <code>cos(x)</code>, which called different implementations depending on whether x was single or double precision.</p>
+
+<div class="example-box">
+<div class="label">Overloading with Objects</div>
+<pre><code><span class="cm">// C++ — method overloading with objects</span>
+obj1.<span class="fn">method</span>(x);
+obj2.<span class="fn">method</span>(y, z);
+
+<span class="cm">// Even if obj1 and obj2 are the same type, these call</span>
+<span class="cm">// different method implementations because the argument</span>
+<span class="cm">// lists are different.</span></code></pre>
+</div>
+</section>
+
+<section id="coercion">
+<h3>Coercion — Implicit Type Conversion</h3>
+
+<div class="definition">
+<div class="label">Definition — Coercion</div>
+<p style="margin-bottom:0"><strong>Coercion</strong> (also called implicit conversion) is when the language <em>automatically</em> converts a value from one type to another to make an operation work. You don't write a cast — the language does it for you.</p>
+</div>
+
+<p>Coercion exists to simplify overloading. Without coercion, if you have 3 types (int, float, bool) and the <code>+</code> operator, you'd need 9 different implementations (every combination of two types). With coercion, you only need 2 (int+int and float+float), and the language automatically converts operands to match.</p>
+
+<pre><code><span class="cm">// int + float — what happens?</span>
+<span class="tp">int</span> a = <span class="nu">5</span>;
+<span class="tp">float</span> b = <span class="nu">3.14</span>;
+<span class="tp">float</span> c = a + b;
+
+<span class="cm">// The compiler implicitly converts a to float:</span>
+<span class="cm">// float c = ((float) a) + b;</span>
+<span class="cm">// Result: c = 8.14 (floating-point addition)</span></code></pre>
+
+<div class="warning-box">
+<div class="label">Coercion Can Lose Information!</div>
+<p>Here's a subtle and dangerous case:</p>
+<pre style="background:var(--bg-code);color:#cdd6f4;padding:16px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:14px;margin:12px 0;"><code>int i = 0x7FFFFFFF;  // 2,147,483,647 (max 32-bit int)
+float f = i;         // implicit conversion: int → float</code></pre>
+<p>The int has 31 bits of meaningful data. But a 32-bit float only has <strong>24 bits of precision</strong> (23 fraction bits + 1 hidden bit). So the conversion <em>loses information</em> — f won't exactly equal i. It will be rounded to 2,147,483,648 (2<sup>31</sup>).</p>
+<p style="margin-bottom:0">Now if you use f in a computation, you're working with a slightly wrong number, and the compiler didn't warn you. This is the fundamental problem with coercion: <strong>it trades safety for convenience.</strong></p>
+</div>
+
+<p>Another classic coercion trap:</p>
+
+<pre><code><span class="tp">unsigned int</span> a = <span class="nu">5</span>;
+<span class="kw">if</span> (a > -<span class="nu">1</span>) { ... }  <span class="cm">// Always TRUE? No — always FALSE!</span>
+
+<span class="cm">// Why: -1 is coerced to unsigned, becoming 4,294,967,295 (max uint)</span>
+<span class="cm">// So this is really: if (5 > 4294967295) — which is false</span></code></pre>
+
+<p>OCaml avoids all of this by <strong>not doing implicit coercion</strong>. If you want to add an int and a float, you must explicitly convert: <code>float_of_int a +. b</code>. OCaml even uses <em>different operators</em> for int addition (<code>+</code>) and float addition (<code>+.</code>). This is more verbose, but eliminates an entire class of bugs.</p>
+</section>
+
+<section id="parametric">
+<h3>Parametric Polymorphism</h3>
+
+<div class="connector">
+<div class="label">Connecting to the Bigger Picture</div>
+<p style="margin-bottom:0">Overloading and coercion are called "ad hoc polymorphism" — they were invented early and kind of bolted on. Now we get to the elegant version: <strong>parametric polymorphism</strong>, where a single piece of code works for <em>any</em> type. This is what makes OCaml's <code>'a list</code> work, and what Java generics (<code>List&lt;T&gt;</code>) are based on. ML was one of the first languages to get this right.</p>
+</div>
+
+<div class="definition">
+<div class="label">Definition — Parametric Polymorphism</div>
+<p style="margin-bottom:0"><strong>Parametric polymorphism</strong> lets you write code using <strong>type variables</strong> (type parameters) instead of concrete types. The same code works for <em>any</em> type that the variable is instantiated with — and you get type safety guaranteed by the compiler.</p>
+</div>
+
+<p>In OCaml, when you write:</p>
+
+<pre><code><span class="kw">let rec</span> <span class="fn">reverse</span> l = <span class="kw">match</span> l <span class="kw">with</span>
+  | [] -> []
+  | h :: t -> (<span class="fn">reverse</span> t) @ [h]</code></pre>
+
+<p>OCaml infers the type as <code>'a list -> 'a list</code>. The <code>'a</code> is a type variable — this function works for <code>int list</code>, <code>string list</code>, <code>bool list list</code>, anything. And it's <em>one</em> implementation, not a different function for each type.</p>
+
+<p>Why does this work? Because the code doesn't depend on what <code>'a</code> is. It only uses list operations (pattern matching, append). It never adds, compares, or does anything type-specific to the elements. This is the key insight: <strong>if the code doesn't depend on properties of the concrete type, it can be generic.</strong></p>
+
+<p>This gives us three things overloading and coercion don't:</p>
+<p><strong>Reusability</strong> — one function works for all types.</p>
+<p><strong>Type safety</strong> — the compiler guarantees correct usage at compile time.</p>
+<p><strong>No information loss</strong> — no coercion means no rounding, no truncation.</p>
+</section>
+
+<section id="old-java">
+<h3>Old Java — Before Parametric Polymorphism</h3>
+
+<p>To really appreciate parametric polymorphism, let's see what life was like without it.</p>
+
+<p>In old Java (before version 5, released in 2004), every object was ultimately of type <code>Object</code>. If you wanted a collection that could hold strings, you had to use <code>Collection</code> (which held <code>Object</code>s) and manually cast:</p>
+
+<pre><code><span class="cm">// Old Java — remove all single-character strings from a collection</span>
+<span class="kw">for</span> (<span class="tp">Iterator</span> i = c.iterator(); i.hasNext();) {
+    <span class="cm">// i.next() returns Object — we MUST cast to String</span>
+    <span class="kw">if</span> ((<span class="tp">(String)</span> i.next()).length() == <span class="nu">1</span>)
+        i.remove();
+}</code></pre>
+
+<p>The problems:</p>
+
+<p><strong>1. No compile-time safety.</strong> The compiler doesn't know that the collection contains strings. If someone accidentally adds an Integer to the collection, the code compiles fine — but crashes at runtime when the <code>(String)</code> cast fails.</p>
+
+<p><strong>2. Runtime overhead.</strong> Every cast has to be checked at runtime (is this really a String?). That costs CPU time.</p>
+
+<p><strong>3. You only find bugs when the code runs.</strong> If the bad element happens to be at position 10,000 in the collection, you won't discover the bug until the loop gets there — maybe days after deployment.</p>
+</section>
+
+<section id="new-java">
+<h3>New Java — With Parametric Polymorphism (Generics)</h3>
+
+<p>Java 5 added generics — parametric polymorphism. Now you can say <em>what type</em> a collection contains:</p>
+
+<pre><code><span class="cm">// New Java — the collection is declared as holding Strings</span>
+<span class="kw">for</span> (<span class="tp">Iterator&lt;String&gt;</span> i = c.iterator(); i.hasNext();) {
+    <span class="cm">// i.next() returns String — no cast needed!</span>
+    <span class="kw">if</span> (i.next().length() == <span class="nu">1</span>)
+        i.remove();
+}</code></pre>
+
+<p>The improvements:</p>
+
+<p><strong>1. Compile-time safety.</strong> If someone tries to add an Integer to a <code>Collection&lt;String&gt;</code>, the compiler catches it immediately — before the program ever runs.</p>
+
+<p><strong>2. No casts.</strong> <code>i.next()</code> returns a <code>String</code> directly, not an <code>Object</code> that needs casting. Less code, fewer chances for mistakes.</p>
+
+<p><strong>3. No runtime overhead.</strong> The compiler already verified the types. No runtime checks needed.</p>
+
+<table class="compare-table">
+<tr><th></th><th>Old Java (pre-generics)</th><th>New Java (with generics)</th></tr>
+<tr><td><strong>Collection type</strong></td><td><code>Collection</code> (holds Object)</td><td><code>Collection&lt;String&gt;</code></td></tr>
+<tr><td><strong>Getting elements</strong></td><td>Returns Object; manual cast</td><td>Returns String directly</td></tr>
+<tr><td><strong>Type errors</strong></td><td>Discovered at runtime (crash)</td><td>Caught at compile time</td></tr>
+<tr><td><strong>Performance</strong></td><td>Runtime cast checking overhead</td><td>No overhead — types verified at compile time</td></tr>
+</table>
+
+<div class="quiz" id="quiz-poly1">
+<div class="quiz-label">Check Your Understanding</div>
+<div class="quiz-header">What is the main advantage of parametric polymorphism over the old approach of using a universal Object type?</div>
+<div class="quiz-options">
+  <button class="quiz-option" onclick="checkQuiz('quiz-poly1', this, false)">Programs run faster because parametric polymorphism uses less memory</button>
+  <button class="quiz-option" onclick="checkQuiz('quiz-poly1', this, false)">It allows you to put different types in the same collection</button>
+  <button class="quiz-option" onclick="checkQuiz('quiz-poly1', this, true)">The compiler catches type errors before the program runs, eliminating runtime crashes from bad casts</button>
+  <button class="quiz-option" onclick="checkQuiz('quiz-poly1', this, false)">It makes code shorter because you don't have to use generics syntax</button>
+</div>
+<div class="quiz-feedback" id="quiz-poly1-fb"></div>
+</div>
+
+<div class="big-idea">
+<div class="label">The Recurring Theme</div>
+<p style="margin-bottom:0">Throughout this entire lecture, we've seen the same theme over and over: <strong>catching errors at compile time is safer than catching them at runtime.</strong> OCaml's discriminated unions catch null pointer bugs at compile time. OCaml's type inference catches type mismatches at compile time. Java's generics catch collection-type bugs at compile time. Even the float discussion was about whether we <em>could</em> catch floating-point errors at compile time (we concluded it's too impractical for floats, so we use special values instead). The design of a type system is fundamentally about deciding <em>where</em> on the spectrum from "total compile-time safety" to "anything goes at runtime" your language should sit.</p>
+</div>
+</section>
+
+</main>
+
+
+
+</body>
+</html>

@@ -1,0 +1,1658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 11 — Logic Programming & Prolog</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf8f4;
+  --text: #1a1a1a;
+  --text-secondary: #555;
+  --accent: #c0392b;
+  --accent-light: #e74c3c;
+  --accent-bg: #fdf0ef;
+  --code-bg: #2b2b2b;
+  --code-text: #f8f8f2;
+  --border: #e0ddd6;
+  --card-bg: #fff;
+  --success: #27ae60;
+  --success-bg: #eafaf1;
+  --warning: #f39c12;
+  --warning-bg: #fef9e7;
+  --info: #2980b9;
+  --info-bg: #ebf5fb;
+  --highlight: #fff3cd;
+  --sidebar-bg: #f5f3ee;
+  --chapter-indicator: #c0392b;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Source Serif 4', Georgia, serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Layout ─── */
+.page-wrapper {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ─── Sidebar Navigation ─── */
+.sidebar {
+  width: 280px;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 2rem 0;
+  z-index: 100;
+  transition: transform 0.3s ease;
+}
+
+.sidebar-header {
+  padding: 0 1.5rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1rem;
+}
+
+.sidebar-header h2 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin-bottom: 0.25rem;
+}
+
+.sidebar-header p {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.nav-group {
+  padding: 0.5rem 0;
+}
+
+.nav-group-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-secondary);
+  padding: 0.5rem 1.5rem;
+  opacity: 0.7;
+}
+
+.nav-link {
+  display: block;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 0.4rem 1.5rem;
+  border-left: 3px solid transparent;
+  transition: all 0.2s;
+  line-height: 1.4;
+}
+
+.nav-link:hover {
+  color: var(--text);
+  background: rgba(0,0,0,0.03);
+}
+
+.nav-link.active {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  font-weight: 600;
+  background: var(--accent-bg);
+}
+
+/* ─── Main Content ─── */
+.main-content {
+  margin-left: 280px;
+  flex: 1;
+  max-width: 780px;
+  padding: 3rem 3rem 6rem;
+}
+
+/* ─── Mobile toggle ─── */
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 200;
+  width: 40px;
+  height: 40px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+@media (max-width: 900px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); box-shadow: 4px 0 20px rgba(0,0,0,0.1); }
+  .main-content { margin-left: 0; padding: 2rem 1.5rem 4rem; }
+  .sidebar-toggle { display: flex; }
+}
+
+/* ─── Typography ─── */
+.chapter-number {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 1rem;
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-top: 3.5rem;
+  margin-bottom: 1rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+p { margin-bottom: 1rem; }
+
+.lead {
+  font-size: 1.15rem;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+  line-height: 1.8;
+}
+
+/* ─── Callout boxes ─── */
+.callout {
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+  border-left: 4px solid;
+}
+
+.callout-title {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+}
+
+.callout.definition {
+  background: var(--info-bg);
+  border-color: var(--info);
+}
+.callout.definition .callout-title { color: var(--info); }
+
+.callout.key-idea {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+}
+.callout.key-idea .callout-title { color: var(--accent); }
+
+.callout.warning {
+  background: var(--warning-bg);
+  border-color: var(--warning);
+}
+.callout.warning .callout-title { color: var(--warning); }
+
+.callout.success {
+  background: var(--success-bg);
+  border-color: var(--success);
+}
+.callout.success .callout-title { color: var(--success); }
+
+.callout p:last-child { margin-bottom: 0; }
+
+/* ─── Code blocks ─── */
+.code-block {
+  background: var(--code-bg);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 1.5rem 0;
+}
+
+.code-header {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #aaa;
+  padding: 0.6rem 1.25rem;
+  background: #222;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.code-block pre {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.88rem;
+  line-height: 1.7;
+  color: var(--code-text);
+  padding: 1.25rem;
+  overflow-x: auto;
+  margin: 0;
+}
+
+.code-block .comment { color: #75715e; }
+.code-block .keyword { color: #f92672; }
+.code-block .string { color: #e6db74; }
+.code-block .variable { color: #66d9ef; }
+.code-block .number { color: #ae81ff; }
+.code-block .predicate { color: #a6e22e; }
+.code-block .operator { color: #f92672; }
+.code-block .prompt { color: #f39c12; }
+.code-block .output { color: #2ecc71; }
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  background: #eee;
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  color: var(--accent);
+}
+
+/* ─── Analogy / Big Picture boxes ─── */
+.analogy-box {
+  background: linear-gradient(135deg, #fef9e7, #fdf2e9);
+  border: 1px solid #f0e0c0;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  position: relative;
+}
+
+.analogy-box::before {
+  content: '💡';
+  position: absolute;
+  top: -12px;
+  left: 16px;
+  font-size: 1.2rem;
+  background: var(--bg);
+  padding: 0 6px;
+}
+
+/* ─── Comparison table ─── */
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.95rem;
+}
+
+.comparison-table th {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.75rem 1rem;
+  background: #f5f3ee;
+  border-bottom: 2px solid var(--border);
+  text-align: left;
+}
+
+.comparison-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.comparison-table tr:last-child td { border-bottom: none; }
+
+/* ─── Interactive Quiz ─── */
+.quiz {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.quiz-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin-bottom: 0.75rem;
+}
+
+.quiz-question {
+  font-weight: 600;
+  margin-bottom: 1rem;
+  font-size: 1.05rem;
+}
+
+.quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.quiz-option {
+  font-family: 'DM Sans', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+  background: var(--bg);
+}
+
+.quiz-option:hover { border-color: var(--accent); background: var(--accent-bg); }
+.quiz-option.selected { border-color: var(--info); background: var(--info-bg); }
+.quiz-option.correct { border-color: var(--success); background: var(--success-bg); }
+.quiz-option.incorrect { border-color: var(--accent); background: var(--accent-bg); opacity: 0.7; }
+
+.quiz-option .marker {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.quiz-option.selected .marker { border-color: var(--info); background: var(--info); color: #fff; }
+.quiz-option.correct .marker { border-color: var(--success); background: var(--success); color: #fff; }
+.quiz-option.incorrect .marker { border-color: var(--accent); background: var(--accent); color: #fff; }
+
+.quiz-submit {
+  font-family: 'DM Sans', sans-serif;
+  margin-top: 1rem;
+  padding: 0.6rem 1.5rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+.quiz-submit:hover { background: var(--accent-light); }
+.quiz-submit:disabled { background: #ccc; cursor: default; }
+
+.quiz-explanation {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  display: none;
+}
+
+.quiz-explanation.show { display: block; }
+.quiz-explanation.correct-expl { background: var(--success-bg); border: 1px solid var(--success); }
+.quiz-explanation.incorrect-expl { background: var(--accent-bg); border: 1px solid var(--accent); }
+
+/* ─── Step-through / trace ─── */
+.trace-container {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 1.5rem 0;
+}
+
+.trace-header {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  padding: 0.75rem 1.25rem;
+  background: #f9f7f3;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.trace-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.trace-btn {
+  font-family: 'DM Sans', sans-serif;
+  padding: 0.35rem 0.75rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.trace-btn:hover { background: var(--accent-light); }
+.trace-btn:disabled { background: #ccc; cursor: default; }
+
+.trace-step {
+  padding: 1.25rem;
+  display: none;
+}
+
+.trace-step.active { display: block; }
+
+.trace-step-number {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+
+/* ─── Diagram ─── */
+.diagram {
+  text-align: center;
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.diagram svg { max-width: 100%; }
+
+/* ─── Progress tracker ─── */
+.progress-bar {
+  position: fixed;
+  top: 0;
+  left: 280px;
+  right: 0;
+  height: 3px;
+  background: var(--border);
+  z-index: 50;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  width: 0%;
+  transition: width 0.3s;
+}
+
+@media (max-width: 900px) {
+  .progress-bar { left: 0; }
+}
+
+/* ─── Section transitions ─── */
+section {
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Inline emphasis ─── */
+em.term {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.big-picture-connector {
+  background: linear-gradient(90deg, var(--accent-bg), transparent);
+  border-left: 3px solid var(--accent);
+  padding: 1rem 1.25rem;
+  margin: 1.5rem 0;
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+/* ─── Expandable section ─── */
+.expandable {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 1rem 0;
+  overflow: hidden;
+}
+
+.expandable-header {
+  font-family: 'DM Sans', sans-serif;
+  padding: 0.75rem 1.25rem;
+  background: #f9f7f3;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 0.95rem;
+  user-select: none;
+}
+
+.expandable-header:hover { background: #f0ede6; }
+
+.expandable-arrow {
+  transition: transform 0.2s;
+  font-size: 0.8rem;
+}
+
+.expandable.open .expandable-arrow { transform: rotate(90deg); }
+
+.expandable-body {
+  display: none;
+  padding: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.expandable.open .expandable-body { display: block; }
+</style>
+
+<style>
+/* === Printable Override === */
+
+/* Hide non-content elements */
+.sidebar, .sidebar-toggle, .progress-bar, .quiz, .quiz-btn { display: none !important; }
+
+/* Base typography */
+html { font-size: 12px !important; }
+body { line-height: 1.3 !important; }
+
+/* Layout */
+.main {
+  margin-left: 0 !important;
+  padding: 0.5rem !important;
+  max-width: 100% !important;
+}
+
+/* Headings */
+h1 { font-size: 1.4rem !important; }
+h2 { font-size: 1.15rem !important; margin-top: 0.5rem !important; }
+h3 { font-size: 1.05rem !important; margin-top: 0.4rem !important; }
+
+/* Spacing */
+p { margin-bottom: 0.25rem !important; }
+ul, ol { margin-bottom: 0.25rem !important; }
+li { margin-bottom: 0.1rem !important; }
+
+.callout {
+  padding: 0.3rem 0.5rem !important;
+  margin: 0.3rem 0 !important;
+}
+
+.code-block {
+  margin: 0.3rem 0 !important;
+  overflow: visible !important;
+}
+.code-block pre {
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+}
+.code-body, .code-block code {
+  padding: 0.3rem 0.5rem !important;
+  font-size: 0.85rem !important;
+}
+
+section, .section { margin-bottom: 0.3rem !important; }
+.subtitle { margin-bottom: 0.3rem !important; }
+
+/* Force expandables open and remove toggle UI */
+.expandable-content {
+  display: block !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+.expandable-arrow { display: none !important; }
+.expandable-header { cursor: default !important; }
+
+/* Kill animations */
+* {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+}
+</style>
+
+</head>
+<body>
+
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+<button class="sidebar-toggle" id="sidebarToggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<div class="page-wrapper">
+
+<!-- ─── SIDEBAR ─── -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h2>Lecture 11</h2>
+    <p>Logic Programming & Prolog</p>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Part I — The Big Picture</div>
+    <a href="#paradigms" class="nav-link">Three Paradigms</a>
+    <a href="#what-is-logic" class="nav-link">What is Logic Programming?</a>
+    <a href="#declarative" class="nav-link">Declarative Thinking</a>
+    <a href="#logic-vs-control" class="nav-link">Logic vs. Control</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Part II — Prolog by Example</div>
+    <a href="#sort-predicate" class="nav-link">The Sort Predicate</a>
+    <a href="#helper-sorted" class="nav-link">Helper: sorted</a>
+    <a href="#helper-perm" class="nav-link">Helper: perm</a>
+    <a href="#helper-append" class="nav-link">Helper: append</a>
+    <a href="#running-backwards" class="nav-link">Running Backwards</a>
+    <a href="#control-problem" class="nav-link">The Control Problem</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Part III — Prolog Syntax</div>
+    <a href="#terms" class="nav-link">Terms: The Building Blocks</a>
+    <a href="#atoms" class="nav-link">Atoms</a>
+    <a href="#numbers" class="nav-link">Numbers</a>
+    <a href="#variables" class="nav-link">Logical Variables</a>
+    <a href="#structures" class="nav-link">Structures</a>
+    <a href="#syntactic-sugar" class="nav-link">Syntactic Sugar</a>
+    <a href="#arithmetic" class="nav-link">Arithmetic</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-title">Part IV — How Prolog Runs</div>
+    <a href="#programs" class="nav-link">Facts, Rules & Queries</a>
+    <a href="#execution" class="nav-link">Execution Model</a>
+    <a href="#special-predicates" class="nav-link">Special Predicates</a>
+  </div>
+</nav>
+
+<!-- ─── MAIN CONTENT ─── -->
+<main class="main-content">
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PART I: THE BIG PICTURE                     -->
+<!-- ════════════════════════════════════════════ -->
+
+<div class="chapter-number">Part I — The Big Picture</div>
+<h1 id="paradigms">Three Ways to Program a Computer</h1>
+<p class="lead">Before we dive into Prolog, let's zoom out and understand <em>where</em> logic programming fits among the different ways humans talk to computers. This context will help you see why logic programming exists and what it gives up — and gains — compared to what you already know.</p>
+
+<p>Throughout this course, you've been learning that there isn't just one way to write a program. There are fundamentally different <em class="term">paradigms</em> — different philosophies about what a program <em>is</em> and how you should build one. The three major paradigms are:</p>
+
+<table class="comparison-table">
+  <thead>
+    <tr><th>Paradigm</th><th>Core Unit</th><th>Glue</th><th>What You Give Up</th><th>Languages</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Imperative</strong></td>
+      <td>Statements</td>
+      <td>Sequencing <br><small>(do this, then that)</small></td>
+      <td>—</td>
+      <td>C, C++, Java, Python, JavaScript</td>
+    </tr>
+    <tr>
+      <td><strong>Functional</strong></td>
+      <td>Functions</td>
+      <td>Function calls <br><small>(compose functions)</small></td>
+      <td>Assignment statements (side effects)</td>
+      <td>OCaml, Haskell, Scheme</td>
+    </tr>
+    <tr>
+      <td><strong>Logic</strong></td>
+      <td>Predicates</td>
+      <td>Logical connectives <br><small>(AND, OR, NOT)</small></td>
+      <td>Functions <em>and</em> assignment <em>and</em> sequencing</td>
+      <td>Prolog</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Think of these paradigms as a ladder of <strong>increasing abstraction</strong>. Each step up the ladder, you give up some low-level control, but in exchange you get to think at a higher level:</p>
+
+<p><strong>Imperative programming</strong> is the most familiar. You write step-by-step instructions: "do this, then do that." You have full control — you can assign variables, loop, branch. Languages like C, Java, and Python work this way.</p>
+
+<p><strong>Functional programming</strong> (which you studied with OCaml) takes one thing away: <em>assignment statements</em>. Once a value is bound, it can't be changed. This feels like programming with one arm tied behind your back. But it turns out that giving up mutation makes programs easier to reason about, and functional style has become popular even in imperative languages like JavaScript.</p>
+
+<p><strong>Logic programming</strong> goes even further. It takes away functions, assignment, <em>and</em> sequencing. You don't write step-by-step instructions at all. Instead, you describe <em>what you want</em>, and let the system figure out <em>how to get it</em>. This feels like tying both arms and legs behind your back — and yet, surprisingly, you can still get real work done.</p>
+
+<div class="callout key-idea">
+  <div class="callout-title">Key Insight</div>
+  <p>Each paradigm is defined not just by what it <em>has</em>, but by what it <em>gives up</em>. Functional programming gives up assignment. Logic programming gives up functions entirely. The more you give up, the more freedom the system has to find solutions on its own.</p>
+</div>
+
+<!-- ─── What is Logic Programming? ─── -->
+<h2 id="what-is-logic">What is Logic Programming?</h2>
+
+<p>In logic programming, there are <strong>no functions</strong> in the traditional sense. You cannot write a function that takes inputs and returns an output. Instead, you write <em class="term">predicates</em>.</p>
+
+<div class="callout definition">
+  <div class="callout-title">Definition — Predicate</div>
+  <p>A <strong>predicate</strong> is like a function that can only answer "yes" or "no" (true or false). It doesn't <em>return</em> a value — it either <em>succeeds</em> or <em>fails</em>. Predicates are connected to each other using logical connectives like AND, OR, and NOT.</p>
+</div>
+
+<p>Instead of calling a function and getting a return value, in Prolog you ask a <em class="term">query</em> — you pose a question to the system. The system then searches for a way to make your query true, and if it finds one, it tells you the answer.</p>
+
+<div class="analogy-box">
+  <strong>Analogy:</strong> Imagine you have a very smart librarian. In imperative programming, you tell the librarian exactly which shelf to go to, which book to grab, and which page to open. In functional programming, you describe a recipe for finding the book. In logic programming, you just say "I want a book about sorting algorithms published after 2020" and the librarian figures out how to find it for you.
+</div>
+
+<p>This approach is sometimes compared to modern "vibe coding" with AI — you describe what you want, and the system generates the solution. Except with Prolog, there's no AI magic; the system uses precise logical inference to derive answers from the rules you've given it.</p>
+
+<!-- ─── Declarative Thinking ─── -->
+<h2 id="declarative">Declarative vs. Imperative Thinking</h2>
+
+<p>Logic programming emphasizes <em class="term">declarative programming</em>. Let's break down exactly what that means, because it's a fundamental shift in how you think about code.</p>
+
+<div class="callout definition">
+  <div class="callout-title">Definition — Declarative Programming</div>
+  <p><strong>Declarative programming</strong> means you describe <em>what</em> the answer should look like, without specifying <em>how</em> to compute it. You declare the properties of the solution and let the system figure out the steps.</p>
+</div>
+
+<p>You've actually already encountered declarative thinking, even if you didn't realize it. HTML is declarative — you say "I want a heading here and a paragraph there," not "move the cursor 20 pixels down, draw characters in bold font at size 24..." SQL databases are declarative — you say <code>SELECT * FROM users WHERE age > 18</code>, not "loop through each row, check the age column..."</p>
+
+<p>Prolog takes this idea and applies it to <em>general-purpose programming</em>. Instead of writing a sorting algorithm (bubble sort, quicksort, etc.), you can describe the <em>properties</em> of a sorted list and let Prolog figure out how to produce one.</p>
+
+<!-- ─── Logic vs Control ─── -->
+<h2 id="logic-vs-control">Logic vs. Control: The Big Separation</h2>
+
+<p>This is one of the most important concepts in this lecture. In Prolog, every program can be split into two independent parts:</p>
+
+<div class="callout key-idea">
+  <div class="callout-title">The Algorithm Equation</div>
+  <p style="font-size: 1.2rem; text-align: center; font-weight: 600; margin: 0.5rem 0;">Algorithm = Logic + Control</p>
+</div>
+
+<p><strong>Logic</strong> is the formal specification of what the answer should be. It's the constraints: "we want answers that look like this." Whether the answer is correct or not depends entirely on the logic. All your correctness concerns live here.</p>
+
+<p><strong>Control</strong> is advice to the Prolog interpreter about how to search for the answer efficiently. Ideally, control is just about performance improvement. It doesn't change <em>what</em> answers you get — it only changes <em>how fast</em> you get them.</p>
+
+<div class="analogy-box">
+  <strong>Why does this separation matter?</strong> It's a software engineering discipline. You break one big problem into two independent sub-problems. If you screw up the <em>control</em>, your program gets slower but still gives correct answers. If you screw up the <em>logic</em>, your program gives wrong answers — which is much worse. This separation lets you focus on getting the logic right first, then optimize performance separately.
+</div>
+
+<p>The logic is more important than the control, because incorrect logic means wrong answers no matter how fast you run. But you still need good control, because bad control can make a correct program unacceptably slow (as we'll see shortly).</p>
+
+<div class="quiz" id="quiz-logic-control">
+  <div class="quiz-label">Check Your Understanding</div>
+  <p class="quiz-question">You write a Prolog program that always returns the correct sorted list, but it takes 10 minutes instead of 1 millisecond. Which part of your program has a problem?</p>
+  <div class="quiz-options">
+    <div class="quiz-option" data-correct="false" onclick="selectOption(this)"><span class="marker">A</span> The logic is wrong</div>
+    <div class="quiz-option" data-correct="true" onclick="selectOption(this)"><span class="marker">B</span> The control is bad</div>
+    <div class="quiz-option" data-correct="false" onclick="selectOption(this)"><span class="marker">C</span> Both logic and control are wrong</div>
+    <div class="quiz-option" data-correct="false" onclick="selectOption(this)"><span class="marker">D</span> Neither — 10 minutes is fine</div>
+  </div>
+  <button class="quiz-submit" onclick="checkQuiz(this)">Check Answer</button>
+  <div class="quiz-explanation correct-expl">Correct! Since the answers are always right, the logic is fine. The slowness is a control problem — the interpreter is searching for the answer inefficiently. You'd need to restructure how Prolog explores solutions, without changing the logical specification.</div>
+  <div class="quiz-explanation incorrect-expl">Not quite. Since the program always gives the <em>correct</em> answer, the logic must be right. The slowness is purely a <strong>control</strong> issue — the interpreter is finding the answer inefficiently.</div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PART II: PROLOG BY EXAMPLE                  -->
+<!-- ════════════════════════════════════════════ -->
+
+<div class="chapter-number" style="margin-top: 4rem;">Part II — Learning Prolog Through Sorting</div>
+<h1 id="sort-predicate">Building a Sort Predicate from Scratch</h1>
+<p class="lead">Instead of teaching Prolog syntax in the abstract, we're going to learn by doing something concrete: building a sorting predicate. Along the way, you'll absorb the core ideas of how Prolog thinks.</p>
+
+<p>In every programming language you've used before, sorting means writing an algorithm — bubble sort, quicksort, merge sort. You tell the computer <em>how</em> to sort step by step. In Prolog, we take a completely different approach: we describe <em>what it means for a list to be sorted</em>, and let Prolog figure out the rest.</p>
+
+<h3>Predicates Instead of Functions</h3>
+
+<p>Since Prolog has no functions, we write a <em>predicate</em> instead. Our predicate will be called <code>sort</code> and it takes <strong>two arguments</strong>:</p>
+
+<div class="code-block">
+  <div class="code-header">Prolog — The Sort Predicate (Goal)</div>
+  <pre><span class="comment">/* sort(L, S) is true when S is the sorted version of L */</span>
+<span class="predicate">sort</span>(<span class="variable">L</span>, <span class="variable">S</span>).</pre>
+</div>
+
+<p>Notice something important: in a functional language, a sort function takes one argument (the list) and <em>returns</em> the sorted list. In Prolog, since predicates don't return values, we use a second argument to represent what would have been the return value. This is a common pattern: <strong>an n-argument function becomes an (n+1)-argument predicate</strong>, where the extra argument holds the "result."</p>
+
+<p>Here's how you'd use this predicate as a query:</p>
+
+<div class="code-block">
+  <div class="code-header">Prolog — Using the Sort Predicate</div>
+  <pre><span class="comment">/* Ask: "Is [-2, 3, 5] the sorted version of [3, 5, -2]?" */</span>
+<span class="prompt">?-</span> <span class="predicate">sort</span>([<span class="number">3</span>, <span class="number">5</span>, <span class="number">-2</span>], [<span class="number">-2</span>, <span class="number">3</span>, <span class="number">5</span>]).
+<span class="output">yes</span>
+
+<span class="comment">/* Ask: "What is the sorted version of [3, 5, -2]?" */</span>
+<span class="prompt">?-</span> <span class="predicate">sort</span>([<span class="number">3</span>, <span class="number">5</span>, <span class="number">-2</span>], <span class="variable">X</span>).
+<span class="variable">X</span> = [<span class="number">-2</span>, <span class="number">3</span>, <span class="number">5</span>]</pre>
+</div>
+
+<p>Look at what just happened. In the first query, we gave both arguments and asked "is this true?" — Prolog said yes. In the second query, we used a <em>variable</em> <code>X</code> (capital letters are variables in Prolog) and asked Prolog to <em>figure out</em> what X should be. Prolog found the answer on its own.</p>
+
+<p>This ability to "run things backwards" — to give the system a partial question and have it fill in the blanks — is one of the most powerful features of Prolog.</p>
+
+<h3>Defining Sort: What Properties Must Hold?</h3>
+
+<p>Now we need to actually define what <code>sort(L, S)</code> means. In a CS algorithms class, you'd just assume everyone knows what "sorted" means and jump to an algorithm. In Prolog, we have to spell out the exact specification — what properties must S have relative to L?</p>
+
+<p>Let's think about this carefully. What makes S a "sorted version of L"?</p>
+
+<p><strong>Property 1: S and L must be permutations of each other.</strong> This means every element in L appears in S the exact same number of times, and vice versa. This also guarantees they're the same length. (Note: we initially thought we'd need a "same length" requirement, but "permutation" already implies that — it's a stronger condition that subsumes it.)</p>
+
+<p><strong>Property 2: S must be in non-decreasing order.</strong> Each element is less than or equal to the next one. If there are duplicates, they sit next to each other.</p>
+
+<p>That's it. Those two properties completely define what it means for S to be the sorted version of L. Here's the Prolog code:</p>
+
+<div class="code-block">
+  <div class="code-header">Prolog — Sort Definition</div>
+  <pre><span class="predicate">sort</span>(<span class="variable">L</span>, <span class="variable">S</span>) <span class="operator">:-</span>
+    <span class="predicate">perm</span>(<span class="variable">L</span>, <span class="variable">S</span>),    <span class="comment">/* S is a permutation of L  (AND) */</span>
+    <span class="predicate">sorted</span>(<span class="variable">S</span>).     <span class="comment">/* S is in non-decreasing order     */</span></pre>
+</div>
+
+<p>Let's decode this syntax piece by piece:</p>
+
+<p>The <code>:-</code> symbol means "if" (it's read right-to-left: "sort(L,S) <em>is true if</em>..."). The comma <code>,</code> at the top level means "AND." So this reads: <em>"For all L and S, sort(L, S) is true <strong>if</strong> perm(L, S) is true <strong>and</strong> sorted(S) is true."</em></p>
+
+<p>We haven't told Prolog <em>how</em> to sort. We've only told it <em>what it means</em> for something to be sorted. Now we need to define the helper predicates <code>sorted</code> and <code>perm</code>.</p>
+
+<!-- ─── Helper: sorted ─── -->
+<h2 id="helper-sorted">Helper: The <code>sorted</code> Predicate</h2>
+
+<p>The <code>sorted</code> predicate checks whether a list is in non-decreasing order. Let's build it up from the simplest cases to the complex ones.</p>
+
+<h3>Base Cases</h3>
+
+<p><strong>An empty list is sorted.</strong> There are no elements to be out of order, so this is trivially true.</p>
+
+<div class="code-block">
+  <div class="code-header">Prolog</div>
+  <pre><span class="predicate">sorted</span>([]).   <span class="comment">/* The empty list is sorted */</span></pre>
+</div>
+
+<p><strong>A single-element list is sorted.</strong> One element can't be out of order with itself.</p>
+
+<div class="code-block">
+  <div class="code-header">Prolog</div>
+  <pre><span class="predicate">sorted</span>([<span class="variable">_</span>]).  <span class="comment">/* Any single-element list is sorted */</span></pre>
+</div>
+
+<p>The <code>_</code> is a special variable called an <em>anonymous variable</em> or <em>wildcard</em>. It means "I don't care what this value is." Every <code>_</code> you write is a <em>different</em> variable. We use it when a variable appears only once in a clause and we don't need to reference it again. (You could also write <code>sorted([X]).</code> — it means the same thing, but the convention is to use <code>_</code> when you don't need the name.)</p>
+
+<h3>The Recursive Case (Two or More Elements)</h3>
+
+<p>For a list with two or more elements, we need to check that each consecutive pair is in order. Here's the Prolog pattern for "a list with at least two elements":</p>
+
+<div class="code-block">
+  <div class="code-header">Prolog — List Pattern</div>
+  <pre>[<span class="variable">X</span>, <span class="variable">Y</span> | <span class="variable">L</span>]   <span class="comment">/* X is first, Y is second, L is the rest */</span></pre>
+</div>
+
+<p>This is Prolog's way of pattern matching on a list. The <code>|</code> (vertical bar) separates the explicitly listed elements from the "rest" of the list. So <code>[X, Y | L]</code> matches any list of length ≥ 2, binding <code>X</code> to the first element, <code>Y</code> to the second, and <code>L</code> to everything else (which could be empty).</p>
+
+<p>If you've used OCaml, this is similar to writing <code>x :: y :: l</code> as a pattern.</p>
+
+<div class="callout warning">
+  <div class="callout-title">A Subtle Bug</div>
+  <p>Your first instinct might be to write: <code>sorted([X, Y | L]) :- X =< Y, sorted(L).</code></p>
+  <p>This is <strong>wrong</strong>! It checks that X ≤ Y, then checks the <em>tail of the tail</em> (L, which skips Y). This would say that <code>[1, 3, 2, 4]</code> is sorted — because 1 ≤ 3, and then [2, 4] is sorted. But clearly 3 > 2, so it's not sorted!</p>
+  <p>The fix: recurse on <code>[Y | L]</code> instead of <code>L</code>, so you re-check the second element against the third.</p>
+</div>
+
+<p>Here is the correct version:</p>
+
+<div class="code-block">
+  <div class="code-header">Prolog — Sorted (Recursive Case)</div>
+  <pre><span class="predicate">sorted</span>([<span class="variable">X</span>, <span class="variable">Y</span> | <span class="variable">L</span>]) <span class="operator">:-</span>
+    <span class="variable">X</span> <span class="operator">=<</span> <span class="variable">Y</span>,              <span class="comment">/* first ≤ second */</span>
+    <span class="predicate">sorted</span>([<span class="variable">Y</span> | <span class="variable">L</span>]).    <span class="comment">/* [second | rest] is also sorted */</span></pre>
+</div>
+
+<p>The <code>=<</code> operator is Prolog's "less than or equal to." (Yes, it's written backwards from what you might expect. This is because Prolog was originally designed for natural language parsing, and the arrow symbols <code>-></code> and <code><-</code> were reserved for that purpose.)</p>
+
+<p>By recursing on <code>[Y | L]</code> instead of just <code>L</code>, we ensure that Y gets compared against the next element in the next recursive call. This way, every consecutive pair gets checked.</p>
+
+<h3>The Complete Sorted Predicate</h3>
+
+<div class="code-block">
+  <div class="code-header">Prolog — Complete sorted/1 Predicate</div>
+  <pre><span class="predicate">sorted</span>([]).                        <span class="comment">/* empty list: sorted */</span>
+<span class="predicate">sorted</span>([<span class="variable">_</span>]).                       <span class="comment">/* single element: sorted */</span>
+<span class="predicate">sorted</span>([<span class="variable">X</span>, <span class="variable">Y</span> | <span class="variable">L</span>]) <span class="operator">:-</span>
+    <span class="variable">X</span> <span class="operator">=<</span> <span class="variable">Y</span>,
+    <span class="predicate">sorted</span>([<span class="variable">Y</span> | <span class="variable">L</span>]).</pre>
+</div>
+
+<div class="quiz" id="quiz-sorted">
+  <div class="quiz-label">Check Your Understanding</div>
+  <p class="quiz-question">What would <code>?- sorted([5, 3, 8]).</code> return?</p>
+  <div class="quiz-options">
+    <div class="quiz-option" data-correct="false" onclick="selectOption(this)"><span class="marker">A</span> <code>yes</code></div>
+    <div class="quiz-option" data-correct="true" onclick="selectOption(this)"><span class="marker">B</span> <code>no</code></div>
+    <div class="quiz-option" data-correct="false" onclick="selectOption(this)"><span class="marker">C</span> An error</div>
+  </div>
+  <button class="quiz-submit" onclick="checkQuiz(this)">Check Answer</button>
+  <div class="quiz-explanation correct-expl">Correct! Prolog matches <code>[5, 3, 8]</code> against the pattern <code>[X, Y | L]</code>, binding X=5, Y=3, L=[8]. It then checks <code>5 =< 3</code>, which is false. So the predicate fails and Prolog says <code>no</code>.</div>
+  <div class="quiz-explanation incorrect-expl">Not quite. Prolog checks if 5 ≤ 3 (the first two elements). Since 5 > 3, the condition fails, and Prolog answers <code>no</code> — the list is not sorted.</div>
+</div>
+
+<!-- ─── Helper: perm ─── -->
+<h2 id="helper-perm">Helper: The <code>perm</code> Predicate</h2>
+
+<p>Now for the harder part: defining what it means for one list to be a permutation of another. We want <code>perm(L, R)</code> to be true when R contains exactly the same elements as L, just possibly in a different order.</p>
+
+<h3>Building Up Intuitively</h3>
+
+<p>Let's start with the simplest case and work our way up:</p>
+
+<p><strong>The empty list:</strong> The only permutation of <code>[]</code> is <code>[]</code>.</p>
+
+<div class="code-block">
+  <div class="code-header">Prolog</div>
+  <pre><span class="predicate">perm</span>([], []).  <span class="comment">/* base case */</span></pre>
+</div>
+
+<p><strong>The general case:</strong> Here's where the thinking gets interesting. We need a recursive definition. Take a non-empty list <code>[X | L]</code> (where X is the first element and L is the rest). What does a permutation R of this list look like?</p>
+
+<p>R must contain X <em>somewhere</em>, and everything else in R must be a permutation of L. So we can think of building R in two steps:</p>
+
+<ol style="margin: 1rem 0 1rem 1.5rem;">
+  <li>Take L (everything except X), and recursively find a permutation P of it.</li>
+  <li>Insert X somewhere into P to form R.</li>
+</ol>
+
+<p>"Inserting X somewhere into P" means: split P into two pieces (call them P1 and P2), then concatenate P1 + [X] + P2 to get R. We can express this split-and-insert using an <code>append</code> predicate:</p>
+
+<div class="code-block">
+  <div class="code-header">Prolog — Permutation (Recursive Case)</div>
+  <pre><span class="predicate">perm</span>([<span class="variable">X</span> | <span class="variable">L</span>], <span class="variable">R</span>) <span class="operator">:-</span>
+    <span class="predicate">perm</span>(<span class="variable">L</span>, <span class="variable">P</span>),                <span class="comment">/* P is a permutation of L  */</span>
+    <span class="predicate">append</span>(<span class="variable">P1</span>, <span class="variable">P2</span>, <span class="variable">P</span>),        <span class="comment">/* split P into P1 and P2    */</span>
+    <span class="predicate">append</span>(<span class="variable">P1</span>, [<span class="variable">X</span> | <span class="variable">P2</span>], <span class="variable">R</span>). <span class="comment">/* R = P1 + [X] + P2        */</span></pre>
+</div>
+
+<p>Let's trace through the logic carefully with a picture:</p>
+
+<div class="trace-container">
+  <div class="trace-header">
+    <span>Visual Walkthrough: How perm works</span>
+    <div class="trace-controls">
+      <button class="trace-btn" onclick="prevStep(this)" disabled>← Prev</button>
+      <button class="trace-btn" onclick="nextStep(this)">Next →</button>
+    </div>
+  </div>
+  <div class="trace-step active" data-step="0">
+    <div class="trace-step-number">Step 1 of 4</div>
+    <p><strong>Start with the original list <code>[X | L]</code>:</strong></p>
+    <p>We have a list where X is the head and L is the tail. For example, if our list is <code>[3, 1, 2]</code>, then X = 3 and L = [1, 2].</p>
+    <div style="text-align:center; padding: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 1.1rem;">
+      <span style="background: #e74c3c; color: white; padding: 4px 12px; border-radius: 4px;">X = 3</span>
+      <span style="background: #3498db; color: white; padding: 4px 12px; border-radius: 4px; margin-left: 4px;">L = [1, 2]</span>
+    </div>
+  </div>
+  <div class="trace-step" data-step="1">
+    <div class="trace-step-number">Step 2 of 4</div>
+    <p><strong>Recursively permute L to get P:</strong></p>
+    <p><code>perm(L, P)</code> — find some permutation P of L. For example, P might be <code>[2, 1]</code>.</p>
+    <div style="text-align:center; padding: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 1.1rem;">
+      <span style="background: #3498db; color: white; padding: 4px 12px; border-radius: 4px;">L = [1, 2]</span>
+      <span style="margin: 0 8px;">→ permute →</span>
+      <span style="background: #9b59b6; color: white; padding: 4px 12px; border-radius: 4px;">P = [2, 1]</span>
+    </div>
+  </div>
+  <div class="trace-step" data-step="2">
+    <div class="trace-step-number">Step 3 of 4</div>
+    <p><strong>Split P into two pieces P1 and P2:</strong></p>
+    <p><code>append(P1, P2, P)</code> — find P1 and P2 such that P1 ++ P2 = P. One possibility: P1 = [2], P2 = [1].</p>
+    <div style="text-align:center; padding: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 1.1rem;">
+      <span style="background: #9b59b6; color: white; padding: 4px 12px; border-radius: 4px;">P = [2, 1]</span>
+      <span style="margin: 0 8px;">→ split →</span>
+      <span style="background: #e67e22; color: white; padding: 4px 12px; border-radius: 4px;">P1 = [2]</span>
+      <span style="background: #e67e22; color: white; padding: 4px 12px; border-radius: 4px; margin-left: 4px;">P2 = [1]</span>
+    </div>
+  </div>
+  <div class="trace-step" data-step="3">
+    <div class="trace-step-number">Step 4 of 4</div>
+    <p><strong>Insert X between P1 and P2 to form R:</strong></p>
+    <p><code>append(P1, [X | P2], R)</code> — concatenate P1 + [X | P2] to get R.</p>
+    <div style="text-align:center; padding: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 1.1rem;">
+      <span style="background: #e67e22; color: white; padding: 4px 12px; border-radius: 4px;">[2]</span>
+      <span style="margin: 0 4px;">++</span>
+      <span style="background: #e74c3c; color: white; padding: 4px 12px; border-radius: 4px;">[3]</span>
+      <span style="margin: 0 4px;">++</span>
+      <span style="background: #e67e22; color: white; padding: 4px 12px; border-radius: 4px;">[1]</span>
+      <span style="margin: 0 8px;">=</span>
+      <span style="background: #27ae60; color: white; padding: 4px 12px; border-radius: 4px;">R = [2, 3, 1]</span>
+    </div>
+    <p>And <code>[2, 3, 1]</code> is indeed a permutation of <code>[3, 1, 2]</code>! By trying different splits and different recursive permutations, Prolog can generate <em>all</em> permutations.</p>
+  </div>
+</div>
+
+<h3>The Complete Perm Predicate</h3>
+
+<div class="code-block">
+  <div class="code-header">Prolog — Complete perm/2 Predicate</div>
+  <pre><span class="predicate">perm</span>([], []).                         <span class="comment">/* base case */</span>
+<span class="predicate">perm</span>([<span class="variable">X</span> | <span class="variable">L</span>], <span class="variable">R</span>) <span class="operator">:-</span>
+    <span class="predicate">perm</span>(<span class="variable">L</span>, <span class="variable">P</span>),
+    <span class="predicate">append</span>(<span class="variable">P1</span>, <span class="variable">P2</span>, <span class="variable">P</span>),
+    <span class="predicate">append</span>(<span class="variable">P1</span>, [<span class="variable">X</span> | <span class="variable">P2</span>], <span class="variable">R</span>).</pre>
+</div>
+
+<div class="callout success">
+  <div class="callout-title">Note on Variable Scope</div>
+  <p>Every variable in Prolog (anything starting with a capital letter) has its scope limited to the single clause it appears in. So the <code>X</code> and <code>L</code> in the base case are completely independent from the <code>X</code> and <code>L</code> in the recursive case. Each clause is like a separate "function call" with its own local variables. You don't need to declare them — just use them.</p>
+</div>
+
+<!-- ─── Helper: append ─── -->
+<h2 id="helper-append">Helper: The <code>append</code> Predicate</h2>
+
+<p>We used <code>append</code> inside <code>perm</code>, so we need to define it. <code>append(A, B, C)</code> is true when C is the result of concatenating lists A and B.</p>
+
+<div class="code-block">
+  <div class="code-header">Prolog — Complete append/3 Predicate</div>
+  <pre><span class="comment">/* Base case: appending [] to any list gives that list */</span>
+<span class="predicate">append</span>([], <span class="variable">L</span>, <span class="variable">L</span>).
+
+<span class="comment">/* Recursive case: if the first list starts with X... */</span>
+<span class="predicate">append</span>([<span class="variable">X</span> | <span class="variable">L</span>], <span class="variable">M</span>, [<span class="variable">X</span> | <span class="variable">LM</span>]) <span class="operator">:-</span>
+    <span class="predicate">append</span>(<span class="variable">L</span>, <span class="variable">M</span>, <span class="variable">LM</span>).</pre>
+</div>
+
+<p>Let's read each clause:</p>
+
+<p><strong>Base case:</strong> Appending the empty list <code>[]</code> to any list <code>L</code> gives you <code>L</code>. Notice that the second and third arguments are the <em>same variable</em> <code>L</code> — this forces them to be equal.</p>
+
+<p><strong>Recursive case:</strong> If the first list starts with <code>X</code> (followed by <code>L</code>), and the second list is <code>M</code>, then the result must start with <code>X</code> (followed by <code>LM</code>), where <code>LM</code> is the result of appending <code>L</code> and <code>M</code>.</p>
+
+<p>Think of it this way: to concatenate <code>[1, 2, 3]</code> with <code>[4, 5]</code>, you take the 1 off the front, concatenate <code>[2, 3]</code> with <code>[4, 5]</code> (which gives <code>[2, 3, 4, 5]</code>), and stick the 1 back on front: <code>[1, 2, 3, 4, 5]</code>.</p>
+
+<div class="callout key-idea">
+  <div class="callout-title">The Complete Specification</div>
+  <p>With <code>sort</code>, <code>sorted</code>, <code>perm</code>, and <code>append</code>, we have now fully specified what sorting means — all the way down to the bare-bones level. The only built-in we relied on is <code>=<</code> (numeric less-than-or-equal). We never said "use bubble sort" or "use quicksort." We just described the <em>properties</em> of a sorted list, and Prolog can derive the answer.</p>
+</div>
+
+<!-- ─── Running Backwards ─── -->
+<h2 id="running-backwards">Running Predicates "Backwards"</h2>
+
+<p>One of the most striking features of Prolog is that predicates can often be used in multiple directions. Let's see this with <code>append</code>:</p>
+
+<div class="code-block">
+  <div class="code-header">Prolog — append Used Multiple Ways</div>
+  <pre><span class="comment">/* "Forward" — concatenate two known lists */</span>
+<span class="prompt">?-</span> <span class="predicate">append</span>([<span class="number">1</span>, <span class="number">2</span>], [<span class="number">3</span>, <span class="number">4</span>], <span class="variable">Z</span>).
+<span class="variable">Z</span> = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>]
+
+<span class="comment">/* "Backward" — find all ways to split a list into two parts */</span>
+<span class="prompt">?-</span> <span class="predicate">append</span>(<span class="variable">X</span>, <span class="variable">Y</span>, [<span class="number">3</span>, <span class="number">4</span>, <span class="number">7</span>]).
+<span class="variable">X</span> = [],       <span class="variable">Y</span> = [<span class="number">3</span>, <span class="number">4</span>, <span class="number">7</span>]  ;
+<span class="variable">X</span> = [<span class="number">3</span>],     <span class="variable">Y</span> = [<span class="number">4</span>, <span class="number">7</span>]     ;
+<span class="variable">X</span> = [<span class="number">3</span>, <span class="number">4</span>], <span class="variable">Y</span> = [<span class="number">7</span>]        ;
+<span class="variable">X</span> = [<span class="number">3</span>, <span class="number">4</span>, <span class="number">7</span>], <span class="variable">Y</span> = []     ;
+<span class="output">no</span>
+
+<span class="comment">/* Completely unconstrained */</span>
+<span class="prompt">?-</span> <span class="predicate">append</span>(<span class="variable">X</span>, <span class="variable">Y</span>, <span class="variable">Z</span>).
+<span class="variable">X</span> = [],  <span class="variable">Y</span> = <span class="variable">Z</span>                  ;
+<span class="variable">X</span> = [<span class="variable">_29</span>], <span class="variable">Z</span> = [<span class="variable">_29</span> | <span class="variable">Y</span>]     ;
+<span class="comment">... (infinite answers) ...</span></pre>
+</div>
+
+<p>In the second example, we gave Prolog the result and asked it to find <em>all possible inputs</em>. It found four ways to split <code>[3, 4, 7]</code> into two pieces. In a functional language, you'd have to write a completely separate function to do this. In Prolog, the same predicate works in both directions.</p>
+
+<p>The semicolon <code>;</code> is what you type to ask Prolog for the next answer. Prolog will pause after each answer and wait — if you want more, you type <code>;</code> and it backtracks to find another solution. When there are no more solutions, it prints <code>no</code>.</p>
+
+<p>This "running backwards" capability is exactly what <code>perm</code> relies on. When <code>perm</code> calls <code>append(P1, P2, P)</code>, it knows P but not P1 or P2 — it's running append backwards to find all ways to split P.</p>
+
+<!-- ─── The Control Problem ─── -->
+<h2 id="control-problem">The Control Problem: Why Our Sort is Terrible</h2>
+
+<p>Our <code>sort</code> predicate is logically correct — it will always give the right answer. But it's catastrophically slow. Here's why:</p>
+
+<p>Prolog evaluates goals <strong>left to right</strong>. So when processing <code>sort(L, S) :- perm(L, S), sorted(S).</code>, it first calls <code>perm</code>, which generates a permutation, and then checks if that permutation is <code>sorted</code>.</p>
+
+<p>If it's not sorted (and it usually won't be), Prolog backtracks and <code>perm</code> generates another permutation. And another. And another. Until it happens to stumble upon the one that's sorted.</p>
+
+<div class="callout warning">
+  <div class="callout-title">Performance Disaster</div>
+  <p>For a list of n elements, there are n! (n factorial) permutations. That means this sorting algorithm is <strong>O(n!)</strong> — far worse than even the slowest sorting algorithms you learned in your algorithms class. Bubble sort and insertion sort are O(n²), which is vastly better than n!. For a list of just 20 elements, n! ≈ 2.4 × 10¹⁸ — that's 2.4 quintillion permutations to check.</p>
+</div>
+
+<p>This is the <em>control</em> problem, not a <em>logic</em> problem. The logic is right — S really does need to be a permutation of L that's sorted. The issue is that Prolog's strategy of "generate all permutations, then check" is horrifically inefficient.</p>
+
+<h3>Can We Fix It by Reordering?</h3>
+
+<p>Since the comma means "AND" (which is commutative), you might think: "What if I put the second <code>append</code> first in the <code>perm</code> clause, to constrain R before generating permutations?" Let's see what happens:</p>
+
+<div class="code-block">
+  <div class="code-header">Prolog — Reordered perm (WORSE!)</div>
+  <pre><span class="predicate">perm</span>([<span class="variable">X</span> | <span class="variable">L</span>], <span class="variable">R</span>) <span class="operator">:-</span>
+    <span class="comment">/* Moving this first makes control WORSE! */</span>
+    <span class="predicate">append</span>(<span class="variable">P1</span>, [<span class="variable">X</span> | <span class="variable">P2</span>], <span class="variable">R</span>),
+    <span class="predicate">perm</span>(<span class="variable">L</span>, <span class="variable">P</span>),
+    <span class="predicate">append</span>(<span class="variable">P1</span>, <span class="variable">P2</span>, <span class="variable">P</span>).</pre>
+</div>
+
+<p>Logically, this is identical — AND is commutative and associative. But Prolog evaluates left to right, and now the first thing it does is <code>append(P1, [X | P2], R)</code> where P1, P2, and R are all unknown. This generates an <em>infinite</em> number of solutions, making things even worse.</p>
+
+<div class="callout key-idea">
+  <div class="callout-title">Key Insight — Logic vs. Control Revisited</div>
+  <p>Reordering clauses <strong>does not change the logic</strong> (the set of correct answers stays the same), but it <strong>does change the control</strong> (how efficiently Prolog finds those answers). Prolog evaluates subgoals in the exact order you write them. If you put things in the wrong order, you can make your program infinitely slower — or even make it loop forever — even though the logic is correct.</p>
+</div>
+
+<div class="quiz" id="quiz-control">
+  <div class="quiz-label">Check Your Understanding</div>
+  <p class="quiz-question">If you swap the order of <code>perm(L, S)</code> and <code>sorted(S)</code> in the sort predicate (checking sorted first, then perm), what happens?</p>
+  <div class="quiz-options">
+    <div class="quiz-option" data-correct="false" onclick="selectOption(this)"><span class="marker">A</span> It gets faster because sorted is simpler</div>
+    <div class="quiz-option" data-correct="false" onclick="selectOption(this)"><span class="marker">B</span> It gives wrong answers</div>
+    <div class="quiz-option" data-correct="true" onclick="selectOption(this)"><span class="marker">C</span> It fails because S is unknown when sorted is called</div>
+    <div class="quiz-option" data-correct="false" onclick="selectOption(this)"><span class="marker">D</span> It works exactly the same</div>
+  </div>
+  <button class="quiz-submit" onclick="checkQuiz(this)">Check Answer</button>
+  <div class="quiz-explanation correct-expl">Correct! If <code>sorted(S)</code> runs first, S is still an unbound variable — Prolog doesn't know what list to check. <code>sorted</code> would try to match <code>S</code> against its patterns, and since S is unconstrained, it could lead to failure or unexpected behavior. The logic is the same, but the control breaks down.</div>
+  <div class="quiz-explanation incorrect-expl">Think about what Prolog knows at each step. If <code>sorted(S)</code> runs first, S hasn't been bound by <code>perm</code> yet — it's still unknown. Prolog would struggle because it's trying to check if an unknown list is sorted.</div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PART III: PROLOG SYNTAX                     -->
+<!-- ════════════════════════════════════════════ -->
+
+<div class="chapter-number" style="margin-top: 4rem;">Part III — Prolog Syntax</div>
+<h1 id="terms">Terms: The Building Blocks of Everything</h1>
+<p class="lead">Now that you've seen Prolog in action, let's formally learn the syntax. Everything in Prolog is built out of <em class="term">terms</em>. There are exactly four kinds of terms, and that's all there is to the core language.</p>
+
+<p>What's remarkable about Prolog is how simple its syntax is at its core. Every piece of data, every predicate call, every rule — they're all just terms. Here are the four types:</p>
+
+<!-- ─── Atoms ─── -->
+<h2 id="atoms">1. Atoms</h2>
+
+<div class="callout definition">
+  <div class="callout-title">Definition — Atom</div>
+  <p>An <strong>atom</strong> is the simplest kind of term. It's atomic — meaning it can't be broken into smaller pieces. Each atom equals only itself and nothing else. Atoms are like unique labels or symbols.</p>
+</div>
+
+<p>The syntax for atoms comes in two forms:</p>
+
+<p><strong>Unquoted atoms</strong> start with a <em>lowercase letter</em>, followed by any mix of letters, digits, and underscores:</p>
+
+<div class="code-block">
+  <div class="code-header">Examples of Atoms</div>
+  <pre>abc          <span class="comment">/* a simple atom */</span>
+a9_x         <span class="comment">/* letters, digits, underscores OK */</span>
+hello_world  <span class="comment">/* must start with lowercase */</span>
+x            <span class="comment">/* single character works */</span></pre>
+</div>
+
+<p><strong>Quoted atoms</strong> are wrapped in single quotes and can contain any characters, including spaces and special symbols:</p>
+
+<div class="code-block">
+  <div class="code-header">Quoted Atoms</div>
+  <pre>'Hello World'   <span class="comment">/* spaces are fine inside quotes */</span>
+'o''clock'      <span class="comment">/* double the quote to include an apostrophe */</span>
+'+'             <span class="comment">/* operators are atoms too! */</span>
+':-'            <span class="comment">/* the "if" symbol is an atom */</span></pre>
+</div>
+
+<p>Atoms don't have "values" — they just <em>are</em>. The atom <code>hello</code> is simply <code>hello</code>. It doesn't store a number or a string. It's just a unique symbol that equals only itself.</p>
+
+<!-- ─── Numbers ─── -->
+<h2 id="numbers">2. Numbers</h2>
+
+<p>Numbers in Prolog work like numbers in most languages — you have integers and floating-point values. The syntax is straightforward: <code>42</code>, <code>-7</code>, <code>3.14</code>, <code>-0.5</code>, etc. Nothing surprising here.</p>
+
+<!-- ─── Variables ─── -->
+<h2 id="variables">3. Logical Variables</h2>
+
+<div class="callout definition">
+  <div class="callout-title">Definition — Logical Variable</div>
+  <p>A <strong>logical variable</strong> is a term that represents an unknown value. It starts with a <em>capital letter</em> or an <em>underscore</em>, followed by any mix of letters, digits, and underscores. Examples: <code>X</code>, <code>Hello</code>, <code>_hello</code>, <code>H9</code>, <code>_</code>.</p>
+</div>
+
+<p>Logical variables are fundamentally different from variables in languages like Java or Python, and understanding this difference is crucial:</p>
+
+<table class="comparison-table">
+  <thead>
+    <tr><th>Property</th><th>Java / Python Variable</th><th>Prolog Logical Variable</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Starts as</strong></td>
+      <td>Undefined (error to use)</td>
+      <td><em>Unbound</em> (perfectly legal to use)</td>
+    </tr>
+    <tr>
+      <td><strong>Getting a value</strong></td>
+      <td>Assignment: <code>x = 5</code></td>
+      <td><em>Binding</em> through matching</td>
+    </tr>
+    <tr>
+      <td><strong>Changing value</strong></td>
+      <td>Re-assign anytime: <code>x = 10</code></td>
+      <td>Cannot change! Only unbinds on backtracking</td>
+    </tr>
+    <tr>
+      <td><strong>Scope</strong></td>
+      <td>Block / function scope</td>
+      <td>Single clause (the thing ending in <code>.</code>)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The lifecycle of a Prolog variable looks like this:</p>
+
+<ol style="margin: 1rem 0 1rem 1.5rem;">
+  <li><strong>Unbound:</strong> The variable starts as a question mark — "I don't know my value yet." This is totally fine; it's not an error.</li>
+  <li><strong>Bound:</strong> As computation succeeds, the variable gets bound to a value (some term). Once bound, it <em>stays</em> bound to that value — there are no assignment statements.</li>
+  <li><strong>Unbound again (on failure):</strong> If Prolog backtracks, the variable becomes unbound again, freeing it to be bound to a different value in the next attempt.</li>
+</ol>
+
+<p>This bind → unbind cycle is how Prolog explores different possibilities. In the sort example, the variable S gets bound to a permutation, then if <code>sorted(S)</code> fails, S gets unbound and perm binds it to a different permutation.</p>
+
+<div class="callout success">
+  <div class="callout-title">The Underscore Variable</div>
+  <p>The special variable <code>_</code> (single underscore) is the <em>anonymous variable</em>. Every <code>_</code> in your code is a <em>different, independent</em> variable. Use it when you need a variable to make the pattern work but don't care about its value. For example, <code>sorted([_]).</code> means "any singleton list is sorted" — we don't need to name the element.</p>
+</div>
+
+<!-- ─── Structures ─── -->
+<h2 id="structures">4. Structures</h2>
+
+<div class="callout definition">
+  <div class="callout-title">Definition — Structure</div>
+  <p>A <strong>structure</strong> is a compound term that represents a data structure. It consists of a <em class="term">functor</em> (which must be an atom) followed by one or more arguments in parentheses: <code>f(t1, t2, ..., tn)</code>. Each argument is itself a term. You must have at least one argument (n ≥ 1).</p>
+</div>
+
+<p>A structure looks like a function call, but <strong>it's not a function call</strong>. It's a <em>constructor</em> — all it does is build a piece of data in memory. When you write <code>foo(bar, 42, X)</code>, Prolog creates a little chunk of storage containing the atom <code>foo</code> and pointers to <code>bar</code>, <code>42</code>, and <code>X</code>. That's it. No computation happens.</p>
+
+<p>You can think of structures as nodes in a tree. The functor is the node label, and the arguments are the children. Any Prolog term can be drawn as a tree.</p>
+
+<p>The <em class="term">arity</em> of a structure is how many arguments it has. We write this as <code>functor/arity</code>. For example, <code>append/3</code> means the append predicate with 3 arguments. Importantly, <code>append/2</code> and <code>append/3</code> are completely independent — they don't collide at all, just like two different predicates with different names.</p>
+
+<div class="quiz" id="quiz-terms">
+  <div class="quiz-label">Check Your Understanding</div>
+  <p class="quiz-question">Which of the following is a logical variable in Prolog?</p>
+  <div class="quiz-options">
+    <div class="quiz-option" data-correct="false" onclick="selectOption(this)"><span class="marker">A</span> <code>hello</code></div>
+    <div class="quiz-option" data-correct="true" onclick="selectOption(this)"><span class="marker">B</span> <code>Hello</code></div>
+    <div class="quiz-option" data-correct="false" onclick="selectOption(this)"><span class="marker">C</span> <code>42</code></div>
+    <div class="quiz-option" data-correct="false" onclick="selectOption(this)"><span class="marker">D</span> <code>'Hello'</code></div>
+  </div>
+  <button class="quiz-submit" onclick="checkQuiz(this)">Check Answer</button>
+  <div class="quiz-explanation correct-expl">Correct! <code>Hello</code> starts with a capital letter, so it's a logical variable. <code>hello</code> (lowercase) is an atom. <code>42</code> is a number. <code>'Hello'</code> (quoted) is an atom — the quotes override the capital letter.</div>
+  <div class="quiz-explanation incorrect-expl">Remember: variables must start with a capital letter or underscore. <code>Hello</code> starts with capital H, so it's a variable. <code>hello</code> (lowercase) is an atom. <code>'Hello'</code> (quoted) is an atom — quotes make it an atom regardless of capitalization.</div>
+</div>
+
+<!-- ─── Syntactic Sugar ─── -->
+<h2 id="syntactic-sugar">Syntactic Sugar: Making Prolog Readable</h2>
+
+<p>The four term types (atoms, numbers, variables, structures) are the complete core syntax of Prolog. Everything else is <em class="term">syntactic sugar</em> — convenient shorthand that gets translated into the core forms internally.</p>
+
+<h3>Operators</h3>
+
+<p>Prolog has built-in operators (both binary and unary) that are just syntactic sugar for structures:</p>
+
+<div class="code-block">
+  <div class="code-header">Operators are Structures in Disguise</div>
+  <pre><span class="comment">/* What you write          What Prolog sees internally */</span>
+3 + 4 * 5           <span class="comment">≡</span>    '+'(3, '*'(4, 5))
+2 * -3              <span class="comment">≡</span>    '*'(2, '-'(3))
+
+<span class="comment">/* The "if" operator */</span>
+a :- b              <span class="comment">≡</span>    ':-'(a, b)
+
+<span class="comment">/* AND and OR */</span>
+a , b               <span class="comment">≡</span>    ','(a, b)
+a ; b               <span class="comment">≡</span>    ';'(a, b)</pre>
+</div>
+
+<p>The key insight: operators like <code>+</code>, <code>*</code>, <code>:-</code>, <code>,</code>, and <code>;</code> don't <em>do</em> anything by themselves. They just build structures. Writing <code>3 + 4</code> doesn't add 3 and 4 — it builds the data structure <code>'+'(3, 4)</code>.</p>
+
+<h3>List Syntax</h3>
+
+<p>The list syntax you've been seeing is also syntactic sugar. Internally, lists are built from a special structure called <code>'.'</code> (dot), which works like <code>cons</code> in OCaml:</p>
+
+<div class="code-block">
+  <div class="code-header">List Syntax is Structure Sugar</div>
+  <pre><span class="comment">/* What you write          What it really is */</span>
+[]                  <span class="comment">≡</span>    '[]'
+[a, b, c]           <span class="comment">≡</span>    '.'(a, '.'(b, '.'(c, '[]')))
+[X, Y | L]          <span class="comment">≡</span>    '.'(X, '.'(Y, L))</pre>
+</div>
+
+<p>So a list is really a chain of <code>./2</code> structures ending in <code>'[]'</code>. The bracket notation is just syntactic sugar that makes lists readable. The <code>|</code> (vertical bar) separates explicitly named elements from the tail of the list.</p>
+
+<!-- ─── Arithmetic ─── -->
+<h2 id="arithmetic">Arithmetic: The <code>is</code> Operator</h2>
+
+<p>Since <code>3 + 4</code> just builds a structure and doesn't do math, Prolog needs a special mechanism for actual computation. That mechanism is the built-in <code>is</code> operator:</p>
+
+<div class="code-block">
+  <div class="code-header">Prolog — Arithmetic with is</div>
+  <pre><span class="variable">N</span> = <span class="number">19</span>,
+<span class="variable">M</span> <span class="keyword">is</span> <span class="variable">N</span> * <span class="number">12</span>.
+<span class="comment">/* Internally: is builds '*'(19, 12), evaluates it, binds M = 228 */</span></pre>
+</div>
+
+<p>Here's what happens step by step: <code>N * 12</code> builds the data structure <code>'*'(19, 12)</code> (since N is already bound to 19). Then <code>is</code> takes that data structure, walks through the tree, does the actual arithmetic in machine code, and binds M to the result (228).</p>
+
+<div class="callout warning">
+  <div class="callout-title">Critical Restriction</div>
+  <p>The right side of <code>is</code> must be a <em class="term">ground term</em> — a term with <strong>no unbound logical variables</strong>. It can be a complex expression with structures, atoms, and numbers, but every variable in it must already have a value. This is because <code>is</code> is implemented in machine code (C), which can't handle unknowns. If you try <code>M is X * 12</code> when X is unbound, you'll get an error.</p>
+  <p>This also means you <strong>can't run <code>is</code> backwards</strong>. You can't say "M is 228, what values of N make N * 12 = 228?" — unlike <code>append</code>, <code>is</code> only works in one direction.</p>
+</div>
+
+<div class="callout definition">
+  <div class="callout-title">Definition — Ground Term</div>
+  <p>A <strong>ground term</strong> is any term that contains no logical variables anywhere. It can be an atom, a number, or a structure whose arguments are all ground terms. For example, <code>f(a, 3, g(b))</code> is ground, but <code>f(a, X, g(b))</code> is not (because of X).</p>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PART IV: HOW PROLOG RUNS                    -->
+<!-- ════════════════════════════════════════════ -->
+
+<div class="chapter-number" style="margin-top: 4rem;">Part IV — How Prolog Runs</div>
+<h1 id="programs">Facts, Rules, and Queries</h1>
+<p class="lead">A Prolog program is a collection of <em class="term">clauses</em>. Each clause is a term, but there are three distinct types depending on their form and purpose.</p>
+
+<h3>1. Facts — Unconditional Truths</h3>
+
+<p>A <em class="term">fact</em> is a clause that ends with a period and contains no <code>:-</code> (turnstile). It's unconditionally true — no conditions needed. When Prolog encounters a fact during its search, it can immediately succeed.</p>
+
+<div class="code-block">
+  <div class="code-header">Examples of Facts</div>
+  <pre><span class="predicate">append</span>([], <span class="variable">L</span>, <span class="variable">L</span>).     <span class="comment">/* true for any L */</span>
+<span class="predicate">perm</span>([], []).            <span class="comment">/* true unconditionally */</span>
+<span class="predicate">sorted</span>([]).              <span class="comment">/* the empty list is sorted */</span>
+<span class="predicate">sorted</span>([<span class="variable">_</span>]).             <span class="comment">/* any singleton is sorted */</span></pre>
+</div>
+
+<p>Facts can contain variables (like the first example, which is true for any list L), or they can be entirely ground (like <code>parent(tom, bob).</code>).</p>
+
+<h3>2. Rules — Conditional Truths</h3>
+
+<p>A <em class="term">rule</em> has a turnstile <code>:-</code> in it. The part before <code>:-</code> is called the <em class="term">head</em>, and the part after is called the <em class="term">body</em>. A rule means: "the head is true <strong>if</strong> all the goals in the body are true."</p>
+
+<div class="code-block">
+  <div class="code-header">Anatomy of a Rule</div>
+  <pre><span class="comment">/*   HEAD                    BODY                          */</span>
+<span class="predicate">sorted</span>([<span class="variable">X</span>, <span class="variable">Y</span> | <span class="variable">L</span>])  <span class="operator">:-</span>   <span class="variable">X</span> <span class="operator">=<</span> <span class="variable">Y</span>, <span class="predicate">sorted</span>([<span class="variable">Y</span> | <span class="variable">L</span>]).
+
+<span class="comment">/* Read as: sorted([X, Y | L]) is true IF X ≤ Y AND sorted([Y | L]) */</span></pre>
+</div>
+
+<p>When Prolog matches a goal to the head of a rule, it doesn't immediately succeed. Instead, it creates <em>subgoals</em> from the body and tries to prove them. Rules make Prolog recurse.</p>
+
+<p>Technically, a fact is just a rule with no body (or equivalently, with the body <code>true</code>). You could write <code>sorted([]) :- true.</code> and it would mean exactly the same as <code>sorted([]).</code></p>
+
+<h3>3. Queries (Goals) — Questions for Prolog</h3>
+
+<p>A <em class="term">query</em> (also called a <em>goal</em>) is what you type at the Prolog prompt. It has a body but no head — it starts with <code>?-</code> and tells Prolog "prove this."</p>
+
+<div class="code-block">
+  <div class="code-header">Examples of Queries</div>
+  <pre><span class="prompt">?-</span> <span class="predicate">sorted</span>([<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]).
+<span class="prompt">?-</span> <span class="predicate">append</span>(<span class="variable">X</span>, <span class="variable">Y</span>, [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]).
+<span class="prompt">?-</span> <span class="predicate">sort</span>([<span class="number">3</span>, <span class="number">1</span>, <span class="number">2</span>], <span class="variable">S</span>).</pre>
+</div>
+
+<p>Facts and rules are <em>passive</em> — Prolog stores them in its <em class="term">database</em> without doing anything. <strong>The only thing that triggers computation is a query.</strong> When you type a query, Prolog springs into action and starts searching.</p>
+
+<table class="comparison-table">
+  <thead>
+    <tr><th>Clause Type</th><th>Has Head?</th><th>Has Body?</th><th>Meaning</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Fact</strong></td><td>Yes</td><td>No</td><td>Unconditionally true</td></tr>
+    <tr><td><strong>Rule</strong></td><td>Yes</td><td>Yes</td><td>True if body is provable</td></tr>
+    <tr><td><strong>Query</strong></td><td>No</td><td>Yes</td><td>"Please prove this"</td></tr>
+  </tbody>
+</table>
+
+<p>A <em class="term">predicate</em> is the ordered collection of all facts and rules that share the same functor name and arity. The order matters because Prolog tries them top-to-bottom.</p>
+
+<!-- ─── Execution Model ─── -->
+<h2 id="execution">How Prolog Searches: Backward Chaining & Depth-First Search</h2>
+
+<p>Understanding how Prolog actually runs your code is essential for writing efficient programs. There are two key ideas:</p>
+
+<h3>Backward Chaining</h3>
+
+<p>Prolog is completely <em class="term">goal-oriented</em>. It starts with the query you give it and works <em>backwards</em> toward facts. Here's the process:</p>
+
+<ol style="margin: 1rem 0 1rem 1.5rem;">
+  <li>Start with the goal from the query.</li>
+  <li>Scan through the database (facts and rules), in order, looking for a clause whose <em>head</em> matches the goal.</li>
+  <li>If it matches a <strong>fact</strong>: success! The goal is proved.</li>
+  <li>If it matches a <strong>rule</strong>: the body of the rule becomes a set of new subgoals. Go to step 2 for each subgoal.</li>
+  <li>If nothing matches: the goal fails. Prolog backtracks and tries the next matching clause.</li>
+</ol>
+
+<h3>Depth-First Search</h3>
+
+<p>When there are multiple matching clauses and multiple subgoals, Prolog explores them as a tree using <strong>depth-first search</strong>:</p>
+
+<div class="analogy-box">
+  <strong>The search tree:</strong> Imagine your goal at the root. Each matching clause creates a branch. Each subgoal within a clause creates a child node. Prolog always goes <em>deep</em> first (explores the first branch all the way down), before backing up and trying the next branch. It searches <em>left to right</em> across the database, and <em>depth first</em> down the tree.
+</div>
+
+<p>This means Prolog tries the <strong>first matching clause first</strong>, and within that clause, it evaluates subgoals <strong>left to right</strong>. If a subgoal fails, it backtracks to the most recent choice point and tries the next alternative.</p>
+
+<p>This is why the order of clauses in your database matters (it determines which branch Prolog tries first), and why the order of subgoals in a rule matters (it determines what gets evaluated first).</p>
+
+<!-- ─── Special Predicates ─── -->
+<h2 id="special-predicates">Special Predicates: true, fail, loop, repeat</h2>
+
+<p>These simple built-in predicates illustrate important aspects of how Prolog works:</p>
+
+<h3><code>true</code></h3>
+
+<div class="code-block">
+  <div class="code-header">Prolog</div>
+  <pre><span class="predicate">true</span>.   <span class="comment">/* It's a fact. It always succeeds. */</span></pre>
+</div>
+
+<p><code>true</code> is a fact with no arguments. Whenever Prolog needs to prove <code>true</code>, it immediately succeeds. Simple.</p>
+
+<h3><code>fail</code></h3>
+
+<div class="code-block">
+  <div class="code-header">Prolog</div>
+  <pre><span class="comment">/* The source code for fail is... nothing! */</span>
+<span class="comment">/* There are no clauses for fail at all. */</span></pre>
+</div>
+
+<p>There are <em>zero</em> clauses that mention <code>fail</code>. When Prolog tries to prove <code>fail</code>, it searches the entire database, finds nothing, and fails. That's the whole trick — <code>fail</code> is defined by having no definition.</p>
+
+<p><code>fail</code> is useful for forcing backtracking. A common pattern is to use it with side effects to iterate through all solutions:</p>
+
+<div class="code-block">
+  <div class="code-header">Prolog — Using fail to Print All Solutions</div>
+  <pre><span class="prompt">?-</span> <span class="predicate">append</span>(<span class="variable">X</span>, <span class="variable">Y</span>, [<span class="number">3</span>, <span class="number">4</span>, <span class="number">7</span>]), <span class="predicate">write</span>(<span class="variable">X</span>), <span class="predicate">nl</span>, <span class="keyword">fail</span>.
+<span class="comment">/* Prints each X, then fail forces backtracking to get next answer */</span>
+<span class="comment">/* Output: [], [3], [3,4], [3,4,7] — then "no" */</span></pre>
+</div>
+
+<p>The query can never succeed (because <code>fail</code> is always false), but along the way it uses <code>write</code> and <code>nl</code> (newline) as side effects to print all possible values of X.</p>
+
+<div class="callout success">
+  <div class="callout-title">Software Engineering Note</div>
+  <p>Because <code>fail</code> works by having no clauses, a typo like <code>fale</code> would also fail silently. To catch such bugs, most Prolog interpreters print a warning if you call a predicate that has no clauses — <em>unless</em> it's the built-in <code>fail</code>. So <code>fail</code> is the one and only predicate that's allowed to have zero clauses without a warning.</p>
+</div>
+
+<h3><code>loop</code> — An Infinite Loop</h3>
+
+<div class="code-block">
+  <div class="code-header">Prolog</div>
+  <pre><span class="predicate">loop</span> <span class="operator">:-</span> <span class="predicate">loop</span>.   <span class="comment">/* To prove loop, you must prove loop... */</span></pre>
+</div>
+
+<p>Calling <code>loop</code> causes Prolog to try to prove <code>loop</code>, which requires proving <code>loop</code>, which requires proving <code>loop</code>... forever. It never succeeds, never fails, just runs infinitely. Logically, this clause tells you nothing (X is true if X is true — you already knew that). Procedurally, it's an infinite loop.</p>
+
+<h3><code>repeat</code> — Infinite Backtracking Success</h3>
+
+<div class="code-block">
+  <div class="code-header">Prolog</div>
+  <pre><span class="predicate">repeat</span>.                  <span class="comment">/* repeat is true (fact) */</span>
+<span class="predicate">repeat</span> <span class="operator">:-</span> <span class="predicate">repeat</span>.        <span class="comment">/* repeat is true if repeat is true (rule) */</span></pre>
+</div>
+
+<p><code>repeat</code> is <em>logically</em> equivalent to <code>loop</code> — both say "repeat is true." But <em>procedurally</em> it behaves very differently:</p>
+
+<p>When you call <code>repeat</code>, Prolog matches the first clause (the fact) and <em>immediately succeeds</em>. If something later causes backtracking to <code>repeat</code>, Prolog tries the second clause, which calls <code>repeat</code> recursively — and that also succeeds via the first clause. So <code>repeat</code> succeeds an <em>infinite number of times</em>.</p>
+
+<p>This makes <code>repeat</code> useful for creating loops:</p>
+
+<div class="code-block">
+  <div class="code-header">Prolog — Infinite Newlines</div>
+  <pre><span class="prompt">?-</span> <span class="predicate">repeat</span>, <span class="predicate">nl</span>, <span class="keyword">fail</span>.
+<span class="comment">/* repeat succeeds → nl prints a newline → fail backtracks</span>
+<span class="comment">   → nl can't redo → backtracks to repeat → repeat succeeds again</span>
+<span class="comment">   → nl prints again → fail backtracks → ... forever */</span></pre>
+</div>
+
+<h3><code>rep</code> — The Useless Variant</h3>
+
+<div class="code-block">
+  <div class="code-header">Prolog</div>
+  <pre><span class="predicate">rep</span> <span class="operator">:-</span> <span class="predicate">rep</span>.   <span class="comment">/* rule first */</span>
+<span class="predicate">rep</span>.            <span class="comment">/* fact second */</span></pre>
+</div>
+
+<p>This is <em>logically</em> identical to <code>repeat</code>, but useless in practice. Why? Because Prolog tries clauses <strong>top to bottom</strong>. It hits the rule first, which says "to prove rep, prove rep." It recurses into the rule again, and again — going deeper and deeper (depth-first!) and <em>never reaching the fact on the second line</em>.</p>
+
+<p>The search tree has the fact (success) at every level, but always branching off to the right. Since Prolog searches depth-first (down before right), it keeps going down forever and never finds any of the successes.</p>
+
+<div class="callout key-idea">
+  <div class="callout-title">Lesson</div>
+  <p><code>repeat</code> and <code>rep</code> teach a critical lesson about Prolog: the <strong>order of clauses matters</strong>. Facts should generally come before recursive rules, so Prolog finds the base case before diving into recursion. This is the same principle as making sure your base case comes first in any recursive function.</p>
+</div>
+
+<div class="quiz" id="quiz-special">
+  <div class="quiz-label">Check Your Understanding</div>
+  <p class="quiz-question">What's the fundamental difference between <code>loop :- loop.</code> and <code>repeat. repeat :- repeat.</code>?</p>
+  <div class="quiz-options">
+    <div class="quiz-option" data-correct="false" onclick="selectOption(this)"><span class="marker">A</span> <code>loop</code> has wrong logic; <code>repeat</code> has correct logic</div>
+    <div class="quiz-option" data-correct="true" onclick="selectOption(this)"><span class="marker">B</span> <code>loop</code> never succeeds; <code>repeat</code> succeeds infinitely many times</div>
+    <div class="quiz-option" data-correct="false" onclick="selectOption(this)"><span class="marker">C</span> They behave identically</div>
+    <div class="quiz-option" data-correct="false" onclick="selectOption(this)"><span class="marker">D</span> <code>repeat</code> is faster</div>
+  </div>
+  <button class="quiz-submit" onclick="checkQuiz(this)">Check Answer</button>
+  <div class="quiz-explanation correct-expl">Correct! <code>loop</code> has only a rule that calls itself — it recurses forever without ever reaching a success. <code>repeat</code> has a fact (which succeeds immediately) <em>before</em> the recursive rule. So it succeeds once on the fact, and if you backtrack, it succeeds again via the rule calling repeat again, which hits the fact again — giving infinite successes.</div>
+  <div class="quiz-explanation incorrect-expl"><code>loop</code> only has <code>loop :- loop.</code> — it recurses forever with no base case, so it never succeeds. <code>repeat</code> has <code>repeat.</code> (a fact, base case) <em>before</em> <code>repeat :- repeat.</code> (the recursive rule). The fact lets it succeed immediately. On backtracking, the rule recurses, but immediately hits the fact again — so it succeeds infinitely many times.</div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- FINAL SUMMARY                               -->
+<!-- ════════════════════════════════════════════ -->
+
+<h2 style="border-top: 2px solid var(--accent);">Putting It All Together</h2>
+
+<p>Let's step back and see how everything connects:</p>
+
+<div class="expandable" onclick="this.classList.toggle('open')">
+  <div class="expandable-header">
+    <span>The Big Picture Map</span>
+    <span class="expandable-arrow">▶</span>
+  </div>
+  <div class="expandable-body">
+    <p><strong>Programming paradigms</strong> → Logic programming is one of three major paradigms. It gives up functions and assignment in exchange for declarative power.</p>
+    <p><strong>Declarative thinking</strong> → Instead of writing step-by-step algorithms, you describe <em>what</em> the answer looks like. This connects to the Algorithm = Logic + Control equation.</p>
+    <p><strong>Logic vs. Control</strong> → Logic determines correctness; control determines efficiency. They should be independent. This was demonstrated by the sort example (correct logic, terrible control at O(n!)).</p>
+    <p><strong>Predicates</strong> → The core unit of Prolog. They succeed or fail, and can often be "run backwards." This is what makes sort work — append running backwards lets perm generate permutations.</p>
+    <p><strong>Terms</strong> → Everything in Prolog is a term (atoms, numbers, variables, structures). Even operators and lists are just syntactic sugar for structures.</p>
+    <p><strong>Execution model</strong> → Prolog uses backward chaining (goal-oriented) with depth-first search. This is why clause order matters, why <code>repeat</code> works but <code>rep</code> doesn't, and why reordering subgoals can make programs slower or cause infinite loops.</p>
+  </div>
+</div>
+
+<div class="expandable" onclick="this.classList.toggle('open')">
+  <div class="expandable-header">
+    <span>Complete Sort Code — All Predicates Together</span>
+    <span class="expandable-arrow">▶</span>
+  </div>
+  <div class="expandable-body">
+    <div class="code-block">
+      <div class="code-header">Prolog — Complete Sorting Program</div>
+      <pre><span class="comment">/* ─── sort/2 ─── */</span>
+<span class="predicate">sort</span>(<span class="variable">L</span>, <span class="variable">S</span>) <span class="operator">:-</span>
+    <span class="predicate">perm</span>(<span class="variable">L</span>, <span class="variable">S</span>),
+    <span class="predicate">sorted</span>(<span class="variable">S</span>).
+
+<span class="comment">/* ─── sorted/1 ─── */</span>
+<span class="predicate">sorted</span>([]).
+<span class="predicate">sorted</span>([<span class="variable">_</span>]).
+<span class="predicate">sorted</span>([<span class="variable">X</span>, <span class="variable">Y</span> | <span class="variable">L</span>]) <span class="operator">:-</span>
+    <span class="variable">X</span> <span class="operator">=<</span> <span class="variable">Y</span>,
+    <span class="predicate">sorted</span>([<span class="variable">Y</span> | <span class="variable">L</span>]).
+
+<span class="comment">/* ─── perm/2 ─── */</span>
+<span class="predicate">perm</span>([], []).
+<span class="predicate">perm</span>([<span class="variable">X</span> | <span class="variable">L</span>], <span class="variable">R</span>) <span class="operator">:-</span>
+    <span class="predicate">perm</span>(<span class="variable">L</span>, <span class="variable">P</span>),
+    <span class="predicate">append</span>(<span class="variable">P1</span>, <span class="variable">P2</span>, <span class="variable">P</span>),
+    <span class="predicate">append</span>(<span class="variable">P1</span>, [<span class="variable">X</span> | <span class="variable">P2</span>], <span class="variable">R</span>).
+
+<span class="comment">/* ─── append/3 ─── */</span>
+<span class="predicate">append</span>([], <span class="variable">L</span>, <span class="variable">L</span>).
+<span class="predicate">append</span>([<span class="variable">X</span> | <span class="variable">L</span>], <span class="variable">M</span>, [<span class="variable">X</span> | <span class="variable">LM</span>]) <span class="operator">:-</span>
+    <span class="predicate">append</span>(<span class="variable">L</span>, <span class="variable">M</span>, <span class="variable">LM</span>).</pre>
+    </div>
+  </div>
+</div>
+
+<div style="text-align: center; padding: 3rem 0 1rem; color: var(--text-secondary); font-family: 'DM Sans', sans-serif; font-size: 0.85rem;">
+  — End of Lecture 11 —
+</div>
+
+</main>
+</div>
+
+
+</body>
+</html>

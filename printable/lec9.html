@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Java Concurrency — Interactive Textbook</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,700;9..144,800&family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,500;8..60,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1612;
+  --paper: #faf6f0;
+  --cream: #f3ede3;
+  --warm: #e8dfd2;
+  --accent: #c0522a;
+  --accent-light: #f5e6de;
+  --accent-dark: #8a3518;
+  --teal: #2a7a6c;
+  --teal-light: #e0f0ec;
+  --blue: #3565a0;
+  --blue-light: #e2ecf5;
+  --purple: #6b4fa0;
+  --purple-light: #ece6f5;
+  --grey: #8a857d;
+  --code-bg: #2b2520;
+  --code-fg: #e8dfd2;
+  --success: #3a7d44;
+  --success-bg: #e6f2e8;
+  --error: #c0522a;
+  --error-bg: #fce8e0;
+  --shadow: 0 2px 20px rgba(26,22,18,0.08);
+  --shadow-lg: 0 8px 40px rgba(26,22,18,0.12);
+  --radius: 8px;
+  --radius-lg: 14px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; font-size: 17px; }
+
+body {
+  font-family: 'Source Serif 4', Georgia, serif;
+  color: var(--ink);
+  background: var(--paper);
+  line-height: 1.72;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- NAV SIDEBAR --- */
+.sidebar {
+  position: fixed;
+  left: 0; top: 0; bottom: 0;
+  width: 300px;
+  background: var(--ink);
+  color: var(--warm);
+  overflow-y: auto;
+  z-index: 100;
+  padding: 32px 0;
+  transform: translateX(0);
+  transition: transform 0.3s ease;
+}
+.sidebar.collapsed { transform: translateX(-300px); }
+.sidebar-toggle {
+  position: fixed;
+  left: 300px;
+  top: 20px;
+  z-index: 101;
+  background: var(--ink);
+  color: var(--warm);
+  border: none;
+  width: 36px; height: 36px;
+  border-radius: 0 6px 6px 0;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  transition: left 0.3s ease;
+}
+.sidebar.collapsed + .sidebar-toggle { left: 0; }
+.sidebar h2 {
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 0 24px;
+  margin-bottom: 8px;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.sidebar .brand {
+  font-family: 'Fraunces', serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fff;
+  padding: 0 24px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  margin-bottom: 20px;
+}
+.nav-section { margin-bottom: 20px; }
+.nav-link {
+  display: block;
+  padding: 6px 24px 6px 36px;
+  color: var(--warm);
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-family: 'Source Serif 4', serif;
+  opacity: 0.7;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+}
+.nav-link:hover { opacity: 1; background: rgba(255,255,255,0.04); }
+.nav-link.active {
+  opacity: 1;
+  color: #fff;
+  border-left-color: var(--accent);
+  background: rgba(255,255,255,0.06);
+}
+
+/* progress */
+.progress-bar {
+  margin: 0 24px 24px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 100px;
+  height: 6px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 100px;
+  width: 0%;
+  transition: width 0.5s ease;
+}
+.progress-label {
+  font-size: 0.72rem;
+  padding: 0 24px;
+  margin-bottom: 6px;
+  opacity: 0.5;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* --- MAIN --- */
+.main {
+  margin-left: 300px;
+  transition: margin-left 0.3s ease;
+  min-height: 100vh;
+}
+.sidebar.collapsed ~ .main { margin-left: 0; }
+
+/* --- HERO --- */
+.hero {
+  background: linear-gradient(135deg, var(--ink) 0%, #2e2520 60%, #3a2a1e 100%);
+  color: #fff;
+  padding: 80px 60px 70px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  right: -80px; top: -80px;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(192,82,42,0.15), transparent 70%);
+  border-radius: 50%;
+}
+.hero-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.hero h1 {
+  font-family: 'Fraunces', serif;
+  font-weight: 800;
+  font-size: 3rem;
+  line-height: 1.15;
+  margin-bottom: 16px;
+}
+.hero p {
+  font-size: 1.1rem;
+  opacity: 0.7;
+  max-width: 600px;
+  line-height: 1.6;
+}
+
+/* --- CONTENT --- */
+.content {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 48px 40px 120px;
+}
+
+/* sections */
+.section {
+  margin-bottom: 64px;
+  scroll-margin-top: 32px;
+}
+.section-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--accent);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.section h2 {
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  font-size: 1.85rem;
+  line-height: 1.25;
+  margin-bottom: 20px;
+  color: var(--ink);
+}
+.section h3 {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 1.3rem;
+  margin: 36px 0 14px;
+  color: var(--ink);
+}
+.section h4 {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin: 28px 0 10px;
+  color: var(--accent-dark);
+}
+.section p {
+  margin-bottom: 16px;
+}
+
+/* callouts */
+.callout {
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin: 24px 0;
+  position: relative;
+}
+.callout.why {
+  background: var(--accent-light);
+  border-left: 4px solid var(--accent);
+}
+.callout.key {
+  background: var(--teal-light);
+  border-left: 4px solid var(--teal);
+}
+.callout.connect {
+  background: var(--blue-light);
+  border-left: 4px solid var(--blue);
+}
+.callout.warn {
+  background: #fff3e0;
+  border-left: 4px solid #e8a020;
+}
+.callout-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.callout.why .callout-label { color: var(--accent); }
+.callout.key .callout-label { color: var(--teal); }
+.callout.connect .callout-label { color: var(--blue); }
+.callout.warn .callout-label { color: #b8860b; }
+
+/* code */
+pre {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  line-height: 1.7;
+  padding: 20px 24px;
+  border-radius: var(--radius);
+  margin: 20px 0;
+  overflow-x: auto;
+  position: relative;
+}
+pre .comment { color: #7a7268; }
+pre .keyword { color: #e8a060; font-weight: 500; }
+pre .type { color: #6cb8a0; }
+pre .string { color: #c8a070; }
+pre .label {
+  position: absolute;
+  top: 8px; right: 12px;
+  font-size: 0.62rem;
+  color: #6a6258;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  background: var(--warm);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* analogy box */
+.analogy {
+  background: var(--purple-light);
+  border-radius: var(--radius-lg);
+  padding: 24px 28px;
+  margin: 24px 0;
+  border: 1px solid rgba(107,79,160,0.15);
+}
+.analogy-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--purple);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* diagrams */
+.diagram {
+  background: #fff;
+  border: 1px solid var(--warm);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  margin: 28px 0;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.diagram svg { max-width: 100%; height: auto; }
+.diagram-caption {
+  font-size: 0.8rem;
+  color: var(--grey);
+  margin-top: 12px;
+  font-style: italic;
+}
+
+/* quiz */
+.quiz {
+  background: #fff;
+  border: 2px solid var(--warm);
+  border-radius: var(--radius-lg);
+  padding: 28px 32px;
+  margin: 32px 0;
+  box-shadow: var(--shadow);
+}
+.quiz-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.quiz-icon {
+  width: 32px; height: 32px;
+  background: var(--accent);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+.quiz-title {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 1rem;
+}
+.quiz p { margin-bottom: 14px; }
+.quiz-options { display: flex; flex-direction: column; gap: 8px; margin: 16px 0; }
+.quiz-option {
+  background: var(--cream);
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  cursor: pointer;
+  font-family: 'Source Serif 4', serif;
+  font-size: 0.95rem;
+  text-align: left;
+  transition: all 0.2s;
+  position: relative;
+}
+.quiz-option:hover { border-color: var(--accent); background: var(--accent-light); }
+.quiz-option.selected { border-color: var(--blue); background: var(--blue-light); }
+.quiz-option.correct { border-color: var(--success); background: var(--success-bg); }
+.quiz-option.incorrect { border-color: var(--error); background: var(--error-bg); }
+.quiz-option.correct::after { content: '✓'; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--success); font-weight: 700; }
+.quiz-option.incorrect::after { content: '✗'; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--error); font-weight: 700; }
+.quiz-feedback {
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  margin-top: 14px;
+  font-size: 0.92rem;
+  display: none;
+}
+.quiz-feedback.show { display: block; }
+.quiz-feedback.correct { background: var(--success-bg); border: 1px solid var(--success); }
+.quiz-feedback.incorrect { background: var(--error-bg); border: 1px solid var(--error); }
+.quiz-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 10px 24px;
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: background 0.2s;
+}
+.quiz-btn:hover { background: var(--accent-dark); }
+.quiz-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* comparison table */
+.comp-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 24px 0;
+  font-size: 0.9rem;
+}
+.comp-table th {
+  background: var(--ink);
+  color: #fff;
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  padding: 12px 16px;
+  text-align: left;
+}
+.comp-table th:first-child { border-radius: var(--radius) 0 0 0; }
+.comp-table th:last-child { border-radius: 0 var(--radius) 0 0; }
+.comp-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--warm);
+  vertical-align: top;
+}
+.comp-table tr:nth-child(even) td { background: var(--cream); }
+
+/* interactive state diagram */
+.state-diagram {
+  background: #fff;
+  border: 1px solid var(--warm);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin: 28px 0;
+  box-shadow: var(--shadow);
+}
+.state-diagram h4 {
+  text-align: center;
+  margin: 0 0 16px;
+  font-family: 'Fraunces', serif;
+}
+
+/* step through */
+.step-through {
+  background: #fff;
+  border: 2px solid var(--warm);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  margin: 28px 0;
+  box-shadow: var(--shadow);
+}
+.step-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 16px;
+}
+.step-btn {
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 8px 18px;
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.step-btn:hover { opacity: 0.85; }
+.step-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.step-indicator {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--grey);
+}
+.step-content {
+  min-height: 80px;
+  padding: 16px 0;
+}
+
+/* reorder table */
+.reorder-grid {
+  display: grid;
+  grid-template-columns: 160px 1fr 1fr 1fr;
+  gap: 2px;
+  margin: 20px 0;
+  font-size: 0.82rem;
+}
+.reorder-cell {
+  padding: 12px 14px;
+  background: var(--cream);
+}
+.reorder-cell.header {
+  background: var(--ink);
+  color: #fff;
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+}
+.reorder-cell.row-header {
+  background: var(--warm);
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+}
+.reorder-cell.yes { background: var(--success-bg); color: var(--success); font-weight: 600; }
+.reorder-cell.no { background: var(--error-bg); color: var(--error); font-weight: 600; }
+.reorder-cell.clickable { cursor: pointer; transition: all 0.2s; }
+.reorder-cell.clickable:hover { filter: brightness(0.95); }
+.reorder-detail {
+  background: var(--cream);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-top: 12px;
+  font-size: 0.88rem;
+  min-height: 60px;
+  transition: all 0.3s;
+}
+
+/* separator */
+.sep {
+  border: none;
+  border-top: 1px solid var(--warm);
+  margin: 48px 0;
+}
+
+/* responsive */
+@media (max-width: 1000px) {
+  .sidebar { transform: translateX(-300px); }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-toggle { left: 0; }
+  .sidebar.open + .sidebar-toggle { left: 300px; }
+  .main { margin-left: 0 !important; }
+  .hero { padding: 48px 28px 40px; }
+  .hero h1 { font-size: 2rem; }
+  .content { padding: 32px 20px 80px; }
+}
+</style>
+
+<style>
+/* === Printable Override === */
+
+/* Hide non-content elements */
+.sidebar, .sidebar-toggle, .progress-bar, .quiz, .quiz-btn { display: none !important; }
+
+/* Base typography */
+html { font-size: 12px !important; }
+body { line-height: 1.3 !important; }
+
+/* Layout */
+.main {
+  margin-left: 0 !important;
+  padding: 0.5rem !important;
+  max-width: 100% !important;
+}
+
+/* Headings */
+h1 { font-size: 1.4rem !important; }
+h2 { font-size: 1.15rem !important; margin-top: 0.5rem !important; }
+h3 { font-size: 1.05rem !important; margin-top: 0.4rem !important; }
+
+/* Spacing */
+p { margin-bottom: 0.25rem !important; }
+ul, ol { margin-bottom: 0.25rem !important; }
+li { margin-bottom: 0.1rem !important; }
+
+.callout {
+  padding: 0.3rem 0.5rem !important;
+  margin: 0.3rem 0 !important;
+}
+
+.code-block {
+  margin: 0.3rem 0 !important;
+  overflow: visible !important;
+}
+.code-block pre {
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+}
+.code-body, .code-block code {
+  padding: 0.3rem 0.5rem !important;
+  font-size: 0.85rem !important;
+}
+
+section, .section { margin-bottom: 0.3rem !important; }
+.subtitle { margin-bottom: 0.3rem !important; }
+
+/* Force expandables open and remove toggle UI */
+.expandable-content {
+  display: block !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+.expandable-arrow { display: none !important; }
+.expandable-header { cursor: default !important; }
+
+/* Kill animations */
+* {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+}
+</style>
+
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+  <div class="brand">Lecture 9</div>
+  <div class="progress-label">PROGRESS</div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="nav-section">
+    <h2>Foundations</h2>
+    <a href="#s1" class="nav-link" data-section="s1">1. The Big Picture</a>
+    <a href="#s2" class="nav-link" data-section="s2">2. SIMD vs MIMD</a>
+    <a href="#s3" class="nav-link" data-section="s3">3. Message Passing vs Shared Memory</a>
+    <a href="#s4" class="nav-link" data-section="s4">4. Symmetric Multiprocessing</a>
+  </div>
+  <div class="nav-section">
+    <h2>Thread Model</h2>
+    <a href="#s5" class="nav-link" data-section="s5">5. Processes, Threads & Processors</a>
+    <a href="#s6" class="nav-link" data-section="s6">6. Creating Threads in Java</a>
+    <a href="#s7" class="nav-link" data-section="s7">7. Inheritance vs Delegation</a>
+    <a href="#s8" class="nav-link" data-section="s8">8. Thread Lifecycle</a>
+  </div>
+  <div class="nav-section">
+    <h2>Synchronization</h2>
+    <a href="#s9" class="nav-link" data-section="s9">9. Race Conditions</a>
+    <a href="#s10" class="nav-link" data-section="s10">10. Synchronized & Locks</a>
+    <a href="#s11" class="nav-link" data-section="s11">11. Wait & Notify</a>
+    <a href="#s12" class="nav-link" data-section="s12">12. Higher-Level Primitives</a>
+  </div>
+  <div class="nav-section">
+    <h2>Memory Model</h2>
+    <a href="#s13" class="nav-link" data-section="s13">13. Volatile</a>
+    <a href="#s14" class="nav-link" data-section="s14">14. Java Memory Model</a>
+    <a href="#s15" class="nav-link" data-section="s15">15. Reordering Rules</a>
+  </div>
+</nav>
+<button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">☰</button>
+
+<!-- MAIN -->
+<div class="main" id="mainContent">
+
+<div class="hero">
+  <div class="hero-label">CS 131 · Programming Languages</div>
+  <h1>Concurrency in Java</h1>
+  <p>How multiple independent threads cooperate to solve problems — from hardware foundations to the Java Memory Model.</p>
+</div>
+
+<div class="content">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 1: BIG PICTURE -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s1">
+  <div class="section-number">Section 01</div>
+  <h2>The Big Picture: Why Concurrency?</h2>
+
+  <p>Imagine you're cooking a big dinner. You could do everything one step at a time — chop vegetables, then boil water, then sauté onions, then set the table. But that's slow. A smarter approach is to do several things at once: while the water boils, you chop vegetables; while things cook, you set the table. That's the core idea behind <strong>concurrency</strong> — having multiple activities progress together rather than one-at-a-time.</p>
+
+  <div class="callout key">
+    <div class="callout-label">Key Definition</div>
+    <strong>Concurrency</strong> is how multiple independent threads of execution work together to solve a problem. It's not just about running things at the same time (that's <em>parallelism</em>). Concurrency is about <em>coordinating</em> multiple activities so they cooperate correctly.
+  </div>
+
+  <p>In the world of computers, concurrency matters because modern machines have multiple CPU cores, and we want to use all of them — not let some sit idle. But getting multiple pieces of code to work together without stepping on each other's toes is one of the hardest problems in all of computer science. That's what this lecture is about.</p>
+
+  <div class="callout why">
+    <div class="callout-label">Why This Matters</div>
+    Every time you use a web browser, a phone app, or a video game, concurrency is happening behind the scenes. One thread handles your clicks, another fetches data from the network, another renders graphics. Without concurrency, your apps would freeze every time they waited for the network. Understanding how this works — and what can go wrong — is fundamental to writing reliable software.
+  </div>
+
+  <p>This lecture covers Java's approach to concurrency specifically. Java was designed from the ground up with concurrency in mind, and it made specific choices about <em>how</em> threads communicate that shape everything we'll learn. Before we look at Java's tools, we need to understand the hardware landscape they were designed for.</p>
+</div>
+
+<hr class="sep">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 2: SIMD vs MIMD -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s2">
+  <div class="section-number">Section 02</div>
+  <h2>Two Kinds of Parallelism: SIMD vs MIMD</h2>
+
+  <p>At the hardware level, there are two fundamentally different ways to do things in parallel. Understanding these two approaches is important because Java deliberately chose one of them, and that choice shapes the entire programming model.</p>
+
+  <h3>SIMD: Single Instruction, Multiple Data</h3>
+
+  <p>Imagine a drill sergeant shouting a single command: "Everyone, do ten push-ups!" Every soldier does the same exercise at the same time. That's SIMD. There's <strong>one instruction</strong> (the command) applied to <strong>many pieces of data</strong> (each soldier) simultaneously.</p>
+
+  <div class="callout key">
+    <div class="callout-label">Key Definition</div>
+    <strong>SIMD (Single Instruction Multiple Data)</strong>: One instruction is applied simultaneously to many independent pieces of data. The data differs, but the instruction is the same — every "lane" follows the same control flow.
+  </div>
+
+  <p>A concrete example: suppose you have a million numbers and you want to add 1 to each of them. With SIMD, you issue one "add 1" instruction and it gets applied to all million numbers at the same time. This is incredibly efficient for certain workloads — especially the kind of math used in graphics (which is why <strong>GPUs</strong> are built around SIMD). When you see a GPU running a machine learning model, it's largely doing SIMD: applying the same matrix multiplication operation across huge arrays of numbers simultaneously.</p>
+
+  <p>The limitation? SIMD only works when every piece of data needs the <em>same</em> operation. If you need different pieces of your program to do <em>different</em> things, SIMD can't handle that.</p>
+
+  <h3>MIMD: Multiple Instruction, Multiple Data</h3>
+
+  <p>Now imagine an office where each worker has their own task list. One person handles emails, another processes spreadsheets, a third manages the calendar. They're all working at the same time, but each is doing something <em>different</em>. That's MIMD.</p>
+
+  <div class="callout key">
+    <div class="callout-label">Key Definition</div>
+    <strong>MIMD (Multiple Instruction Multiple Data)</strong>: Different processors or threads execute <em>different instructions</em> on <em>different data</em>. Each thread has its own instruction pointer, and their control flows can diverge — meaning each can make its own decisions about what to do next.
+  </div>
+
+  <p>This is what <strong>CPUs</strong> do. Each CPU core can run a completely different program, or a different part of the same program. It's much more flexible than SIMD, but also less efficient for the kind of uniform math that SIMD excels at.</p>
+
+  <div class="analogy">
+    <div class="analogy-label">Real-World Analogy — SIMD vs MIMD</div>
+    <p><strong>SIMD</strong> is like a factory assembly line where every worker does the exact same task on different items passing by. Super fast for that one task.</p>
+    <p><strong>MIMD</strong> is like a restaurant kitchen where the chef chops vegetables, the sous chef makes sauce, and the dishwasher cleans plates. Everyone does something different, and they coordinate to get dinner served.</p>
+  </div>
+
+  <h3>Why Java Chose MIMD</h3>
+
+  <p>Java programs are about <em>control, logic, coordination, and managing state</em> — not uniform math on huge arrays. A web server needs one thread handling user login, another writing to a database, another talking to the network. These are all fundamentally <em>different</em> tasks. That's MIMD territory.</p>
+
+  <p>Java does have some SIMD support, but it's not the core of the language. From a programming languages perspective, the interesting part is the MIMD side — how Java lets you create multiple threads, each with their own instruction pointer, and coordinate them.</p>
+
+  <div class="callout connect">
+    <div class="callout-label">Connecting the Dots</div>
+    Modern high-end machines (your phone, your laptop, supercomputers like El Capitan) actually use <strong>both</strong> SIMD and MIMD. The CPU cores handle the "smart" part — the control logic that decides what to do next. The GPU handles the "worker bee" part — crunching through massive amounts of identical math. Java's threading model handles the CPU/MIMD side of this picture. If you're into machine learning, the GPU/SIMD side is what frameworks like PyTorch manage — but someone still needs to <em>tell</em> the GPU what to compute, and that coordination is MIMD.
+  </div>
+
+  <!-- QUIZ -->
+  <div class="quiz" id="quiz1">
+    <div class="quiz-header">
+      <div class="quiz-icon">?</div>
+      <div class="quiz-title">Check Your Understanding</div>
+    </div>
+    <p>A web server has one thread handling HTTP requests, another writing logs to disk, and a third managing a cache. What kind of parallelism is this?</p>
+    <div class="quiz-options">
+      <button class="quiz-option" onclick="checkQuiz('quiz1', this, false)">SIMD — because all threads are processing data</button>
+      <button class="quiz-option" onclick="checkQuiz('quiz1', this, true)">MIMD — because each thread executes different instructions on different data</button>
+      <button class="quiz-option" onclick="checkQuiz('quiz1', this, false)">Neither — this is just concurrency, not parallelism</button>
+    </div>
+    <div class="quiz-feedback correct" id="quiz1-correct">Exactly right! Each thread has its own instruction pointer doing a completely different task. This is the definition of MIMD — multiple instructions, multiple data. Java's threading model is built for exactly this.</div>
+    <div class="quiz-feedback incorrect" id="quiz1-incorrect">Not quite. Since each thread is doing a <em>different</em> task (handling requests vs writing logs vs managing cache), each one has its own instruction pointer following its own control flow. That's MIMD. SIMD would require all threads to execute the <em>same</em> instruction.</div>
+  </div>
+</div>
+
+<hr class="sep">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 3: MESSAGE PASSING vs SHARED MEMORY -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s3">
+  <div class="section-number">Section 03</div>
+  <h2>How Threads Talk: Message Passing vs Shared Memory</h2>
+
+  <p>Now we know Java uses MIMD — multiple threads each doing their own thing. But here's the critical question: when those threads need to cooperate (which is the whole point of concurrency), <strong>how do they communicate?</strong></p>
+
+  <p>There are two fundamental approaches, and Java's choice here affects everything from how you write code to what kinds of bugs you'll encounter.</p>
+
+  <h3>Approach 1: Message Passing</h3>
+
+  <p>Think of how email works. When you want to tell a colleague something, you compose a complete message, address it, and send it. Your colleague receives the full message in their inbox. You don't share a desk — you each have your own workspace, and all communication happens through these discrete messages.</p>
+
+  <div class="callout key">
+    <div class="callout-label">Key Definition</div>
+    <strong>Message Passing</strong>: Threads communicate by sending complete messages through a channel. Each thread has its own private memory — they never directly touch each other's data.
+  </div>
+
+  <p>This is extremely common on the internet. Think about how a web browser (client) talks to a web server: it constructs an HTTP request (maybe with JSON data), sends it across the network, and the server receives the full message and responds. Node.js, for example, is primarily about this model — sending messages between clients and servers.</p>
+
+  <p><strong>Advantages:</strong> Since threads never share memory, there's no risk of one thread accidentally corrupting another's data. It's easier to reason about correctness. <strong>Disadvantage:</strong> Constructing, sending, and receiving messages has overhead. You have to serialize all the data (convert it to bytes), send it, then deserialize it on the other end.</p>
+
+  <h3>Approach 2: Shared Memory</h3>
+
+  <p>Now imagine two colleagues sharing the same whiteboard. Instead of writing each other messages, one person writes a number on the whiteboard, and the other person just walks over and reads it. Communication is instant — no message to construct, no delivery delay.</p>
+
+  <div class="callout key">
+    <div class="callout-label">Key Definition</div>
+    <strong>Shared Memory</strong>: Threads communicate by reading from and writing to the same memory locations. All threads can see the same objects. One thread says "I've stored XYZ at location ABC, go pick it up whenever."
+  </div>
+
+  <p>This is <strong>Java's approach</strong>. When Java was developed in the 1990s, shared memory was simply faster — especially on machines where multiple CPU cores are attached to the same physical RAM. No need to construct messages, serialize data, or wait for delivery. Just write to a memory location, and the other thread can read it.</p>
+
+  <div class="callout warn">
+    <div class="callout-label">The Catch</div>
+    Shared memory is faster, but it's also <strong>much more dangerous</strong>. If two threads write to the same memory location at the same time, the data can get corrupted. If one thread reads while another is halfway through writing, it might see garbage. These bugs — called <strong>race conditions</strong> — are among the hardest bugs to find in all of software engineering. We'll spend a large part of this lecture learning how Java tries to prevent them.
+  </div>
+
+  <div class="analogy">
+    <div class="analogy-label">Why this analogy matters</div>
+    <p><strong>Message Passing</strong> = passing notes in class. Safe (only you can read your note) but slow.</p>
+    <p><strong>Shared Memory</strong> = a shared whiteboard. Fast (just look at it) but chaotic if two people write at once.</p>
+    <p>Java chose the whiteboard. The rest of this lecture is about the rules for using the whiteboard without chaos.</p>
+  </div>
+
+  <div class="quiz" id="quiz2">
+    <div class="quiz-header">
+      <div class="quiz-icon">?</div>
+      <div class="quiz-title">Check Your Understanding</div>
+    </div>
+    <p>Why is shared memory more error-prone than message passing?</p>
+    <div class="quiz-options">
+      <button class="quiz-option" onclick="checkQuiz('quiz2', this, false)">Because shared memory is slower, giving more time for errors</button>
+      <button class="quiz-option" onclick="checkQuiz('quiz2', this, true)">Because multiple threads can read/write the same data simultaneously, causing conflicts</button>
+      <button class="quiz-option" onclick="checkQuiz('quiz2', this, false)">Because message passing uses encryption</button>
+    </div>
+    <div class="quiz-feedback correct" id="quiz2-correct">Right! When two threads share the same memory, they can both try to modify the same variable at the same time. This leads to race conditions — the results depend on which thread happens to run first. With message passing, each thread has private data, so this problem doesn't arise.</div>
+    <div class="quiz-feedback incorrect" id="quiz2-incorrect">Not quite. The issue is that shared memory lets multiple threads access the same data at the same time. If thread A is writing to a variable while thread B reads it, thread B might see a half-written, corrupted value. This is the fundamental danger of shared memory.</div>
+  </div>
+</div>
+
+<hr class="sep">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 4: SMP -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s4">
+  <div class="section-number">Section 04</div>
+  <h2>Symmetric Multiprocessing (SMP)</h2>
+
+  <p>Before we dive into Java's threading tools, there's one more piece of the hardware picture we need. Java assumes a specific kind of hardware setup called <strong>Symmetric Multiprocessing</strong>, and this assumption simplifies the programming model significantly.</p>
+
+  <div class="callout key">
+    <div class="callout-label">Key Definition</div>
+    <strong>Symmetric Multiprocessing (SMP)</strong> is a hardware architecture where multiple CPUs (or CPU cores) are connected to shared main memory (RAM), and all CPUs have roughly equal speed and equal access to that RAM.
+  </div>
+
+  <p>Picture it like this: you have several equally-capable workers (the CPU cores) all sitting around the same table (the shared RAM). Any worker can reach any part of the table equally quickly. There's no "this corner is closer to me" — everyone has symmetric access.</p>
+
+  <p><strong>Why does this matter for programming?</strong> Because it means you don't have to think about <em>which</em> CPU your thread runs on. Any thread can run on any CPU, and any thread can access any piece of memory at roughly the same speed. This simplifies programming enormously — you just write your threads and let the operating system figure out which CPU to run them on.</p>
+
+  <div class="callout connect">
+    <div class="callout-label">Connecting the Dots</div>
+    <p>In reality, this simple SMP model is starting to break down. Modern phones and laptops have "big" performance cores and "little" efficiency cores — they're not all equal. But even there, the key SMP assumption still holds: all cores can talk to all RAM at roughly the same speed. There are more exotic architectures where different CPUs have different memory speeds (called NUMA), but we won't worry about those.</p>
+    <p><strong>Bottom line:</strong> Java's memory and thread model assumes SMP. This means when you write Java threading code, you can think of all threads as having equal access to all shared data.</p>
+  </div>
+</div>
+
+<hr class="sep">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 5: PROCESSES, THREADS, PROCESSORS -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s5">
+  <div class="section-number">Section 05</div>
+  <h2>Processes, Threads, and Processors</h2>
+
+  <p>We've established the hardware landscape. Now let's get precise about three terms that are easy to confuse: <strong>processes</strong>, <strong>threads</strong>, and <strong>processors</strong>. These are the building blocks of everything that follows.</p>
+
+  <h3>What is a Process?</h3>
+
+  <p>A <strong>process</strong> is a running program together with <em>all the resources</em> it needs. When you double-click an application on your computer, the operating system creates a process for it. That process includes:</p>
+
+  <div class="callout key">
+    <div class="callout-label">Key Definition</div>
+    <strong>Process</strong>: A running program plus all of its resources — its own private block of memory (RAM), file descriptors (tracking which files it has open), the current working directory, and everything else the program needs to operate.
+  </div>
+
+  <p>The crucial property of processes is <strong>isolation</strong>. Different processes on the same machine <em>cannot</em> see each other's memory. This is a security feature — you don't want your web browser to be able to read your banking app's memory. If one process goes haywire and crashes, other processes are protected. You can just kill the bad process (<code>kill 5931</code> on Linux) and everything else keeps running.</p>
+
+  <h3>What is a Thread?</h3>
+
+  <p>A <strong>thread</strong> is like a slimmed-down process. It's a unit of execution that lives <em>inside</em> a process.</p>
+
+  <div class="callout key">
+    <div class="callout-label">Key Definition</div>
+    <strong>Thread</strong>: A unit of execution within a process, consisting of its own <strong>instruction pointer</strong> (which line of code it's currently on), its own <strong>stack</strong> (for local variables and function calls), and its own <strong>stack pointer</strong>. But threads within the same process <em>share</em> the process's heap memory.
+  </div>
+
+  <p>This is the key difference. Processes are isolated — they have separate memory. Threads within the same process share memory — they can all see and modify the same objects on the heap. This is exactly the <strong>shared memory model</strong> we discussed: Java threads communicate by reading and writing to the same shared heap.</p>
+
+  <div class="analogy">
+    <div class="analogy-label">Analogy — Process vs Thread</div>
+    <p>A <strong>process</strong> is like an apartment. Each apartment has its own kitchen, bathroom, and living space. Neighbors can't walk into your apartment.</p>
+    <p><strong>Threads</strong> are like roommates in the same apartment. They each have their own toothbrush (instruction pointer, stack) but they share the kitchen and living room (heap memory). If one roommate makes a mess in the kitchen, the others have to deal with it.</p>
+  </div>
+
+  <p>This feeds directly into our MIMD model: each thread has its own instruction pointer, so they can each be executing different instructions (Multiple Instruction). And they work on shared data (Multiple Data). That's why your processors have to deal with lots of different instruction pointers — decoding different instructions for different threads all at once.</p>
+
+  <h3>What is a Processor?</h3>
+
+  <div class="callout key">
+    <div class="callout-label">Key Definition</div>
+    <strong>Processor</strong>: A physical execution unit — a CPU core. This is <em>hardware</em>, unlike processes and threads which are software concepts. It might be virtual (in a cloud environment) or real (a silicon chip in your computer).
+  </div>
+
+  <p>Don't confuse "process" with "processor" — they're completely different things despite similar names. A process is a running program (software). A processor is a CPU core (hardware). Multiple threads from the same process can run on different processors simultaneously.</p>
+
+  <h3>Trust and Threads</h3>
+
+  <p>Since threads share memory, they have to <strong>trust each other</strong>. If one thread goes rogue — scribbling on memory it shouldn't, or going into an infinite loop — that's a bug in your program. Unlike processes, you can't easily kill one bad thread without affecting the others, because they all share the same memory space. The attitude is: if you have a bad thread, go fix your program and run it again.</p>
+
+  <div class="quiz" id="quiz3">
+    <div class="quiz-header">
+      <div class="quiz-icon">?</div>
+      <div class="quiz-title">Check Your Understanding</div>
+    </div>
+    <p>Thread A and Thread B live in the same process. Thread A creates an object <code>x</code> on the heap. Can Thread B see and modify <code>x</code>?</p>
+    <div class="quiz-options">
+      <button class="quiz-option" onclick="checkQuiz('quiz3', this, true)">Yes — threads in the same process share heap memory</button>
+      <button class="quiz-option" onclick="checkQuiz('quiz3', this, false)">No — each thread has its own private memory</button>
+      <button class="quiz-option" onclick="checkQuiz('quiz3', this, false)">Only if Thread A explicitly sends the object to Thread B</button>
+    </div>
+    <div class="quiz-feedback correct" id="quiz3-correct">Correct! This is the fundamental property of threads — they share heap memory within the same process. Thread B can read and modify <code>x</code> directly. This is what makes shared-memory concurrency fast (no need to send messages) but also dangerous (both threads could modify <code>x</code> at the same time).</div>
+    <div class="quiz-feedback incorrect" id="quiz3-incorrect">Actually, yes it can! Threads within the same process share all heap memory. That's the key difference between threads and processes. Each thread has its own <em>stack</em> (local variables), but the <em>heap</em> (where objects live) is shared. This shared access is both the strength and the danger of Java's threading model.</div>
+  </div>
+</div>
+
+<hr class="sep">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 6: CREATING THREADS IN JAVA -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s6">
+  <div class="section-number">Section 06</div>
+  <h2>Creating Threads in Java</h2>
+
+  <p>Now we get to the practical part. Java represents threads as objects. There's a built-in class called <code>Thread</code>, and an object of type <code>Thread</code> represents a potential thread of execution. But here's an important subtlety: <strong>the object alone does nothing</strong>. Just creating a <code>Thread</code> object doesn't start any parallel execution. It's just some bytes sitting in memory. You need to explicitly tell it to start.</p>
+
+  <p>There are two ways to define what a thread should do when it runs. Let's learn both, because understanding why the second way is preferred teaches us something important about object-oriented design.</p>
+
+  <h3>Method 1: Subclassing (Inheritance)</h3>
+
+  <p>The first approach is to create a new class that <em>extends</em> <code>Thread</code>. Your new class inherits all the thread machinery (the ability to start, be scheduled by the OS, etc.) and you just tell it <em>what to do</em> by overriding a method called <code>run()</code>.</p>
+
+  <pre><span class="label">Java</span><span class="keyword">class</span> <span class="type">T</span> <span class="keyword">extends</span> <span class="type">Thread</span> {
+    <span class="keyword">public void</span> run() {
+        <span class="comment">// Your code goes here.</span>
+        <span class="comment">// When this thread runs, this method executes.</span>
+        System.out.println(<span class="string">"Hello from a thread!"</span>);
+    }
+}</pre>
+
+  <p>To actually run this thread:</p>
+
+  <pre><span class="label">Java</span><span class="type">T</span> x = <span class="keyword">new</span> <span class="type">T</span>();   <span class="comment">// Create a Thread object (no parallel execution yet!)</span>
+x.start();          <span class="comment">// NOW the OS creates a real thread and calls run()</span></pre>
+
+  <div class="callout warn">
+    <div class="callout-label">Critical Distinction</div>
+    <p><strong><code>start()</code></strong> and <strong><code>run()</code></strong> are very different!</p>
+    <p><code>start()</code> asks the JVM to create a brand new OS thread (with its own instruction pointer and stack), and <em>then</em> calls <code>run()</code> inside that new thread. Your code now runs in parallel.</p>
+    <p>If you just call <code>run()</code> directly (without <code>start()</code>), it's just a normal method call — it runs in your <em>current</em> thread. No new thread is created. No parallelism. This is a very common beginner mistake!</p>
+  </div>
+
+  <h3>Method 2: Delegation (Runnable interface)</h3>
+
+  <p>The second approach separates "what code to run" from "being a thread." You create a class that implements the <code>Runnable</code> interface, then hand it to a <code>Thread</code> object.</p>
+
+  <pre><span class="label">Java</span><span class="comment">// Runnable is a built-in interface with just one method:</span>
+<span class="keyword">interface</span> <span class="type">Runnable</span> {
+    <span class="keyword">void</span> run();
+}</pre>
+
+  <p><code>Runnable</code> is remarkably simple — it's an interface with a single method, <code>run()</code>, that takes no arguments and returns nothing. A class that implements <code>Runnable</code> is just promising: "I have a <code>run()</code> method you can call."</p>
+
+  <pre><span class="label">Java</span><span class="keyword">class</span> <span class="type">U</span> <span class="keyword">implements</span> <span class="type">Runnable</span> {
+    <span class="keyword">public void</span> run() {
+        <span class="comment">// Your code goes here</span>
+        System.out.println(<span class="string">"Hello from Runnable!"</span>);
+    }
+}</pre>
+
+  <p>But <code>U</code> is not a thread — it has no <code>start()</code> method. It's just a regular object that happens to have a <code>run()</code> method. To run it in a thread, you <em>hand it to</em> a <code>Thread</code> object:</p>
+
+  <pre><span class="label">Java</span><span class="type">U</span> y = <span class="keyword">new</span> <span class="type">U</span>();            <span class="comment">// Create the Runnable (no concurrency yet)</span>
+<span class="type">Thread</span> t = <span class="keyword">new</span> <span class="type">Thread</span>(y);  <span class="comment">// Create a Thread that delegates to y</span>
+                              <span class="comment">// "When I start, ask y what to run"</span>
+t.start();                   <span class="comment">// NOW the OS thread is created, y.run() is called</span></pre>
+
+  <p>This is <strong>delegation</strong>: the <code>Thread</code> object <code>t</code> is responsible for thread creation and scheduling, but it <em>delegates</em> the question "what code should I actually run?" to the <code>Runnable</code> object <code>y</code>.</p>
+</div>
+
+<hr class="sep">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 7: INHERITANCE VS DELEGATION -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s7">
+  <div class="section-number">Section 07</div>
+  <h2>Inheritance vs Delegation: Why Delegation Wins</h2>
+
+  <p>At first glance, Method 1 (subclassing) seems simpler — it's two lines of code to start the thread instead of three. So why does almost everyone prefer Method 2 (delegation)?</p>
+
+  <p>The answer lies in Java's <strong>single inheritance</strong> rule. In Java, a class can only extend <em>one</em> other class. If your class <code>T extends Thread</code>, then <code>T</code> is permanently welded to the <code>Thread</code> class hierarchy. It can't extend anything else.</p>
+
+  <div class="analogy">
+    <div class="analogy-label">Analogy — The Hierarchy Problem</div>
+    <p>Imagine you're building a class hierarchy for a game. You have <code>Character → Warrior</code>. Now you want the <code>Warrior</code> to run in its own thread. With <strong>subclassing</strong>, you'd need <code>Warrior extends Thread</code> — but <code>Warrior</code> already extends <code>Character</code>! In Java, you can't do both. Your design is stuck.</p>
+    <p>With <strong>delegation</strong>, <code>Warrior</code> can extend <code>Character</code> AND implement <code>Runnable</code>. Java allows implementing multiple interfaces. The <code>Warrior</code> stays where it belongs in your class hierarchy, and you just hand it to a <code>Thread</code> when you want it to run concurrently.</p>
+  </div>
+
+  <div class="callout key">
+    <div class="callout-label">Key Principle</div>
+    <p><strong>Delegation separates concerns.</strong> The <code>Thread</code> class handles thread mechanics (OS thread creation, scheduling, lifecycle). The <code>Runnable</code> object handles the computation (what code to run). By keeping these separate, you maintain flexibility in your class hierarchy.</p>
+    <p>This inheritance-vs-delegation tradeoff isn't unique to threading — it comes up over and over in object-oriented programming. Delegation is generally preferred because it's more flexible.</p>
+  </div>
+
+  <div class="quiz" id="quiz4">
+    <div class="quiz-header">
+      <div class="quiz-icon">?</div>
+      <div class="quiz-title">Check Your Understanding</div>
+    </div>
+    <p>You have a class <code>DatabaseConnection extends Connection</code>. You want instances of this class to run in their own thread. Which approach should you use?</p>
+    <div class="quiz-options">
+      <button class="quiz-option" onclick="checkQuiz('quiz4', this, false)">Make DatabaseConnection extend Thread instead of Connection</button>
+      <button class="quiz-option" onclick="checkQuiz('quiz4', this, true)">Make DatabaseConnection implement Runnable (keep extending Connection)</button>
+      <button class="quiz-option" onclick="checkQuiz('quiz4', this, false)">You can't run this in a thread because it already extends Connection</button>
+    </div>
+    <div class="quiz-feedback correct" id="quiz4-correct">Exactly! Since Java has single inheritance, <code>DatabaseConnection</code> can't extend both <code>Connection</code> and <code>Thread</code>. But it CAN extend <code>Connection</code> AND implement <code>Runnable</code> — Java allows implementing multiple interfaces. Then you create a <code>Thread</code> and pass your <code>DatabaseConnection</code> to it: <code>new Thread(myDbConn).start()</code>.</div>
+    <div class="quiz-feedback incorrect" id="quiz4-incorrect">Remember: Java only allows single inheritance (one <code>extends</code>), but you can implement multiple interfaces. The solution is <code>class DatabaseConnection extends Connection implements Runnable</code>. Then wrap it in a Thread when needed: <code>new Thread(myDbConn).start()</code>.</div>
+  </div>
+</div>
+
+<hr class="sep">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 8: THREAD LIFECYCLE -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s8">
+  <div class="section-number">Section 08</div>
+  <h2>The Thread Lifecycle</h2>
+
+  <p>A Java Thread isn't just "running" or "not running." It goes through several distinct states during its lifetime. Understanding these states is crucial for reasoning about what your threads are doing — and for understanding the synchronization tools we'll learn next.</p>
+
+  <div class="callout why">
+    <div class="callout-label">Why This Matters</div>
+    When you debug multi-threaded code, you need to know whether a thread is actually executing, waiting for something, or finished. Each state has different implications for performance and correctness. The tools we learn later (wait, notify, synchronized) all cause state transitions.
+  </div>
+
+  <!-- Interactive State Diagram -->
+  <div class="state-diagram">
+    <h4>Interactive Thread Lifecycle — click each state to learn more</h4>
+    <svg viewBox="0 0 700 340" xmlns="http://www.w3.org/2000/svg" style="font-family: 'JetBrains Mono', monospace;">
+      <!-- NEW -->
+      <rect x="20" y="140" width="100" height="46" rx="8" fill="#e8dfd2" stroke="#1a1612" stroke-width="2" class="state-box" onclick="showState('new')" style="cursor:pointer"/>
+      <text x="70" y="168" text-anchor="middle" font-size="13" font-weight="600" fill="#1a1612">NEW</text>
+      <!-- arrow -->
+      <line x1="120" y1="163" x2="175" y2="163" stroke="#1a1612" stroke-width="2" marker-end="url(#arrow)"/>
+      <text x="148" y="155" text-anchor="middle" font-size="9" fill="#8a857d">start()</text>
+
+      <!-- RUNNABLE -->
+      <rect x="178" y="130" width="120" height="66" rx="8" fill="#e0f0ec" stroke="#2a7a6c" stroke-width="2.5" class="state-box" onclick="showState('runnable')" style="cursor:pointer"/>
+      <text x="238" y="158" text-anchor="middle" font-size="13" font-weight="600" fill="#2a7a6c">RUNNABLE</text>
+      <text x="238" y="178" text-anchor="middle" font-size="9" fill="#5a9a8c">(running or ready)</text>
+
+      <!-- self-loop: keep running -->
+      <path d="M238,130 C238,100 270,100 270,130" fill="none" stroke="#2a7a6c" stroke-width="1.5" marker-end="url(#arrowG)"/>
+      <text x="270" y="105" font-size="8" fill="#2a7a6c">keep running</text>
+
+      <!-- yield self-loop -->
+      <path d="M205,130 C205,105 185,105 185,130" fill="none" stroke="#2a7a6c" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <text x="167" y="105" font-size="8" fill="#2a7a6c">yield()</text>
+
+      <!-- WAITING -->
+      <rect x="370" y="30" width="120" height="46" rx="8" fill="#e2ecf5" stroke="#3565a0" stroke-width="2" class="state-box" onclick="showState('waiting')" style="cursor:pointer"/>
+      <text x="430" y="58" text-anchor="middle" font-size="13" font-weight="600" fill="#3565a0">WAITING</text>
+      <line x1="298" y1="140" x2="370" y2="58" stroke="#3565a0" stroke-width="1.5" marker-end="url(#arrowB)"/>
+      <text x="320" y="90" font-size="8" fill="#3565a0">wait()</text>
+
+      <!-- TIMED_WAITING -->
+      <rect x="370" y="120" width="140" height="46" rx="8" fill="#ece6f5" stroke="#6b4fa0" stroke-width="2" class="state-box" onclick="showState('timed')" style="cursor:pointer"/>
+      <text x="440" y="148" text-anchor="middle" font-size="12" font-weight="600" fill="#6b4fa0">TIMED_WAITING</text>
+      <line x1="298" y1="160" x2="370" y2="145" stroke="#6b4fa0" stroke-width="1.5" marker-end="url(#arrowP)"/>
+      <text x="330" y="145" font-size="8" fill="#6b4fa0">sleep(ms)</text>
+
+      <!-- BLOCKED -->
+      <rect x="370" y="210" width="120" height="46" rx="8" fill="#fff3e0" stroke="#c0860b" stroke-width="2" class="state-box" onclick="showState('blocked')" style="cursor:pointer"/>
+      <text x="430" y="238" text-anchor="middle" font-size="13" font-weight="600" fill="#b8860b">BLOCKED</text>
+      <line x1="270" y1="196" x2="370" y2="230" stroke="#b8860b" stroke-width="1.5" marker-end="url(#arrowY)"/>
+      <text x="305" y="218" font-size="8" fill="#b8860b">I/O</text>
+
+      <!-- return arrows (dashed) -->
+      <line x1="370" y1="48" x2="298" y2="145" stroke="#3565a0" stroke-width="1.2" stroke-dasharray="5,3" marker-end="url(#arrowB)"/>
+      <line x1="370" y1="138" x2="298" y2="155" stroke="#6b4fa0" stroke-width="1.2" stroke-dasharray="5,3" marker-end="url(#arrowP)"/>
+      <line x1="370" y1="225" x2="298" y2="175" stroke="#b8860b" stroke-width="1.2" stroke-dasharray="5,3" marker-end="url(#arrowY)"/>
+
+      <!-- TERMINATED -->
+      <rect x="178" y="270" width="120" height="46" rx="8" fill="#fce8e0" stroke="#c0522a" stroke-width="2" class="state-box" onclick="showState('terminated')" style="cursor:pointer"/>
+      <text x="238" y="298" text-anchor="middle" font-size="12" font-weight="600" fill="#c0522a">TERMINATED</text>
+      <line x1="238" y1="196" x2="238" y2="270" stroke="#c0522a" stroke-width="1.5" marker-end="url(#arrowR)"/>
+      <text x="253" y="240" font-size="8" fill="#c0522a">run() returns</text>
+
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#1a1612"/></marker>
+        <marker id="arrowG" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#2a7a6c"/></marker>
+        <marker id="arrowB" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#3565a0"/></marker>
+        <marker id="arrowP" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#6b4fa0"/></marker>
+        <marker id="arrowY" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#b8860b"/></marker>
+        <marker id="arrowR" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#c0522a"/></marker>
+      </defs>
+    </svg>
+    <div id="stateDetail" class="reorder-detail" style="min-height:70px; margin-top:14px;">
+      <em>Click any state in the diagram above to learn about it.</em>
+    </div>
+  </div>
+
+  <h3>State by State</h3>
+
+  <h4>1. NEW</h4>
+  <p>Immediately after you call <code>new Thread(y)</code>, the thread object exists on the heap, but <strong>no OS thread has been created</strong>. There's no extra instruction pointer, no extra stack. The number of actual threads running hasn't changed. The thread is just a regular Java object at this point.</p>
+  <p>While in the NEW state, you can configure the thread — for example, setting its priority (<code>t.setPriority(7)</code>) or giving it a name (<code>t.setName("worker-1")</code>). These don't change the state.</p>
+
+  <h4>2. RUNNABLE</h4>
+  <p>When you call <code>t.start()</code>, two things happen: (1) the JVM asks the OS to create a real thread — allocating an instruction pointer, a stack, and scheduling metadata (on Linux, this would call <code>pthread_create</code>); (2) the <code>run()</code> method begins executing in that new thread.</p>
+
+  <p>The state is called <strong>RUNNABLE</strong> — not "RUNNING" — for an important reason. Suppose you create 100 threads on a machine with 16 cores. All 100 cannot physically run at the same time. The OS decides which ones get CPU time. So RUNNABLE means "eligible to run" — maybe it's running right now, maybe it's waiting for its turn on a CPU.</p>
+
+  <div class="callout key">
+    <div class="callout-label">Key Advice from the Lecture</div>
+    <strong>Never ask "is this thread currently running?"</strong> It doesn't matter. All that matters is: <em>is it runnable?</em> If it's runnable, it will get its turn eventually and make progress. Reason about your program in terms of what's runnable, not what's physically running at this exact nanosecond.
+  </div>
+
+  <h4>3. WAITING</h4>
+  <p>A thread enters the WAITING state when it calls <code>wait()</code> on an object. It's frozen — waiting for some other thread to notify it that something has happened. While waiting, <strong>it uses zero CPU</strong>. This is important for efficiency: instead of spinning in a loop checking "is it ready yet?", the thread goes to sleep and gets woken up when needed.</p>
+
+  <h4>4. TIMED_WAITING</h4>
+  <p>Like WAITING, but with a time limit. Calling <code>Thread.sleep(1000)</code> puts the thread into TIMED_WAITING for 1000 milliseconds. You can also do a timed wait: "wait for this event, but give up after 2 seconds." This provides a guaranteed wake-up time.</p>
+
+  <h4>5. BLOCKED</h4>
+  <p>A thread enters the BLOCKED state when it's waiting for an <strong>external</strong> event — reading from a file, waiting for network data from a socket, etc. The difference from WAITING: WAITING is for <em>internal</em> events (another thread doing something), while BLOCKED is for <em>external</em> events (disk I/O, network, etc.).</p>
+
+  <h4>6. TERMINATED</h4>
+  <p>When the <code>run()</code> method returns (either by reaching the end or by returning explicitly), the thread enters the TERMINATED state. The OS thread is destroyed. The Thread <em>object</em> still exists (you might want to check data it stored before terminating), but it no longer corresponds to any running thread. <strong>This is permanent — you cannot restart a terminated thread.</strong> Calling <code>start()</code> again throws an exception. To run the same code again, create a new Thread.</p>
+
+  <h4>Bonus: yield()</h4>
+  <p><code>Thread.yield()</code> is a hint to the OS: "I'm willing to pause right now if another runnable thread needs the CPU." The thread stays in RUNNABLE state — the OS can choose to ignore the suggestion entirely. It's useful when you know you're about to start an expensive new block of work (cache miss, context switch anyway), so you might as well let someone else go first.</p>
+
+  <h4>Bonus: Garbage Collection</h4>
+  <p>Like any Java object, if no references to the Thread object remain, it can be garbage collected. At that point, the object simply ceases to exist — there's no state anymore because there's no object.</p>
+
+  <div class="quiz" id="quiz5">
+    <div class="quiz-header">
+      <div class="quiz-icon">?</div>
+      <div class="quiz-title">Check Your Understanding</div>
+    </div>
+    <p>You call <code>Thread t = new Thread(myRunnable)</code>. How many new OS threads have been created?</p>
+    <div class="quiz-options">
+      <button class="quiz-option" onclick="checkQuiz('quiz5', this, true)">Zero — new only creates a Java object on the heap</button>
+      <button class="quiz-option" onclick="checkQuiz('quiz5', this, false)">One — the constructor creates the OS thread</button>
+      <button class="quiz-option" onclick="checkQuiz('quiz5', this, false)">It depends on the OS scheduler</button>
+    </div>
+    <div class="quiz-feedback correct" id="quiz5-correct">Correct! The <code>new</code> keyword only allocates a Java object. The thread is in the NEW state — no OS thread, no instruction pointer, no stack. You need to call <code>t.start()</code> to actually create the OS thread and enter RUNNABLE.</div>
+    <div class="quiz-feedback incorrect" id="quiz5-incorrect">Not quite! <code>new Thread(y)</code> only creates a Java object on the heap. It's in the NEW state — just bytes in memory. No OS thread is created until you call <code>t.start()</code>. This is an important distinction: creating the object and starting the thread are separate steps.</div>
+  </div>
+</div>
+
+<hr class="sep">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 9: RACE CONDITIONS -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s9">
+  <div class="section-number">Section 09</div>
+  <h2>The Problem: Race Conditions</h2>
+
+  <p>So far, threads sound great — free parallelism! But shared memory creates a devastating class of bugs called <strong>race conditions</strong>. These are one of the biggest disasters in conventional programming, and Java's original designers knew they had to address them.</p>
+
+  <div class="callout key">
+    <div class="callout-label">Key Definition</div>
+    <strong>Race condition</strong> (or "race"): A bug where the program's behavior depends on the unpredictable timing of how threads are scheduled. The result changes depending on which thread happens to run first — like two runners racing to modify the same data.
+  </div>
+
+  <p>Here's a concrete example. Suppose two threads both want to increment a shared counter:</p>
+
+  <pre><span class="label">Java</span><span class="comment">// Shared variable</span>
+<span class="keyword">int</span> v = 0;
+
+<span class="comment">// Thread A does:        Thread B does:</span>
+v++;                  <span class="comment">//</span>   v++;</pre>
+
+  <p>You'd expect <code>v</code> to end up as 2. But <code>v++</code> is <strong>not atomic</strong> — it's actually three separate operations at the hardware level:</p>
+
+  <!-- Step-through -->
+  <div class="step-through">
+    <h4 style="margin-top:0">Step-through: How v++ Can Go Wrong</h4>
+    <div class="step-content" id="raceStepContent">
+      <p><strong>Setup:</strong> <code>v = 0</code>. Thread A and Thread B both execute <code>v++</code>. Each <code>v++</code> is really three steps: (1) load v from memory into a register, (2) add 1 to the register, (3) store the register value back to v. Let's see what can go wrong...</p>
+    </div>
+    <div class="step-controls">
+      <button class="step-btn" id="racePrev" onclick="raceStep(-1)" disabled>← Back</button>
+      <span class="step-indicator" id="raceIndicator">Step 0 of 6</span>
+      <button class="step-btn" id="raceNext" onclick="raceStep(1)">Next →</button>
+    </div>
+  </div>
+
+  <p>The result? Both threads tried to add 1, but <code>v</code> only ended up as 1 instead of 2. One increment was <strong>lost</strong>. And here's the terrifying part: this bug depends on exact timing. Run the program a million times, and it might work perfectly each time. Then on the million-and-first run, the threads happen to interleave differently, and you get a wrong answer.</p>
+
+  <div class="callout warn">
+    <div class="callout-label">Why This Is So Dangerous</div>
+    Java was originally designed to run on embedded devices like toasters and refrigerators. Reliability was paramount. Race conditions are the enemy of reliability — your program can run correctly 999,999 times and then fail once, in a way that's nearly impossible to reproduce or debug. The early Java designers knew they needed a solution.
+  </div>
+</div>
+
+<hr class="sep">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 10: SYNCHRONIZED -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s10">
+  <div class="section-number">Section 10</div>
+  <h2>The First Solution: <code>synchronized</code></h2>
+
+  <p>Java's first answer to race conditions is the <code>synchronized</code> keyword. It ensures that only one thread at a time can execute a particular piece of code on a particular object. Let's build up to it step by step.</p>
+
+  <h3>The Concept: Locks</h3>
+
+  <p>Every Java object — every single one — has a hidden <strong>lock</strong> field built into it. You never see this field in your code, but it's there in the object's internal representation. This lock can be in one of two states: <strong>unlocked</strong> (0) or <strong>locked</strong> (1).</p>
+
+  <h3>What <code>synchronized</code> Does</h3>
+
+  <p>When you declare a method as <code>synchronized</code>, Java automatically inserts lock/unlock code around the method body:</p>
+
+  <pre><span class="label">Java — What you write</span><span class="keyword">class</span> <span class="type">C</span> {
+    <span class="keyword">int</span> v = 0;
+
+    <span class="keyword">synchronized int</span> next() {
+        <span class="keyword">return</span> v++;
+    }
+}</pre>
+
+  <pre><span class="label">Java — What actually happens</span><span class="keyword">class</span> <span class="type">C</span> {
+    <span class="keyword">int</span> v = 0;
+
+    <span class="keyword">int</span> next() {
+        lock(<span class="keyword">this</span>);        <span class="comment">// ← inserted automatically</span>
+        <span class="keyword">int</span> n = v++;
+        unlock(<span class="keyword">this</span>);      <span class="comment">// ← inserted automatically</span>
+        <span class="keyword">return</span> n;
+    }
+}</pre>
+
+  <p>When Thread A calls <code>next()</code> on some object <code>obj</code>, it first grabs the lock on <code>obj</code>. While Thread A holds the lock, if Thread B tries to call <code>next()</code> <em>on the same object</em>, it will <strong>spin</strong> — repeatedly trying to grab the lock in a tight loop until Thread A releases it.</p>
+
+  <div class="callout key">
+    <div class="callout-label">Three Critical Facts About Locks</div>
+    <p><strong>1. Locks are per object, not per class.</strong> Two different objects have two different locks. Threads can call <code>a.next()</code> and <code>b.next()</code> simultaneously with no conflict — they're locking different objects.</p>
+    <p><strong>2. The lock/unlock is automatic.</strong> You never write it yourself. This prevents the extremely common C/C++ bug of forgetting to unlock. Java does it for you, even if an exception occurs.</p>
+    <p><strong>3. Only one thread can hold an object's lock at a time.</strong> If two threads try to grab the same lock simultaneously, one wins (atomically, using special hardware instructions) and the other waits.</p>
+  </div>
+
+  <pre><span class="label">Java — Locks are per-object</span><span class="type">C</span> a = <span class="keyword">new</span> <span class="type">C</span>();
+<span class="type">C</span> b = <span class="keyword">new</span> <span class="type">C</span>();
+
+<span class="comment">// Thread 1 can call a.next() at the same time</span>
+<span class="comment">// Thread 2 calls b.next() — no conflict! Different locks.</span>
+
+<span class="comment">// But Thread 1 and Thread 2 CANNOT both call a.next()</span>
+<span class="comment">// at the same time — same object, same lock.</span></pre>
+
+  <h3>The Performance Problem</h3>
+
+  <p>Synchronized works. It prevents race conditions. But it has a <strong>serious performance cost</strong>. If you have 1000 threads all calling <code>next()</code> on the <em>same</em> object, only one core does useful work at a time. The other 999 are burning CPU cycles just spinning "Can I get this lock? Can I get this lock?" — a technique called <strong>spin locking</strong>.</p>
+
+  <p>This was acceptable for toasters and refrigerators. But for high-performance applications like web servers handling thousands of clients simultaneously? The performance is terrible. <strong>We need something better.</strong></p>
+
+  <div class="callout connect">
+    <div class="callout-label">Connecting the Dots</div>
+    The original Java class libraries used <code>synchronized</code> heavily — for example, the <code>Hashtable</code> class had all its methods synchronized. This was correct but slow. Modern Java provides better alternatives (like <code>ConcurrentHashMap</code>) that use more sophisticated techniques we'll learn next.
+  </div>
+</div>
+
+<hr class="sep">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 11: WAIT & NOTIFY -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s11">
+  <div class="section-number">Section 11</div>
+  <h2>Wait & Notify: Efficient Waiting</h2>
+
+  <p>The problem with synchronized is that when a thread can't get a lock, it <strong>spins</strong> — it stays in the RUNNABLE state, burning CPU cycles doing nothing useful. What if instead, the thread could go to sleep and be woken up when it's needed? That's exactly what <code>wait()</code> and <code>notify()</code> provide.</p>
+
+  <div class="callout why">
+    <div class="callout-label">Why This Matters</div>
+    This is where the thread lifecycle states we learned become practical. The WAITING state exists precisely for this purpose — a thread that's waiting uses <strong>zero CPU</strong>. The operating system can give that CPU core to another thread that can actually get work done.
+  </div>
+
+  <h3><code>o.wait()</code></h3>
+
+  <p>Any object <code>o</code> can have <code>wait()</code> called on it (you must hold the lock first — i.e., be inside a <code>synchronized</code> block for that object). Here's what happens:</p>
+
+  <p><strong>Step 1:</strong> Release all locks held by this thread. This is crucial — if you held your locks while waiting, you'd still be bottlenecking other threads. You want them to make progress while you sleep.</p>
+
+  <p><strong>Step 2:</strong> The thread enters the WAITING state. Its instruction pointer is frozen. The OS gives the CPU to someone else.</p>
+
+  <p><strong>Step 3:</strong> Eventually, some other thread will signal that the object is "available" (we'll see how in a moment). When that happens, your thread wakes up, <strong>reacquires the lock</strong>, and resumes executing from where it left off.</p>
+
+  <p>There's also a timed version: <code>o.wait(timeout)</code> puts you in TIMED_WAITING — you'll wake up either when notified or when the timeout expires, whichever comes first.</p>
+
+  <h3><code>o.notify()</code> and <code>o.notifyAll()</code></h3>
+
+  <p>These are how you wake up threads that are waiting. Any thread that currently holds <code>o</code>'s lock can call them.</p>
+
+  <p><code>o.notify()</code> wakes up <strong>one</strong> thread waiting on <code>o</code>. The OS picks which one (typically FIFO — whoever's been waiting longest).</p>
+
+  <p><code>o.notifyAll()</code> wakes up <strong>all</strong> threads waiting on <code>o</code>. They all try to reacquire the lock; one wins, the others block again. This is used when you want to manage the scheduling yourself rather than letting the OS pick.</p>
+
+  <div class="callout key">
+    <div class="callout-label">Key Concept</div>
+    <p>What does "available" mean? <strong>The OS doesn't know.</strong> "Available" is whatever your program decides it means. <code>notify()</code> simply marks the object as available — it's a low-level signal with no built-in semantic meaning. Your program decides when to call notify() based on your application logic.</p>
+    <p>These are low-level primitives — building blocks. Most Java apps use higher-level tools built on top of them.</p>
+  </div>
+</div>
+
+<hr class="sep">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 12: HIGHER-LEVEL PRIMITIVES -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s12">
+  <div class="section-number">Section 12</div>
+  <h2>Higher-Level Coordination Primitives</h2>
+
+  <p>The <code>wait()</code>/<code>notify()</code> primitives are powerful but low-level. Over the years, people have identified common patterns for thread coordination and packaged them into reusable classes. Here are the four discussed in lecture, each solving a different coordination problem.</p>
+
+  <h3>1. Semaphore: Controlling How Many</h3>
+
+  <div class="callout key">
+    <div class="callout-label">Key Definition</div>
+    <strong>Semaphore</strong>: A synchronization object that maintains a counter (capacity) and controls how many threads can proceed concurrently. Each thread must <em>acquire</em> a permit before proceeding and <em>release</em> it when done.
+  </div>
+
+  <p>Think of a parking lot with 10 spaces. Each car entering must acquire a space; if the lot is full, cars wait at the entrance. When a car leaves, it releases a space, and the next waiting car enters.</p>
+
+  <pre><span class="label">Java</span><span class="type">Semaphore</span> s = <span class="keyword">new</span> <span class="type">Semaphore</span>(10);  <span class="comment">// 10 permits</span>
+
+s.acquire();      <span class="comment">// Get a permit (WAITS if none available)</span>
+<span class="comment">// ... do work with the resource ...</span>
+s.release();      <span class="comment">// Return the permit</span>
+
+s.tryAcquire();   <span class="comment">// Try to get a permit (returns false if unavailable,</span>
+                  <span class="comment">//   NO waiting — stays RUNNABLE)</span></pre>
+
+  <div class="callout connect">
+    <div class="callout-label">synchronized vs Semaphore</div>
+    <p><code>synchronized</code> is about <strong>who</strong> — at most one thread in the critical section. Locks are binary (0 or 1), per-object, and enforce mutual exclusion.</p>
+    <p><code>Semaphore</code> is about <strong>how many</strong> — up to N threads can proceed. Counting (0..N), shared/global, and controls resource access capacity.</p>
+  </div>
+
+  <h3>2. Exchanger: Pairwise Handoff</h3>
+
+  <div class="callout key">
+    <div class="callout-label">Key Definition</div>
+    <strong>Exchanger</strong>: A synchronization point where two threads meet and swap objects atomically. Neither thread proceeds until both have arrived.
+  </div>
+
+  <pre><span class="label">Java</span><span class="type">Exchanger</span>&lt;<span class="type">String</span>&gt; x = <span class="keyword">new</span> <span class="type">Exchanger</span>&lt;&gt;();
+
+<span class="comment">// Thread 1:                Thread 2:</span>
+v1 = x.exchange(v2);    <span class="comment">//</span>  v3 = x.exchange(v4);
+
+<span class="comment">// After both arrive:</span>
+<span class="comment">// v1 == v4 (Thread 1 gets Thread 2's object)</span>
+<span class="comment">// v3 == v2 (Thread 2 gets Thread 1's object)</span></pre>
+
+  <p>Whichever thread arrives at the exchanger first will <strong>wait</strong> until the other arrives. Then they swap and both proceed. The exchange variable <code>x</code> is shared between both threads — it's the rendezvous point.</p>
+
+  <p>Since at most one thread owns each object at any time (they hand off ownership), you don't need synchronized — the exchanger handles the coordination. Good for producer/consumer patterns and pipeline stages.</p>
+
+  <h3>3. CountDownLatch: One-Time Starting Gate</h3>
+
+  <div class="callout key">
+    <div class="callout-label">Key Definition</div>
+    <strong>CountDownLatch</strong>: Initialized with a count N. Threads call <code>await()</code> to wait at the gate. A coordinator calls <code>countDown()</code> repeatedly. When the count reaches zero, all waiting threads are released simultaneously. <strong>Cannot be reused.</strong>
+  </div>
+
+  <p>Think of a horse race. There are N slots in the starting gate. Horses arrive and wait. When all slots are filled, the gate opens and all horses run. The gate doesn't close again — it's a one-time event.</p>
+
+  <pre><span class="label">Java</span><span class="type">CountDownLatch</span> latch = <span class="keyword">new</span> <span class="type">CountDownLatch</span>(N);
+
+<span class="comment">// Worker threads:</span>
+latch.await();       <span class="comment">// "I'm ready. Wake me when count hits 0."</span>
+
+<span class="comment">// Coordinator thread:</span>
+latch.countDown();   <span class="comment">// Reduces count by 1. When 0, all awaiters unblock.</span></pre>
+
+  <h3>4. CyclicBarrier: Reusable Checkpoint</h3>
+
+  <div class="callout key">
+    <div class="callout-label">Key Definition</div>
+    <strong>CyclicBarrier</strong>: Makes threads wait until all N reach the barrier, then releases all simultaneously. <strong>Automatically resets</strong> for reuse — threads can hit the barrier again and again.
+  </div>
+
+  <div class="analogy">
+    <div class="analogy-label">The Weather Simulation Example</div>
+    <p>Imagine simulating weather over the entire US. You split the map into 100 regions, each handled by its own thread. Each thread computes one minute of weather for its local region at full speed (no synchronization needed — they only look at local data).</p>
+    <p>After one minute of simulation, all threads hit the CyclicBarrier. When all 100 have arrived, a bit of update code runs to bleed information between neighboring regions (a cloud moving from one region into another). Then the barrier resets, and all threads compute the next minute.</p>
+    <p>This pattern — compute independently, synchronize at a checkpoint, share boundary data, repeat — is extremely common in scientific computing.</p>
+  </div>
+
+  <h3>Comparison</h3>
+
+  <table class="comp-table">
+    <tr><th>Primitive</th><th>What It Controls</th><th>Reusable?</th></tr>
+    <tr><td><strong>Semaphore</strong></td><td>Number of concurrent threads accessing a resource</td><td>Yes</td></tr>
+    <tr><td><strong>Exchanger</strong></td><td>Pairwise data handoff between two threads</td><td>Yes</td></tr>
+    <tr><td><strong>CountDownLatch</strong></td><td>One-time event synchronization (starting gate)</td><td>No</td></tr>
+    <tr><td><strong>CyclicBarrier</strong></td><td>Repeated phase synchronization (checkpoint)</td><td>Yes (auto-resets)</td></tr>
+  </table>
+
+  <div class="quiz" id="quiz6">
+    <div class="quiz-header">
+      <div class="quiz-icon">?</div>
+      <div class="quiz-title">Check Your Understanding</div>
+    </div>
+    <p>You have 10 threads that must all complete phase 1 before any of them can start phase 2, and this repeats for 100 phases. Which primitive fits best?</p>
+    <div class="quiz-options">
+      <button class="quiz-option" onclick="checkQuiz('quiz6', this, false)">CountDownLatch — it coordinates starting together</button>
+      <button class="quiz-option" onclick="checkQuiz('quiz6', this, true)">CyclicBarrier — it's reusable and syncs repeated phases</button>
+      <button class="quiz-option" onclick="checkQuiz('quiz6', this, false)">Semaphore — it controls how many threads run</button>
+      <button class="quiz-option" onclick="checkQuiz('quiz6', this, false)">Exchanger — it swaps data between threads</button>
+    </div>
+    <div class="quiz-feedback correct" id="quiz6-correct">CyclicBarrier is the right tool. It makes all threads wait until everyone reaches the checkpoint, then releases them all. And because it automatically resets, you can use it for all 100 phases. CountDownLatch would only work once — you'd need to create 100 separate latches.</div>
+    <div class="quiz-feedback incorrect" id="quiz6-incorrect">Think about the requirements: repeated synchronization across phases. CountDownLatch can't be reused (one-time only). Semaphore controls how many, not synchronization points. Exchanger is for pairs. CyclicBarrier is designed exactly for this — it synchronizes threads at a barrier and automatically resets for the next phase.</div>
+  </div>
+</div>
+
+<hr class="sep">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 13: VOLATILE -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s13">
+  <div class="section-number">Section 13</div>
+  <h2>Going Lower: <code>volatile</code></h2>
+
+  <p>We've gone <em>higher</em> in abstraction (from synchronized → wait/notify → semaphores, exchangers, etc.). Now let's go <em>lower</em>. The <code>volatile</code> keyword is simpler than <code>synchronized</code> but also trickier to use correctly. When used right, it's the highest-performance option.</p>
+
+  <div class="callout why">
+    <div class="callout-label">Why Go Lower?</div>
+    <code>synchronized</code> is reliable but slow — spinning threads waste CPU. <code>wait()</code>/<code>notify()</code> is more efficient but involves OS scheduling overhead. Sometimes you just need a single variable to be visible across threads without any locking at all. That's where <code>volatile</code> shines.
+  </div>
+
+  <h3>The Problem: Compiler Optimizations</h3>
+
+  <p>Before understanding volatile, you need to understand why it's needed. Java compilers (and C/C++ compilers) aggressively optimize your code. They perform what are called <strong>"as-if" optimizations</strong> — they can rearrange, eliminate, or transform your code as long as the result <em>behaves as if</em> the original code ran.</p>
+
+  <div class="callout key">
+    <div class="callout-label">Key Definition</div>
+    <strong>As-if optimization</strong>: The compiler can change or reorder code as long as the program behaves the same <em>in a single-threaded world</em>. The output is "as if" the original code ran.
+  </div>
+
+  <p>For example, the compiler sees this:</p>
+
+  <pre><span class="label">Before Optimization</span><span class="keyword">int</span> k = 3;
+<span class="keyword">int</span> j = v - v;  <span class="comment">// always 0, no matter what v is</span>
+j++;            <span class="comment">// j becomes 1</span>
+k--;            <span class="comment">// k becomes 2</span></pre>
+
+  <p>And transforms it into:</p>
+
+  <pre><span class="label">After Optimization</span><span class="keyword">int</span> k = 2;   <span class="comment">// compiler computed the final value directly</span>
+<span class="keyword">int</span> j = 1;   <span class="comment">// compiler computed the final value directly</span></pre>
+
+  <p>This is great for performance! The code runs faster, and a single thread can't tell the difference. But in a multi-threaded world, these optimizations can break things.</p>
+
+  <h3>The Spin-Loop Bug</h3>
+
+  <p>Here's a classic example of how optimization breaks multi-threaded code:</p>
+
+  <pre><span class="label">BROKEN — without volatile</span><span class="keyword">class</span> <span class="type">C</span> {
+    <span class="keyword">boolean</span> busy;   <span class="comment">// NOT volatile</span>
+}
+
+<span class="keyword">void</span> m() {
+    <span class="keyword">while</span> (busy)
+        <span class="keyword">continue</span>;   <span class="comment">// spin until busy becomes false</span>
+
+    busy = <span class="keyword">true</span>;     <span class="comment">// enter critical section</span>
+    <span class="comment">// ... do work ...</span>
+    busy = <span class="keyword">false</span>;    <span class="comment">// exit critical section</span>
+}</pre>
+
+  <p>The intent: wait until no other thread is using the resource, then claim it. But the compiler looks at this loop and thinks: "Nothing <em>inside</em> the loop modifies <code>busy</code>. If <code>busy</code> is true when we enter, it'll be true forever. This is an infinite loop (or it's false and we skip it)." So it optimizes the busy checks away entirely! Thread A might set <code>busy = false</code>, but Thread B never re-reads it from memory — it's using a <em>cached</em> value that's permanently <code>true</code>. Thread B is stuck forever.</p>
+
+  <h3>The Fix: <code>volatile</code></h3>
+
+  <pre><span class="label">FIXED — with volatile</span><span class="keyword">class</span> <span class="type">C</span> {
+    <span class="keyword">volatile boolean</span> busy;  <span class="comment">// forces real reads and writes!</span>
+}</pre>
+
+  <div class="callout key">
+    <div class="callout-label">Key Definition</div>
+    <strong><code>volatile</code></strong>: Declaring a variable volatile tells the compiler and JVM: <strong>every time the source code reads this variable, generate a real load from memory</strong>. Every time it writes, generate a real store. Don't cache it in a register, don't optimize it away, don't reorder operations around it.
+  </div>
+
+  <p>With <code>volatile</code>, each iteration of the <code>while(busy)</code> loop re-reads <code>busy</code> from actual memory. When Thread A sets <code>busy = false</code>, Thread B will eventually see the new value.</p>
+
+  <div class="callout warn">
+    <div class="callout-label">Volatile Is Not a Lock!</div>
+    <p><code>volatile</code> ensures <strong>visibility</strong> (other threads see your writes) and prevents <strong>reordering</strong>. But it does NOT ensure <strong>mutual exclusion</strong>. Two threads can still read <code>busy == false</code> simultaneously and both set it to <code>true</code> — you've got a race condition again.</p>
+    <p>Making the spin-loop example actually thread-safe requires more sophisticated techniques (like compare-and-swap). But <code>volatile</code> solves the visibility problem, which is a necessary first step.</p>
+  </div>
+
+  <p>In high-performance Java libraries, you'll see <code>volatile</code> used alongside other techniques. It avoids the overhead of synchronized entirely — no locks, no spinning, no waiting. The tradeoff is that it's trickier to use correctly and provides weaker guarantees.</p>
+</div>
+
+<hr class="sep">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 14: JAVA MEMORY MODEL -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s14">
+  <div class="section-number">Section 14</div>
+  <h2>The Java Memory Model (JMM)</h2>
+
+  <p>When Java implementers tried to nail down the exact rules for how <code>volatile</code> and <code>synchronized</code> interact with compiler optimizations, they found that different compiler writers <em>disagreed</em> about what was allowed. To fix this, they created the <strong>Java Memory Model</strong> — a formal set of rules that every Java implementation must follow.</p>
+
+  <div class="callout key">
+    <div class="callout-label">Key Definition</div>
+    <strong>Java Memory Model (JMM)</strong>: A formal specification that defines what memory operations are visible to which threads, in what order, and which compiler/CPU optimizations are allowed. It's a <em>contract</em> between programmers, the JVM, the compiler, and the CPU.
+  </div>
+
+  <div class="callout why">
+    <div class="callout-label">Why This Matters</div>
+    Without a memory model, the same Java program could behave differently on different CPUs or with different compilers. The JMM ensures your multithreaded code is <strong>portable</strong> — if it works correctly on one Java implementation, it works on all of them.
+  </div>
+
+  <h3>The Minkowski Analogy</h3>
+
+  <p>The professor draws a fascinating analogy to <strong>special relativity</strong>. In physics, there's a speed limit (the speed of light) that determines what you can and can't communicate. Events that are too far apart can't affect each other — they're in each other's "elsewhere."</p>
+
+  <div class="analogy">
+    <div class="analogy-label">The Relativity Analogy for Threads</div>
+    <p>In multi-threaded programming, your thread's <strong>past</strong> is everything it has done — you can see all of that reliably. Your <strong>future</strong> is everything it will do — you control that. But what <em>other threads</em> are doing right now is like the "elsewhere" in relativity — communication is fuzzy and unreliable unless you use proper synchronization.</p>
+    <p>Without <code>synchronized</code> or <code>volatile</code>, you simply <strong>cannot rely</strong> on seeing another thread's writes. They might be cached, reordered, or delayed. The JMM defines exactly where the "light cones" are — what's reliably visible and what's not.</p>
+  </div>
+
+  <h3>Core Assumptions</h3>
+
+  <p>The JMM assumes an abstract Java Virtual Machine with threads, objects, volatile variables, and synchronized methods. Each individual thread has <strong>sequential semantics</strong> — you can think of it executing statements one at a time. Within that thread, as-if optimizations (including reordering loads and stores) are allowed — as long as that single thread can't tell the difference.</p>
+
+  <p>The complexity arises when multiple threads interact. The JMM defines six operations that matter for cross-thread visibility:</p>
+
+  <table class="comp-table">
+    <tr><th>Operation</th><th>Category</th><th>Description</th></tr>
+    <tr><td>Normal Load</td><td>A</td><td>Reading an ordinary (non-volatile) variable</td></tr>
+    <tr><td>Normal Store</td><td>A</td><td>Writing an ordinary (non-volatile) variable</td></tr>
+    <tr><td>Volatile Load</td><td>B</td><td>Reading a volatile variable (acts like "acquire")</td></tr>
+    <tr><td>Enter Monitor</td><td>B</td><td>Entering a synchronized block (grabbing the lock)</td></tr>
+    <tr><td>Volatile Store</td><td>C</td><td>Writing a volatile variable (acts like "release")</td></tr>
+    <tr><td>Exit Monitor</td><td>C</td><td>Exiting a synchronized block (releasing the lock)</td></tr>
+  </table>
+
+  <p>Notice how the operations are grouped into three categories: A (normal stuff), B (acquiring/observing — volatile load or entering a monitor), and C (releasing/publishing — volatile store or exiting a monitor). These categories are the key to the reordering rules.</p>
+</div>
+
+<hr class="sep">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 15: REORDERING RULES -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s15">
+  <div class="section-number">Section 15</div>
+  <h2>The Reordering Rules</h2>
+
+  <p>The JMM answers a specific question: <strong>if the compiler sees two memory operations in sequence, is it allowed to swap their order?</strong> The answer depends on what <em>categories</em> the two operations belong to.</p>
+
+  <p>The rules are captured in a 3×3 matrix. Rows represent the <strong>earlier</strong> operation in the source code; columns represent the <strong>later</strong> operation. Each cell says whether the compiler can swap them.</p>
+
+  <!-- Interactive reordering grid -->
+  <div class="state-diagram">
+    <h4>Can the compiler swap these two operations?</h4>
+    <p style="font-size:0.85rem; color:var(--grey); margin-bottom:16px;">Row = what comes first in source code. Column = what comes second. Click any cell to see the explanation.</p>
+    <div class="reorder-grid">
+      <div class="reorder-cell header"></div>
+      <div class="reorder-cell header">A: Normal load/store</div>
+      <div class="reorder-cell header">B: Volatile load / Enter monitor</div>
+      <div class="reorder-cell header">C: Volatile store / Exit monitor</div>
+
+      <div class="reorder-cell row-header">A: Normal load/store</div>
+      <div class="reorder-cell yes clickable" onclick="showReorder('aa')">✓ Yes</div>
+      <div class="reorder-cell yes clickable" onclick="showReorder('ab')">✓ Yes</div>
+      <div class="reorder-cell no clickable" onclick="showReorder('ac')">✗ No</div>
+
+      <div class="reorder-cell row-header">B: Vol. load / Enter monitor</div>
+      <div class="reorder-cell no clickable" onclick="showReorder('ba')">✗ No</div>
+      <div class="reorder-cell no clickable" onclick="showReorder('bb')">✗ No</div>
+      <div class="reorder-cell no clickable" onclick="showReorder('bc')">✗ No</div>
+
+      <div class="reorder-cell row-header">C: Vol. store / Exit monitor</div>
+      <div class="reorder-cell yes clickable" onclick="showReorder('ca')">✓ Yes</div>
+      <div class="reorder-cell no clickable" onclick="showReorder('cb')">✗ No</div>
+      <div class="reorder-cell no clickable" onclick="showReorder('cc')">✗ No</div>
+    </div>
+    <div class="reorder-detail" id="reorderDetail">
+      <em>Click any cell in the grid above to see why that reordering is or isn't allowed.</em>
+    </div>
+  </div>
+
+  <h3>The Grand Principle</h3>
+
+  <p>Why are exactly these 6 cells "No" and 3 cells "Yes"? The underlying principle is about <strong>critical sections</strong>:</p>
+
+  <p><strong>Making a critical section bigger is safe.</strong> If you move a normal operation <em>into</em> a critical section (from before the lock to inside it, or from after the unlock to inside it), you're just protecting more code than strictly necessary. Slower, perhaps, but still correct. That's why A→B (normal before acquire) and C→A (release before normal) allow swapping — the swap just moves code into the protected region.</p>
+
+  <p><strong>Making a critical section smaller is dangerous.</strong> If you move a normal operation <em>out of</em> a critical section, that operation is no longer protected by the lock. Other threads could interfere. That's why A→C (normal before release) and B→A (acquire before normal) forbid swapping — the swap would move code out of the protected region.</p>
+
+  <p><strong>Reordering synchronization operations themselves is dangerous.</strong> If two acquires, two releases, or an acquire-and-release get swapped, threads could observe shared state in the wrong order or release before they've finished their critical section. That's why all of B→B, B→C, C→B, and C→C are forbidden.</p>
+
+  <div class="callout connect">
+    <div class="callout-label">Bringing It All Together</div>
+    <p>This matrix is the core of the JMM. It tells compiler writers exactly what optimizations they can perform. For you as a programmer, the practical takeaway is:</p>
+    <p><strong>If you don't use <code>volatile</code> or <code>synchronized</code></strong>, the compiler can reorder your loads and stores freely (as-if rules apply). Other threads may see your writes in any order, or not at all.</p>
+    <p><strong>If you use <code>synchronized</code> or <code>volatile</code></strong>, you create ordering constraints that prevent the compiler from reordering operations across those boundaries. This is how you make inter-thread communication reliable.</p>
+  </div>
+
+  <div class="quiz" id="quiz7">
+    <div class="quiz-header">
+      <div class="quiz-icon">?</div>
+      <div class="quiz-title">Final Check</div>
+    </div>
+    <p>Thread A writes to a normal variable <code>x</code>, then exits a synchronized block. Can the compiler move the write to <code>x</code> to <em>after</em> the synchronized block exits?</p>
+    <div class="quiz-options">
+      <button class="quiz-option" onclick="checkQuiz('quiz7', this, false)">Yes — the compiler can always reorder for performance</button>
+      <button class="quiz-option" onclick="checkQuiz('quiz7', this, true)">No — that would move a normal store past a release (A→C is forbidden)</button>
+      <button class="quiz-option" onclick="checkQuiz('quiz7', this, false)">It depends on the specific CPU architecture</button>
+    </div>
+    <div class="quiz-feedback correct" id="quiz7-correct">Exactly! Looking at the reorder matrix: the earlier operation is a Normal Store (category A) and the later operation would become an Exit Monitor (category C). The cell A→C says "No" — you can't move normal writes past a release. The write must be published <em>before</em> the lock is released, ensuring other threads see it when they acquire the same lock.</div>
+    <div class="quiz-feedback incorrect" id="quiz7-incorrect">Check the reorder matrix. A normal store (category A) before an exit monitor (category C): the A→C cell says <strong>No</strong>. The release must publish all previous writes. If the compiler moved the write to after the release, other threads acquiring that lock might not see the write — breaking the happens-before guarantee.</div>
+  </div>
+
+  <!-- FINAL SUMMARY -->
+  <div class="callout key" style="margin-top: 48px;">
+    <div class="callout-label">Lecture Summary — The Full Picture</div>
+    <p>We started at the hardware level (SIMD vs MIMD, shared memory vs message passing, SMP) to understand <em>why</em> Java's threading model works the way it does.</p>
+    <p>We learned the key abstractions (processes vs threads vs processors) and how to create threads in Java (subclassing vs delegation, with delegation being preferred).</p>
+    <p>We traced the thread lifecycle (NEW → RUNNABLE → WAITING/TIMED_WAITING/BLOCKED → TERMINATED) and understood what each state means for CPU usage.</p>
+    <p>We confronted the central problem (race conditions) and learned three levels of solution: <strong>synchronized</strong> (correct but slow), <strong>wait/notify + higher-level primitives</strong> (efficient but complex), and <strong>volatile</strong> (highest performance, trickiest to use correctly).</p>
+    <p>Finally, the Java Memory Model ties it all together — a formal contract defining which optimizations are allowed and which would break cross-thread communication. The reordering matrix is its practical heart.</p>
+  </div>
+
+</div>
+
+</div><!-- /content -->
+</div><!-- /main -->
+
+
+</body>
+</html>

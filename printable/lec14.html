@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 14 — Scheme: Core vs Extensions</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FAF6F1;
+  --bg-warm: #F3EDE5;
+  --text: #2C2417;
+  --text-muted: #7A6F60;
+  --accent: #C84B31;
+  --accent-light: #F8E0D8;
+  --accent-dark: #A33D27;
+  --code-bg: #2C2417;
+  --code-text: #F3EDE5;
+  --code-green: #A8D8A8;
+  --code-orange: #F4B183;
+  --code-blue: #9DC3E6;
+  --code-purple: #C9A0DC;
+  --code-comment: #8B8172;
+  --border: #DDD5C9;
+  --success: #5B8C5A;
+  --success-bg: #EDF5ED;
+  --wrong: #C84B31;
+  --wrong-bg: #FDF0ED;
+  --highlight: #FFF3CD;
+  --sidebar-bg: #2C2417;
+  --sidebar-text: #D4CCBF;
+  --sidebar-active: #C84B31;
+  --card-shadow: 0 2px 12px rgba(44,36,23,0.08);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Source Serif 4', Georgia, serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.72;
+  font-size: 17px;
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+nav.sidebar {
+  width: 280px;
+  min-width: 280px;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  padding: 28px 0;
+  position: fixed;
+  top: 0; left: 0;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 100;
+  transition: transform 0.3s ease;
+}
+nav.sidebar::-webkit-scrollbar { width: 4px; }
+nav.sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+.sidebar-header {
+  padding: 0 24px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  margin-bottom: 16px;
+}
+.sidebar-header .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--sidebar-active);
+  margin-bottom: 6px;
+}
+.sidebar-header h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 500;
+  color: #fff;
+  line-height: 1.3;
+}
+.nav-section {
+  padding: 8px 0;
+}
+.nav-section-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: rgba(255,255,255,0.3);
+  padding: 8px 24px 4px;
+}
+.nav-item {
+  display: block;
+  padding: 7px 24px 7px 28px;
+  color: var(--sidebar-text);
+  text-decoration: none;
+  font-size: 13.5px;
+  line-height: 1.4;
+  border-left: 3px solid transparent;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+.nav-item:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.04);
+}
+.nav-item.active {
+  color: #fff;
+  border-left-color: var(--sidebar-active);
+  background: rgba(200,75,49,0.08);
+}
+.nav-item .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--sidebar-active);
+  margin-right: 6px;
+}
+
+/* Mobile toggle */
+.menu-toggle {
+  display: none;
+  position: fixed;
+  top: 16px; left: 16px;
+  z-index: 200;
+  background: var(--sidebar-bg);
+  color: #fff;
+  border: none;
+  width: 42px; height: 42px;
+  border-radius: 10px;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+/* Main content */
+main {
+  margin-left: 280px;
+  flex: 1;
+  max-width: 820px;
+  padding: 48px 56px 120px;
+}
+.chapter-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+h1 .thin { font-weight: 300; color: var(--text-muted); }
+.subtitle {
+  font-size: 19px;
+  color: var(--text-muted);
+  margin-bottom: 48px;
+  max-width: 560px;
+}
+
+/* Sections */
+section {
+  margin-bottom: 64px;
+}
+section h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 28px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: var(--text);
+  padding-top: 20px;
+}
+section h3 {
+  font-family: 'Fraunces', serif;
+  font-size: 21px;
+  font-weight: 500;
+  margin: 32px 0 10px;
+  color: var(--text);
+}
+section h4 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  margin: 28px 0 8px;
+}
+p { margin-bottom: 16px; }
+
+/* Big idea callout */
+.big-idea {
+  background: var(--accent-light);
+  border-left: 4px solid var(--accent);
+  padding: 20px 24px;
+  border-radius: 0 8px 8px 0;
+  margin: 24px 0;
+  font-size: 16px;
+}
+.big-idea strong { color: var(--accent-dark); }
+
+/* Concept card */
+.concept-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px 28px;
+  margin: 20px 0;
+  box-shadow: var(--card-shadow);
+}
+.concept-card .tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+/* Code blocks */
+pre {
+  background: var(--code-bg);
+  color: var(--code-text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13.5px;
+  line-height: 1.65;
+  padding: 20px 24px;
+  border-radius: 10px;
+  margin: 16px 0;
+  overflow-x: auto;
+  position: relative;
+}
+pre .comment { color: var(--code-comment); font-style: italic; }
+pre .keyword { color: var(--code-orange); }
+pre .string { color: var(--code-green); }
+pre .builtin { color: var(--code-blue); }
+pre .value { color: var(--code-purple); }
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.88em;
+  background: var(--bg-warm);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Analogy box */
+.analogy {
+  background: #FFFCF0;
+  border: 1px dashed #E8D9A0;
+  padding: 20px 24px;
+  border-radius: 10px;
+  margin: 20px 0;
+}
+.analogy::before {
+  content: '💡';
+  font-size: 18px;
+  margin-right: 6px;
+}
+
+/* Interactive quiz */
+.quiz {
+  background: #fff;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  margin: 28px 0;
+}
+.quiz-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+.quiz p.question {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+.quiz-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.quiz-option {
+  padding: 12px 16px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 15px;
+  background: #fff;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.quiz-option:hover { border-color: var(--accent); background: var(--accent-light); }
+.quiz-option.selected { border-color: var(--accent); background: var(--accent-light); }
+.quiz-option.correct { border-color: var(--success); background: var(--success-bg); }
+.quiz-option.wrong { border-color: var(--wrong); background: var(--wrong-bg); }
+.quiz-option .letter {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--bg-warm);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.quiz-option.correct .letter { background: var(--success); color: #fff; }
+.quiz-option.wrong .letter { background: var(--wrong); color: #fff; }
+.quiz-feedback {
+  padding: 14px 16px;
+  border-radius: 8px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  display: none;
+}
+.quiz-feedback.show { display: block; }
+.quiz-feedback.correct { background: var(--success-bg); color: #3D6B3C; }
+.quiz-feedback.wrong { background: var(--wrong-bg); color: var(--wrong); }
+.quiz-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.quiz-btn:hover { background: var(--accent-dark); }
+.quiz-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* Comparison table */
+.comp-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 14.5px;
+}
+.comp-table th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent);
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 2px solid var(--border);
+  background: var(--bg-warm);
+}
+.comp-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.comp-table tr:last-child td { border-bottom: none; }
+
+/* Visual diagram */
+.diagram-box {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  margin: 20px 0;
+  text-align: center;
+  box-shadow: var(--card-shadow);
+}
+.diagram-box svg { max-width: 100%; }
+
+/* Step indicator */
+.step-flow {
+  display: flex;
+  gap: 12px;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+.step-item {
+  flex: 1;
+  min-width: 160px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  position: relative;
+  box-shadow: var(--card-shadow);
+}
+.step-item .step-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.step-item .step-text {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* Interactive expand/collapse */
+.expandable {
+  margin: 16px 0;
+}
+.expand-header {
+  background: var(--bg-warm);
+  padding: 14px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.15s;
+}
+.expand-header:hover { background: var(--border); }
+.expand-header .arrow { transition: transform 0.2s; }
+.expand-header.open .arrow { transform: rotate(90deg); }
+.expand-body {
+  display: none;
+  padding: 16px 18px 8px;
+  font-size: 15.5px;
+}
+.expand-body.open { display: block; }
+
+/* Progress bar */
+.progress-bar {
+  position: fixed;
+  top: 0; left: 280px; right: 0;
+  height: 3px;
+  background: var(--border);
+  z-index: 50;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  width: 0%;
+  transition: width 0.1s;
+}
+
+/* Responsive */
+@media (max-width: 960px) {
+  nav.sidebar { transform: translateX(-100%); }
+  nav.sidebar.open { transform: translateX(0); }
+  .menu-toggle { display: flex; align-items: center; justify-content: center; }
+  main { margin-left: 0; padding: 48px 24px 120px; }
+  .progress-bar { left: 0; }
+  h1 { font-size: 32px; }
+}
+</style>
+
+<style>
+/* === Printable Override === */
+
+/* Hide non-content elements */
+.sidebar, .sidebar-toggle, .progress-bar, .quiz, .quiz-btn { display: none !important; }
+
+/* Base typography */
+html { font-size: 12px !important; }
+body { line-height: 1.3 !important; }
+
+/* Layout */
+.main {
+  margin-left: 0 !important;
+  padding: 0.5rem !important;
+  max-width: 100% !important;
+}
+
+/* Headings */
+h1 { font-size: 1.4rem !important; }
+h2 { font-size: 1.15rem !important; margin-top: 0.5rem !important; }
+h3 { font-size: 1.05rem !important; margin-top: 0.4rem !important; }
+
+/* Spacing */
+p { margin-bottom: 0.25rem !important; }
+ul, ol { margin-bottom: 0.25rem !important; }
+li { margin-bottom: 0.1rem !important; }
+
+.callout {
+  padding: 0.3rem 0.5rem !important;
+  margin: 0.3rem 0 !important;
+}
+
+.code-block {
+  margin: 0.3rem 0 !important;
+  overflow: visible !important;
+}
+.code-block pre {
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+}
+.code-body, .code-block code {
+  padding: 0.3rem 0.5rem !important;
+  font-size: 0.85rem !important;
+}
+
+section, .section { margin-bottom: 0.3rem !important; }
+.subtitle { margin-bottom: 0.3rem !important; }
+
+/* Force expandables open and remove toggle UI */
+.expandable-content {
+  display: block !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+.expandable-arrow { display: none !important; }
+.expandable-header { cursor: default !important; }
+
+/* Kill animations */
+* {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+}
+</style>
+
+</head>
+<body>
+
+<button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="label">Lecture 14</div>
+    <h2>Scheme: Core vs Extensions</h2>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Foundations</div>
+    <a class="nav-item" href="#big-picture"><span class="num">01</span> The Big Picture</a>
+    <a class="nav-item" href="#lists"><span class="num">02</span> Building with Pairs & Lists</a>
+    <a class="nav-item" href="#quoting"><span class="num">03</span> Quoting vs list</a>
+    <a class="nav-item" href="#equality"><span class="num">04</span> Four Kinds of Equality</a>
+    <a class="nav-item" href="#predicates"><span class="num">05</span> Type Predicates</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Definitions & Functions</div>
+    <a class="nav-item" href="#define"><span class="num">06</span> define & set!</a>
+    <a class="nav-item" href="#lambda"><span class="num">07</span> Lambda Expressions</a>
+    <a class="nav-item" href="#variadic"><span class="num">08</span> Variadic Functions</a>
+    <a class="nav-item" href="#special-forms"><span class="num">09</span> if, begin, and, or</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Recursion & Macros</div>
+    <a class="nav-item" href="#recursion"><span class="num">10</span> Recursion & Tail Calls</a>
+    <a class="nav-item" href="#named-let"><span class="num">11</span> Named let</a>
+    <a class="nav-item" href="#macros"><span class="num">12</span> Macros (define-syntax)</a>
+    <a class="nav-item" href="#macro-let"><span class="num">13</span> Macros: let in Terms of λ</a>
+    <a class="nav-item" href="#hygiene"><span class="num">14</span> Hygienic Macros</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Low-Level Power</div>
+    <a class="nav-item" href="#continuations"><span class="num">15</span> Continuations</a>
+    <a class="nav-item" href="#callcc"><span class="num">16</span> call/cc</a>
+  </div>
+</nav>
+
+<main id="mainContent">
+  <div class="chapter-label">Programming Languages — Lecture 14</div>
+  <h1>Scheme <span class="thin">Core vs Extensions</span></h1>
+  <p class="subtitle">How the simplest useful programming language builds powerful features from a tiny core — and why that matters.</p>
+
+  <!-- ========== SECTION 1: BIG PICTURE ========== -->
+  <section id="big-picture">
+    <h2>1. The Big Picture</h2>
+    <p>Before we dive into any code, let's understand <em>why</em> we're studying Scheme in a programming languages course.</p>
+
+    <div class="big-idea">
+      <strong>Core Philosophy:</strong> Scheme tries to be the <em>simplest possible programming language that's still useful</em>. It strips away everything that isn't needed, leaving a tiny core that can be extended into a full language.
+    </div>
+
+    <p>Think of it like this: back in the 1930s, Alan Turing designed the Turing machine — the simplest possible computer — so he could prove theorems about what computers can and can't do. But actually <em>programming</em> a Turing machine is a nightmare. It's worse than writing raw machine code.</p>
+
+    <p>Scheme tries to solve a <em>harder</em> problem: strip a programming language down to its minimum <em>without</em> being a disaster to use. The designers wanted a language that's theoretically clean <strong>and</strong> practically useful.</p>
+
+    <div class="analogy">
+      <strong>Analogy:</strong> Imagine building a house. You could build it from atoms (like a Turing machine), but that's impractical. You could use a kit with 10,000 specialized parts (like C++ or Java). Scheme is like having a small box of Lego bricks — very few types of pieces, but you can build anything if you're clever about combining them.
+    </div>
+
+    <h3>Core vs. Extensions</h3>
+    <p>This is the central theme of today's lecture. Scheme has two layers:</p>
+
+    <div class="step-flow">
+      <div class="step-item">
+        <div class="step-num">Core</div>
+        <div class="step-text">A tiny set of built-in primitives that <em>can't</em> be defined in terms of anything simpler: <code>lambda</code>, <code>if</code>, <code>cons</code>, <code>car</code>, <code>cdr</code>, and a few others.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">Extensions</div>
+        <div class="step-text">Everything else — <code>and</code>, <code>or</code>, <code>let</code>, <code>list</code> — is syntactic sugar that can be <em>defined</em> using the core. We'll prove this today.</div>
+      </div>
+    </div>
+
+    <p>For example, Scheme's <code>+</code> function can take any number of arguments: <code>(+ a b c)</code>. The designers <em>could</em> have limited it to two arguments and made you write <code>(+ a (+ b c))</code>. But they decided that was too painful — there are already enough parentheses in Scheme. So they made <code>+</code> with many arguments an <em>extension</em> of a simpler two-argument core <code>+</code>.</p>
+
+    <p>Throughout this lecture, we'll see things we <em>thought</em> were fundamental to the language that are actually just convenient extensions built on top of something simpler. That's a powerful idea — it means the language is more understandable and more flexible than it first appears.</p>
+  </section>
+
+  <!-- ========== SECTION 2: PAIRS & LISTS ========== -->
+  <section id="lists">
+    <h2>2. Building with Pairs & Lists</h2>
+    <p>Before you can do <em>anything</em> interesting in Scheme, you need to understand how data is built. The fundamental building block is the <strong>pair</strong> (also called a "cons cell").</p>
+
+    <h3>cons — Building a Pair</h3>
+    <p>The function <code>cons</code> takes two values and glues them together into a pair:</p>
+
+    <pre><span class="comment">; cons takes two values and makes a pair</span>
+(<span class="keyword">cons</span> <span class="value">1</span> <span class="value">2</span>)   <span class="comment">; → (1 . 2)  — a pair with 1 on the left, 2 on the right</span></pre>
+
+    <p>You can visualize a pair as a box with two slots:</p>
+
+    <div class="diagram-box">
+      <svg width="220" height="80" viewBox="0 0 220 80">
+        <rect x="30" y="15" width="70" height="50" rx="6" fill="#fff" stroke="#2C2417" stroke-width="2"/>
+        <line x1="65" y1="15" x2="65" y2="65" stroke="#2C2417" stroke-width="2"/>
+        <text x="48" y="46" font-family="JetBrains Mono" font-size="16" fill="#C84B31" text-anchor="middle">A</text>
+        <text x="83" y="46" font-family="JetBrains Mono" font-size="16" fill="#C84B31" text-anchor="middle">B</text>
+        <text x="48" y="12" font-family="JetBrains Mono" font-size="9" fill="#7A6F60" text-anchor="middle">car</text>
+        <text x="83" y="12" font-family="JetBrains Mono" font-size="9" fill="#7A6F60" text-anchor="middle">cdr</text>
+        <text x="140" y="44" font-family="Source Serif 4" font-size="14" fill="#7A6F60">← (cons A B)</text>
+      </svg>
+    </div>
+
+    <h3>car and cdr — Taking a Pair Apart</h3>
+    <p>If <code>cons</code> builds a pair, then <code>car</code> and <code>cdr</code> take it apart:</p>
+
+    <pre><span class="comment">; car returns the left (first) element of a pair</span>
+(<span class="keyword">car</span> (<span class="keyword">cons</span> <span class="value">1</span> <span class="value">2</span>))   <span class="comment">; → 1</span>
+
+<span class="comment">; cdr returns the right (second) element of a pair</span>
+(<span class="keyword">cdr</span> (<span class="keyword">cons</span> <span class="value">1</span> <span class="value">2</span>))   <span class="comment">; → 2</span></pre>
+
+    <p>The names <code>car</code> and <code>cdr</code> are historical — they come from the original hardware registers on the IBM 704 computer in the 1950s. They've stuck around ever since. Think of <code>car</code> as "Contents of Address Register" (first element) and <code>cdr</code> as "Contents of Decrement Register" (rest). But most people just memorize: <strong>car = first</strong>, <strong>cdr = rest</strong>.</p>
+
+    <h3>Lists Are Chains of Pairs</h3>
+    <p>A list in Scheme is just a chain of pairs where each pair's <code>cdr</code> points to the next pair, and the last pair's <code>cdr</code> is the empty list <code>'()</code>:</p>
+
+    <pre><span class="comment">; The list (1 2 3) is really:</span>
+(<span class="keyword">cons</span> <span class="value">1</span> (<span class="keyword">cons</span> <span class="value">2</span> (<span class="keyword">cons</span> <span class="value">3</span> <span class="value">'()</span>)))</pre>
+
+    <h3>list — A Convenient Shorthand</h3>
+    <p>Writing all those nested <code>cons</code> calls is tedious. So Scheme provides the <code>list</code> function:</p>
+
+    <pre><span class="comment">; list takes any number of arguments and builds a list</span>
+(<span class="keyword">list</span> <span class="value">1</span> <span class="value">2</span> <span class="value">3</span>)      <span class="comment">; → (1 2 3)</span>
+(<span class="keyword">list</span> <span class="string">"hi"</span> <span class="value">42</span>)    <span class="comment">; → ("hi" 42)</span>
+(<span class="keyword">list</span>)             <span class="comment">; → ()  — the empty list</span></pre>
+
+    <p>Here's the beautiful thing: <code>list</code> is <em>not</em> part of the core language. It's an extension! If it weren't built in, you could define it yourself in one line:</p>
+
+    <pre><span class="comment">; list is just "package up all my arguments as a list"</span>
+(<span class="keyword">define</span> (<span class="builtin">list</span> . args) args)</pre>
+
+    <p>This works because the <code>. args</code> syntax collects all arguments into a list (we'll cover that in the variadic functions section). So <code>list</code> just takes its arguments — already packaged as a list — and returns them. That's it!</p>
+
+    <div class="quiz" data-correct="1">
+      <div class="quiz-label">Check Your Understanding</div>
+      <p class="question">What does <code>(car (cdr (list 10 20 30)))</code> return?</p>
+      <div class="quiz-options">
+        <div class="quiz-option" data-idx="0"><span class="letter">A</span> 10</div>
+        <div class="quiz-option" data-idx="1"><span class="letter">B</span> 20</div>
+        <div class="quiz-option" data-idx="2"><span class="letter">C</span> 30</div>
+        <div class="quiz-option" data-idx="3"><span class="letter">D</span> (20 30)</div>
+      </div>
+      <div class="quiz-feedback correct">Correct! <code>(list 10 20 30)</code> gives <code>(10 20 30)</code>. Then <code>cdr</code> gives <code>(20 30)</code> — the list without its first element. Then <code>car</code> gives <code>20</code> — the first element of that.</div>
+      <div class="quiz-feedback wrong">Not quite. Work through it step by step: <code>(list 10 20 30)</code> → <code>(10 20 30)</code>. Then <code>(cdr ...)</code> → <code>(20 30)</code>. Then <code>(car ...)</code> → <code>20</code>. The answer is <strong>B</strong>.</div>
+      <button class="quiz-btn">Check Answer</button>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 3: QUOTING ========== -->
+  <section id="quoting">
+    <h2>3. Quoting vs. <code>list</code></h2>
+    <p>This is a subtle but important distinction. Both quoting and <code>list</code> can produce lists, but they behave differently.</p>
+
+    <h3>Quoting: "Don't Evaluate, Just Give Me the Data"</h3>
+    <p>When you put a <code>'</code> (quote) in front of something, you're telling Scheme: "Don't try to run this as code. Just treat it as raw data."</p>
+
+    <pre><span class="comment">; Quoting: treat everything literally as symbols/numbers</span>
+'(a b 19)   <span class="comment">; → (a b 19)</span>
+            <span class="comment">; a and b are SYMBOLS, not variables</span>
+            <span class="comment">; They are NOT evaluated</span></pre>
+
+    <h3>list: "Evaluate First, Then Package"</h3>
+    <p>The <code>list</code> function evaluates its arguments first, <em>then</em> puts the results into a list:</p>
+
+    <pre><span class="comment">; Suppose a = 27 and b = (x y z)</span>
+(<span class="keyword">list</span> a b <span class="value">19</span>)   <span class="comment">; → (27 (x y z) 19)</span>
+               <span class="comment">; a and b are VARIABLES — they get evaluated!</span></pre>
+
+    <div class="concept-card">
+      <div class="tag">Key Difference</div>
+      <p><strong>Quoting</strong> prevents evaluation — symbols stay as symbols. <strong><code>list</code></strong> evaluates its arguments first — variables get looked up and replaced with their values.</p>
+      <p style="margin-top:8px">Numbers, booleans, and strings are <strong>self-evaluating</strong>: quoting <code>19</code> and just writing <code>19</code> give you the same result. The Scheme interpreter sees <code>19</code> and says "that's just 19" — no error, no confusion.</p>
+    </div>
+
+    <h3>Quasiquoting: The Best of Both Worlds</h3>
+    <p>What if you want <em>mostly</em> literal data, but you want to evaluate a few pieces? That's what quasiquoting does. You use a backtick <code>`</code> instead of a regular quote, and then use <code>,</code> (comma) to "unquote" — to say "evaluate this part":</p>
+
+    <pre><span class="comment">; Quasiquote with , to evaluate specific parts</span>
+<span class="comment">; Suppose a = 27, b = (x y z)</span>
+`(,a ,b 19)   <span class="comment">; → (27 (x y z) 19)</span>
+              <span class="comment">; Same result as (list a b 19)!</span></pre>
+
+    <p>So <code>(list a b 19)</code> and <code>`(,a ,b 19)</code> mean the same thing. The quasiquote version reads like a template: "give me a list that looks like this, but fill in <code>a</code> and <code>b</code> with their current values."</p>
+
+    <div class="quiz" data-correct="2">
+      <div class="quiz-label">Check Your Understanding</div>
+      <p class="question">If <code>x</code> is bound to the value <code>5</code>, what does <code>'(x 10)</code> return?</p>
+      <div class="quiz-options">
+        <div class="quiz-option" data-idx="0"><span class="letter">A</span> (5 10)</div>
+        <div class="quiz-option" data-idx="1"><span class="letter">B</span> Error — x is not defined</div>
+        <div class="quiz-option" data-idx="2"><span class="letter">C</span> (x 10)</div>
+        <div class="quiz-option" data-idx="3"><span class="letter">D</span> '(5 10)</div>
+      </div>
+      <div class="quiz-feedback correct">Correct! The quote <code>'</code> prevents evaluation. So <code>x</code> stays as the <em>symbol</em> x, not the value 5. To get <code>(5 10)</code> you'd need <code>(list x 10)</code> or <code>`(,x 10)</code>.</div>
+      <div class="quiz-feedback wrong">Remember: the quote <code>'</code> means "don't evaluate anything." So <code>x</code> is treated as a literal symbol, not a variable. The answer is <strong>C</strong>: <code>(x 10)</code>.</div>
+      <button class="quiz-btn">Check Answer</button>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 4: EQUALITY ========== -->
+  <section id="equality">
+    <h2>4. Four Kinds of Equality</h2>
+    <p>In English, we say two things are "equal" and don't think twice. But in programming, "equal" can mean very different things. Scheme makes this explicit by giving you <strong>four</strong> different equality tests. Understanding which one to use is critical.</p>
+
+    <table class="comp-table">
+      <tr>
+        <th>Function</th>
+        <th>What It Compares</th>
+        <th>Speed</th>
+        <th>When to Use</th>
+      </tr>
+      <tr>
+        <td><code>eq?</code></td>
+        <td><strong>Object identity</strong> — are A and B literally the same object in memory? (pointer comparison)</td>
+        <td>O(1)</td>
+        <td>Checking if two variables point to the exact same thing</td>
+      </tr>
+      <tr>
+        <td><code>eqv?</code></td>
+        <td><strong>Value comparison</strong> — do A and B have the same value? (one level deep)</td>
+        <td>O(n)</td>
+        <td>Comparing strings, large integers — checks contents, not address</td>
+      </tr>
+      <tr>
+        <td><code>equal?</code></td>
+        <td><strong>Recursive/structural</strong> — walks through lists and sublists comparing everything</td>
+        <td>O(n)</td>
+        <td>Comparing complex data structures</td>
+      </tr>
+      <tr>
+        <td><code>=</code></td>
+        <td><strong>Numeric</strong> — are A and B the same number? (regardless of type)</td>
+        <td>O(n)</td>
+        <td>Comparing numbers across types (int, float, etc.)</td>
+      </tr>
+    </table>
+
+    <h3>Detailed Walkthrough</h3>
+
+    <h4>eq? — Same Object?</h4>
+    <p>Think of <code>eq?</code> as asking: "Do these two things occupy the same memory address?" If you're familiar with C, it's like comparing pointers. It's blazingly fast — just one machine instruction — but it's very strict.</p>
+    <pre><span class="comment">; Two variables pointing to the SAME list object</span>
+(<span class="keyword">define</span> x '(1 2 3))
+(<span class="keyword">define</span> y x)       <span class="comment">; y points to the same object as x</span>
+(<span class="builtin">eq?</span> x y)          <span class="comment">; → #t  (they're the same object)</span>
+
+<span class="comment">; Two DIFFERENT list objects with the same contents</span>
+(<span class="keyword">define</span> a '(1 2 3))
+(<span class="keyword">define</span> b '(1 2 3))
+(<span class="builtin">eq?</span> a b)          <span class="comment">; → #f  (different objects, same contents)</span></pre>
+
+    <h4>eqv? — Same Value?</h4>
+    <p><code>eqv?</code> goes one step further: it actually looks at the <em>value</em> being pointed to. For strings, it compares the characters. For large integers, it compares the digits. But it only looks one level deep — it won't recurse into nested lists.</p>
+    <pre>(<span class="builtin">eqv?</span> <span class="string">"hello"</span> <span class="string">"hello"</span>)   <span class="comment">; → #t  (same string content)</span>
+(<span class="builtin">eq?</span>  <span class="string">"hello"</span> <span class="string">"hello"</span>)   <span class="comment">; → #f (could be: different string objects!)</span></pre>
+
+    <h4>equal? — Same Structure?</h4>
+    <p><code>equal?</code> is the most thorough: it walks through entire data structures recursively. Two lists are <code>equal?</code> if all their elements are <code>eqv?</code>, including nested lists.</p>
+    <pre>(<span class="builtin">equal?</span> '(1 (2 3)) '(1 (2 3)))   <span class="comment">; → #t  (same structure and values)</span>
+(<span class="builtin">eqv?</span>   '(1 (2 3)) '(1 (2 3)))   <span class="comment">; → #f  (different objects, doesn't recurse)</span></pre>
+
+    <h4>= — Same Number?</h4>
+    <p><code>=</code> only works on numbers, but it crosses type boundaries:</p>
+    <pre>(<span class="builtin">=</span> <span class="value">0</span> <span class="value">0.0</span>)     <span class="comment">; → #t  (numerically equal, different types!)</span>
+(<span class="builtin">eqv?</span> <span class="value">0</span> <span class="value">0.0</span>) <span class="comment">; → #f  (integer ≠ float as objects)</span></pre>
+
+    <div class="concept-card">
+      <div class="tag">Tricky Edge Case — NaN</div>
+      <p>Can you find a value where <code>(eq? a b)</code> is <strong>#t</strong> but <code>(= a b)</code> is <strong>#f</strong>?</p>
+      <p style="margin-top:8px"><strong>Answer: NaN</strong> (Not a Number). If <code>a</code> holds NaN, then <code>(eq? a a)</code> is <code>#t</code> (it's the same object), but <code>(= a a)</code> is <code>#f</code> because by the IEEE floating-point standard, NaN is not equal to itself numerically. This is a famous quirk of floating-point arithmetic.</p>
+    </div>
+
+    <div class="quiz" data-correct="1">
+      <div class="quiz-label">Check Your Understanding</div>
+      <p class="question">Which equality function should you use to check if two separately-constructed lists <code>(1 2 3)</code> have the same contents?</p>
+      <div class="quiz-options">
+        <div class="quiz-option" data-idx="0"><span class="letter">A</span> eq?</div>
+        <div class="quiz-option" data-idx="1"><span class="letter">B</span> equal?</div>
+        <div class="quiz-option" data-idx="2"><span class="letter">C</span> eqv?</div>
+        <div class="quiz-option" data-idx="3"><span class="letter">D</span> =</div>
+      </div>
+      <div class="quiz-feedback correct">Correct! <code>equal?</code> recursively compares data structures. <code>eq?</code> would return #f because they're different objects. <code>eqv?</code> doesn't recurse into lists. <code>=</code> only works on numbers.</div>
+      <div class="quiz-feedback wrong">Think about what each function does. <code>eq?</code> checks identity (same object), not contents. <code>eqv?</code> doesn't recurse. <code>=</code> is numbers only. The answer is <strong>B</strong>: <code>equal?</code> — it recursively walks the structure.</div>
+      <button class="quiz-btn">Check Answer</button>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 5: TYPE PREDICATES ========== -->
+  <section id="predicates">
+    <h2>5. Type Predicates</h2>
+    <p>In Scheme, for every type, there's a built-in function that tests whether a value is of that type. These functions are called <strong>predicates</strong>, and by convention they all end with <code>?</code>:</p>
+
+    <pre>(<span class="builtin">null?</span> '())      <span class="comment">; → #t  (it's the empty list)</span>
+(<span class="builtin">null?</span> '(1 2))   <span class="comment">; → #f  (not empty)</span>
+
+(<span class="builtin">pair?</span> '(1 2))   <span class="comment">; → #t  (it's a cons pair)</span>
+(<span class="builtin">pair?</span> <span class="value">42</span>)       <span class="comment">; → #f  (not a pair)</span>
+
+(<span class="builtin">integer?</span> <span class="value">42</span>)    <span class="comment">; → #t</span>
+(<span class="builtin">integer?</span> <span class="value">3.14</span>)  <span class="comment">; → #f</span>
+
+(<span class="builtin">string?</span> <span class="string">"hi"</span>)   <span class="comment">; → #t</span>
+(<span class="builtin">boolean?</span> <span class="value">#t</span>)    <span class="comment">; → #t</span></pre>
+
+    <p>An important detail: in Scheme, there is exactly <strong>one</strong> empty list. Every <code>'()</code> in your program refers to the same object. That's why <code>(eq? '() '())</code> returns <code>#t</code> — they're literally the same object. Many Scheme implementations represent the empty list as the bit pattern of all zeros internally.</p>
+  </section>
+
+  <!-- ========== SECTION 6: DEFINE ========== -->
+  <section id="define">
+    <h2>6. <code>define</code> and <code>set!</code></h2>
+    <p>At the top level, <code>define</code> binds a name to a value:</p>
+
+    <pre>(<span class="keyword">define</span> pi <span class="value">3.14159</span>)
+<span class="comment">; From here on, pi = 3.14159</span>
+
+(<span class="keyword">define</span> greeting <span class="string">"hello"</span>)
+<span class="comment">; greeting = "hello"</span></pre>
+
+    <p>The right-hand side is <em>evaluated</em> first (it can be any complex expression), then the result is stored in the name. This is <strong>not</strong> a macro — it actually runs the code and saves the result.</p>
+
+    <h3>set! — Destructive Assignment (Use with Caution)</h3>
+    <p>You <em>can</em> change a variable's value later with <code>set!</code>:</p>
+    <pre>(<span class="keyword">define</span> x <span class="value">10</span>)
+(<span class="keyword">set!</span> x <span class="value">20</span>)   <span class="comment">; x is now 20</span></pre>
+
+    <div class="big-idea">
+      <strong>Warning:</strong> Using <code>set!</code> means you've left the world of <em>functional</em> programming and entered <em>imperative</em> programming. There's a strong school of thought in Scheme that says this is a bad idea — your programs become harder to reason about when variables can change. In fact, the Racket dialect of Scheme doesn't allow <code>set!</code> on variables defined with <code>define</code> by default!
+    </div>
+  </section>
+
+  <!-- ========== SECTION 7: LAMBDA ========== -->
+  <section id="lambda">
+    <h2>7. Lambda Expressions</h2>
+    <p>A <code>lambda</code> creates a <strong>nameless function</strong> (also called an "anonymous function" or a "closure"). This is one of the most important concepts in Scheme — and in programming languages in general.</p>
+
+    <pre><span class="comment">; A nameless function that takes argument f and calls (f 27)</span>
+(<span class="keyword">lambda</span> (f) (f <span class="value">27</span>))</pre>
+
+    <p>By itself, this function just floats in space with no name. To use it, you can either call it immediately or bind it to a name:</p>
+
+    <pre><span class="comment">; Give it a name using define</span>
+(<span class="keyword">define</span> d (<span class="keyword">lambda</span> (f) (f <span class="value">27</span>)))
+
+<span class="comment">; Now call it: pass the + function as the argument</span>
+(d +)   <span class="comment">; → 27  because (+ 27) = 27</span>
+(d -)   <span class="comment">; → -27 because (- 27) = -27</span></pre>
+
+    <h3>Syntactic Sugar: The Short Form</h3>
+    <p>Defining a function and immediately naming it is so common that Scheme has a shorthand:</p>
+
+    <pre><span class="comment">; Long form:</span>
+(<span class="keyword">define</span> d (<span class="keyword">lambda</span> (f) (f <span class="value">27</span>)))
+
+<span class="comment">; Short form (syntactic sugar — means exactly the same thing):</span>
+(<span class="keyword">define</span> (d f) (f <span class="value">27</span>))</pre>
+
+    <p>The short form puts the function name and parameters in the same parentheses. This pattern should look familiar if you've used OCaml's <code>let d f = f 27</code> — same idea, different syntax.</p>
+
+    <div class="big-idea">
+      <strong>Core vs Extension:</strong> <code>lambda</code> is part of the core language — it's a <em>special form</em>, not a regular function. The shorthand <code>(define (name args) body)</code> is syntactic sugar (an extension) that expands to <code>(define name (lambda (args) body))</code>.
+    </div>
+  </section>
+
+  <!-- ========== SECTION 8: VARIADIC ========== -->
+  <section id="variadic">
+    <h2>8. Variadic Functions</h2>
+    <p>A <strong>variadic function</strong> accepts a varying number of arguments. You've already seen one: <code>+</code> can take any number of arguments. Here's how to define your own:</p>
+
+    <h3>At Least One Argument (dot notation)</h3>
+    <pre><span class="comment">; format is required; args collects everything else as a list</span>
+(<span class="keyword">define</span> (printf format . args) ...)
+
+<span class="comment">; When you call:</span>
+(printf <span class="string">"%s %d %x"</span> <span class="string">"abc"</span> <span class="value">29</span> <span class="value">372</span>)
+<span class="comment">; format → "%s %d %x"</span>
+<span class="comment">; args   → ("abc" 29 372)  ← a list of the remaining arguments</span></pre>
+
+    <p>The <code>.</code> (dot) before <code>args</code> is the key. Everything before the dot is a required parameter. The identifier after the dot collects all remaining arguments into a list.</p>
+
+    <h3>Zero or More Arguments</h3>
+    <p>What if you want a function that takes <em>zero or more</em> arguments? You can't write <code>(lambda (. args) ...)</code> because <code>(.</code> isn't valid syntax. Instead, drop the parentheses entirely:</p>
+
+    <pre><span class="comment">; Takes zero or more arguments — all collected as a list</span>
+(<span class="keyword">define</span> noargs (<span class="keyword">lambda</span> args ...))
+<span class="comment">; Shorthand:</span>
+(<span class="keyword">define</span> (noargs . args) ...)</pre>
+
+    <h3>The list Function Defined</h3>
+    <p>Now we can see how <code>list</code> works — it's the simplest possible variadic function:</p>
+
+    <pre><span class="comment">; list takes zero or more args and returns them as a list</span>
+(<span class="keyword">define</span> (<span class="builtin">list</span> . args) args)
+
+<span class="comment">; When you call (list 1 2 3):</span>
+<span class="comment">; args = (1 2 3)</span>
+<span class="comment">; return args → (1 2 3). That's it!</span></pre>
+
+    <div class="quiz" data-correct="2">
+      <div class="quiz-label">Check Your Understanding</div>
+      <p class="question">Given <code>(define (f x . rest) rest)</code>, what does <code>(f 1 2 3 4)</code> return?</p>
+      <div class="quiz-options">
+        <div class="quiz-option" data-idx="0"><span class="letter">A</span> 1</div>
+        <div class="quiz-option" data-idx="1"><span class="letter">B</span> (1 2 3 4)</div>
+        <div class="quiz-option" data-idx="2"><span class="letter">C</span> (2 3 4)</div>
+        <div class="quiz-option" data-idx="3"><span class="letter">D</span> Error</div>
+      </div>
+      <div class="quiz-feedback correct">Correct! <code>x</code> gets bound to <code>1</code> (the first argument). <code>rest</code> collects all remaining arguments: <code>(2 3 4)</code>. The function returns <code>rest</code>, so the answer is <code>(2 3 4)</code>.</div>
+      <div class="quiz-feedback wrong"><code>x</code> captures the first argument (1), and <code>rest</code> collects the remaining arguments as a list: <code>(2 3 4)</code>. The function returns <code>rest</code>, so the answer is <strong>C</strong>: <code>(2 3 4)</code>.</div>
+      <button class="quiz-btn">Check Answer</button>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 9: SPECIAL FORMS ========== -->
+  <section id="special-forms">
+    <h2>9. Special Forms: <code>if</code>, <code>begin</code>, <code>and</code>, <code>or</code></h2>
+    <p>Now we hit something crucial. Some things in Scheme <em>look</em> like function calls, but they <strong>are not</strong>. They're called <strong>special forms</strong>, and they have special evaluation rules that functions can't replicate.</p>
+
+    <h3>if — Three-Way Conditional</h3>
+    <pre>(<span class="keyword">if</span> condition then-expr else-expr)
+
+<span class="comment">; If condition is anything other than #f → evaluate then-expr</span>
+<span class="comment">; If condition is #f → evaluate else-expr</span>
+<span class="comment">; Exactly ONE of the two branches runs. Never both.</span></pre>
+
+    <h4>Why if Can't Be a Function</h4>
+    <p>This is a critical insight. Scheme evaluates function arguments <strong>eagerly</strong> (call-by-value) — all arguments are evaluated <em>before</em> the function runs. But <code>if</code> must <em>not</em> evaluate both branches! Consider:</p>
+
+    <pre>(<span class="keyword">if</span> (<span class="builtin">=</span> x <span class="value">0</span>) <span class="value">1</span> (<span class="builtin">/</span> <span class="value">10</span> x))
+<span class="comment">; If x is 0, returns 1 — safe!</span>
+<span class="comment">; The division (/ 10 x) is NEVER evaluated</span></pre>
+
+    <p>If <code>if</code> were a regular function, it would evaluate <code>(/ 10 0)</code> <em>before</em> deciding which branch to take — and crash with a division-by-zero error. This is why <code>if</code> must be a special form in the core language.</p>
+
+    <div class="concept-card">
+      <div class="tag">Definitions using if</div>
+      <pre style="margin:8px 0">(<span class="keyword">define</span> (<span class="builtin">null?</span> x) (<span class="builtin">eq?</span> x '()))
+<span class="comment">; Simpler: doesn't even need if!</span>
+
+(<span class="keyword">define</span> (<span class="builtin">not</span> x) (<span class="keyword">if</span> x <span class="value">#f</span> <span class="value">#t</span>))
+<span class="comment">; Also possible: (eq? x #f)</span>
+
+(<span class="keyword">define</span> (<span class="builtin">abs</span> x) (<span class="keyword">if</span> (<span class="builtin"><</span> x <span class="value">0</span>) (<span class="builtin">-</span> x) x))
+<span class="comment">; This one truly needs if — can't simplify further</span></pre>
+    </div>
+
+    <h3>begin — Sequential Evaluation</h3>
+    <pre>(<span class="keyword">begin</span> expr1 expr2 ... exprN)
+<span class="comment">; Evaluate left to right, return the value of exprN</span></pre>
+
+    <h3>and — Short-Circuit Conjunction</h3>
+    <pre>(<span class="keyword">and</span> expr1 expr2 ... exprN)
+<span class="comment">; Evaluate left to right</span>
+<span class="comment">; If ANY expression returns #f → immediately return #f</span>
+<span class="comment">; If ALL are truthy → return the value of the LAST one</span></pre>
+
+    <h3>or — Short-Circuit Disjunction</h3>
+    <pre>(<span class="keyword">or</span> expr1 expr2 ... exprN)
+<span class="comment">; Evaluate left to right</span>
+<span class="comment">; The FIRST truthy value → return it immediately</span>
+<span class="comment">; If ALL are #f → return #f</span></pre>
+
+    <p>This is more powerful than C/C++'s <code>||</code>, which only returns <code>true</code> or <code>false</code>. Scheme's <code>or</code> returns the <em>actual value</em>, which enables a useful pattern for defaults:</p>
+
+    <pre>(<span class="keyword">or</span> (<span class="builtin">getenv</span> <span class="string">"PATH"</span>) <span class="string">"/bin:/usr/bin"</span>)
+<span class="comment">; If PATH is set → returns its value</span>
+<span class="comment">; If PATH is #f (not set) → returns the default string</span></pre>
+
+    <div class="quiz" data-correct="0">
+      <div class="quiz-label">Check Your Understanding</div>
+      <p class="question">What does <code>(and 5 "hello" #f 42)</code> return?</p>
+      <div class="quiz-options">
+        <div class="quiz-option" data-idx="0"><span class="letter">A</span> #f</div>
+        <div class="quiz-option" data-idx="1"><span class="letter">B</span> 42</div>
+        <div class="quiz-option" data-idx="2"><span class="letter">C</span> "hello"</div>
+        <div class="quiz-option" data-idx="3"><span class="letter">D</span> 5</div>
+      </div>
+      <div class="quiz-feedback correct">Correct! <code>and</code> evaluates left to right. <code>5</code> is truthy, <code>"hello"</code> is truthy, <code>#f</code> is false → immediately return <code>#f</code>. The <code>42</code> is never even evaluated.</div>
+      <div class="quiz-feedback wrong"><code>and</code> evaluates left to right: <code>5</code> (truthy, continue), <code>"hello"</code> (truthy, continue), <code>#f</code> (false! stop here). It immediately returns <strong>#f</strong>. The <code>42</code> is never reached.</div>
+      <button class="quiz-btn">Check Answer</button>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 10: RECURSION ========== -->
+  <section id="recursion">
+    <h2>10. Recursion & Tail Calls</h2>
+    <p>Scheme doesn't have traditional loops like <code>for</code> or <code>while</code>. Instead, it uses <strong>recursion</strong> to repeat operations. This means getting recursion right — especially making it <em>efficient</em> — is absolutely critical.</p>
+
+    <h3>First Attempt: Naive Reverse</h3>
+    <pre>(<span class="keyword">define</span> (<span class="builtin">rev</span> ls)
+  (<span class="keyword">if</span> (<span class="builtin">null?</span> ls)
+      '()
+      (<span class="builtin">append</span> (<span class="builtin">rev</span> (<span class="builtin">cdr</span> ls))
+              (<span class="keyword">list</span> (<span class="builtin">car</span> ls)))))</pre>
+
+    <p>This works, but it has <strong>two problems</strong>:</p>
+
+    <div class="step-flow">
+      <div class="step-item">
+        <div class="step-num">Problem 1</div>
+        <div class="step-text"><strong>Not tail recursive.</strong> The last operation is <code>append</code>, not <code>rev</code>. So each recursive call adds a frame to the stack. A list of length N builds up N stack frames → can blow the stack.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">Problem 2</div>
+        <div class="step-text"><strong>O(n²) time.</strong> Each <code>append</code> is O(n) because it must walk the entire first list. We call <code>append</code> n times, so the total work is 1 + 2 + ... + n = O(n²).</div>
+      </div>
+    </div>
+
+    <h3>The Fix: Accumulator Pattern</h3>
+    <p>The solution is the same one we used in OCaml and Prolog: define a helper function that's more general than reverse. Instead of just reversing, it <em>reverses and appends</em>:</p>
+
+    <pre><span class="comment">; revapp reverses L and prepends the result to A</span>
+<span class="comment">; (revapp '(1 2 3) '(4 5)) → (3 2 1 4 5)</span></pre>
+
+    <p>The trick is that <code>cons</code> is O(1), so moving elements one-at-a-time from <code>L</code> onto <code>A</code> is efficient. Each step takes constant time, we do it N times → O(n) total. And it's tail recursive because the recursive call is the <em>last</em> thing we do.</p>
+
+    <p>Scheme <strong>guarantees</strong> tail-call optimization. This is part of the language specification. If a recursive call is in tail position, the implementation <em>must</em> reuse the current stack frame. So tail-recursive code uses O(1) stack space, just like a loop.</p>
+  </section>
+
+  <!-- ========== SECTION 11: NAMED LET ========== -->
+  <section id="named-let">
+    <h2>11. Named <code>let</code></h2>
+    <p>We want our helper function to be <em>private</em> — invisible to the rest of the program. Scheme provides <strong>named <code>let</code></strong> for exactly this: defining a local recursive function and immediately calling it.</p>
+
+    <pre>(<span class="keyword">define</span> (<span class="builtin">rev</span> ls)
+  (<span class="keyword">let</span> revapp ((<span class="builtin">l</span> ls) (<span class="builtin">a</span> '()))
+    (<span class="keyword">if</span> (<span class="builtin">null?</span> l)
+        a
+        (revapp (<span class="builtin">cdr</span> l) (<span class="builtin">cons</span> (<span class="builtin">car</span> l) a)))))</pre>
+
+    <p>Let's break this down piece by piece:</p>
+
+    <div class="concept-card">
+      <div class="tag">Anatomy of Named let</div>
+      <p><code>(let <strong>revapp</strong> ((<strong>l</strong> ls) (<strong>a</strong> '())) <strong>body...</strong>)</code></p>
+      <p style="margin-top:8px"><strong>revapp</strong> — the name of the internal recursive function.<br>
+      <strong>(l ls)</strong> — parameter <code>l</code>, initially bound to <code>ls</code> (the input list).<br>
+      <strong>(a '())</strong> — parameter <code>a</code> (accumulator), initially the empty list.<br>
+      <strong>body</strong> — the code that runs, and can call <code>revapp</code> recursively.</p>
+    </div>
+
+    <p>The textual order matches the execution order: you first see the initial values (<code>ls</code> and <code>'()</code>), then you see what happens with them. This is nicer than the OCaml equivalent, where you'd define the helper function first and call it last — writing the code in the <em>opposite</em> order of execution.</p>
+
+    <div class="expandable">
+      <div class="expand-header" onclick="toggleExpand(this)">
+        <span>Compare: OCaml equivalent</span>
+        <span class="arrow">▸</span>
+      </div>
+      <div class="expand-body">
+        <pre><span class="keyword">let</span> rev ls =
+  <span class="keyword">let rec</span> revapp l a =
+    <span class="keyword">match</span> l <span class="keyword">with</span>
+    | [] -> a
+    | h::t -> revapp t (h::a)
+  <span class="keyword">in</span> revapp ls []</pre>
+        <p>Notice how in OCaml you first define <code>revapp</code> (lines 2-5), and <em>then</em> call it (line 6). You write what executes last first. Named <code>let</code> in Scheme avoids this by putting the initial call <em>first</em> (the parameter bindings) and the recursive body after.</p>
+      </div>
+    </div>
+
+    <h3>Key Properties of This Solution</h3>
+    <p><strong>O(n) time</strong> — <code>cons</code>, <code>car</code>, and <code>cdr</code> are all O(1). We do them n times.</p>
+    <p><strong>Tail recursive</strong> — when <code>revapp</code> calls itself, that's the very last thing it does. Scheme will optimize this into a loop.</p>
+    <p><strong>Private</strong> — <code>revapp</code> is invisible outside <code>rev</code>. Nobody else can call it.</p>
+
+    <div class="quiz" data-correct="2">
+      <div class="quiz-label">Check Your Understanding</div>
+      <p class="question">Named <code>let</code> is assumed to be recursive by default (no <code>rec</code> keyword needed). Why?</p>
+      <div class="quiz-options">
+        <div class="quiz-option" data-idx="0"><span class="letter">A</span> Because Scheme doesn't support non-recursive functions</div>
+        <div class="quiz-option" data-idx="1"><span class="letter">B</span> Because it would be a syntax error without it</div>
+        <div class="quiz-option" data-idx="2"><span class="letter">C</span> Because recursion is so common that requiring 'rec' would be unnecessary boilerplate</div>
+        <div class="quiz-option" data-idx="3"><span class="letter">D</span> Because named let always uses letrec internally</div>
+      </div>
+      <div class="quiz-feedback correct">Correct! The named <code>let</code> pattern is almost always used for recursion. Making it recursive by default saves typing and follows Scheme's philosophy of convenience. If the function doesn't actually call itself, no harm done — the code still works.</div>
+      <div class="quiz-feedback wrong">Scheme <em>does</em> support non-recursive functions (plain <code>let</code>). The real reason is that named <code>let</code> is so commonly used for recursion that requiring <code>rec</code> would be pointless boilerplate. The answer is <strong>C</strong>.</div>
+      <button class="quiz-btn">Check Answer</button>
+    </div>
+  </section>
+
+  <!-- ========== SECTION 12: MACROS ========== -->
+  <section id="macros">
+    <h2>12. Macros with <code>define-syntax</code></h2>
+    <p>This is where Scheme's "core vs extensions" philosophy gets really powerful. Using <code>define-syntax</code>, you can <strong>invent new keywords</strong> — literally extending the language. It's like macros in C, but much more powerful because they can be recursive and are hygienic (we'll explain that shortly).</p>
+
+    <h3>Binding Constructs in Scheme</h3>
+    <p>Identifiers in Scheme can play two roles: they can be <strong>variables</strong> (bound to values via <code>lambda</code>, <code>let</code>, <code>define</code>) or <strong>keywords</strong> for special forms (bound via <code>define-syntax</code>, <code>let-syntax</code>). The keyword-binding forms let you extend the language with new syntax.</p>
+
+    <h3>Example: Defining <code>and</code></h3>
+    <p><code>and</code> is built into Scheme, but it doesn't have to be. Here's how you'd define it from scratch:</p>
+
+    <pre>(<span class="keyword">define-syntax</span> <span class="builtin">and</span>
+  (<span class="keyword">syntax-rules</span> ()
+    ((<span class="builtin">and</span>)            <span class="value">#t</span>)              <span class="comment">; zero args → true</span>
+    ((<span class="builtin">and</span> x)          x)               <span class="comment">; one arg → just return it</span>
+    ((<span class="builtin">and</span> x1 x2 ...)                    <span class="comment">; two+ args →</span>
+     (<span class="keyword">if</span> x1 (<span class="builtin">and</span> x2 ...) <span class="value">#f</span>)))        <span class="comment">;   if x1 then (and rest) else #f</span></pre>
+
+    <p>Think of <code>syntax-rules</code> as pattern matching (like OCaml's <code>match</code>). The compiler tries each pattern top-to-bottom, and the first match wins. The <code>...</code> is a special identifier meaning "zero or more trailing things."</p>
+
+    <h4>Expansion Example</h4>
+    <pre><span class="comment">; Source code:</span>
+(<span class="builtin">and</span> (<span class="builtin">=</span> x <span class="value">0</span>) <span class="string">"foo"</span>)
+
+<span class="comment">; Step 1: matches (and x1 x2 ...) with x1=(= x 0), x2...="foo"</span>
+→ (<span class="keyword">if</span> (<span class="builtin">=</span> x <span class="value">0</span>) (<span class="builtin">and</span> <span class="string">"foo"</span>) <span class="value">#f</span>)
+
+<span class="comment">; Step 2: inner (and "foo") matches (and x) pattern</span>
+→ (<span class="keyword">if</span> (<span class="builtin">=</span> x <span class="value">0</span>) <span class="string">"foo"</span> <span class="value">#f</span>)</pre>
+
+    <p>The compiler recursively expands macros until only core forms remain. The final code uses only <code>if</code> — a core primitive.</p>
+
+    <h3>Example: Defining <code>or</code> (The Tricky One)</h3>
+    <p>You might think <code>or</code> is just as simple as <code>and</code>, but there's a subtle efficiency issue.</p>
+
+    <h4>Naive Attempt (Bad)</h4>
+    <pre>(<span class="keyword">define-syntax</span> <span class="builtin">or</span>
+  (<span class="keyword">syntax-rules</span> ()
+    ((<span class="builtin">or</span>) <span class="value">#f</span>)
+    ((<span class="builtin">or</span> x) x)
+    ((<span class="builtin">or</span> x1 x2 ...)
+     (<span class="keyword">if</span> x1 x1 (<span class="builtin">or</span> x2 ...))))  <span class="comment">; ← Problem! x1 appears TWICE</span></pre>
+
+    <p>Why is this bad? Consider <code>(or (getenv "PATH") "/bin")</code>. This expands to:</p>
+    <pre>(<span class="keyword">if</span> (<span class="builtin">getenv</span> <span class="string">"PATH"</span>) (<span class="builtin">getenv</span> <span class="string">"PATH"</span>) <span class="string">"/bin"</span>)
+<span class="comment">; getenv is called TWICE! Wasteful and possibly wrong</span>
+<span class="comment">; (what if it has side effects?)</span></pre>
+
+    <h4>Correct Version (Save to a Variable)</h4>
+    <pre>(<span class="keyword">define-syntax</span> <span class="builtin">or</span>
+  (<span class="keyword">syntax-rules</span> ()
+    ((<span class="builtin">or</span>) <span class="value">#f</span>)
+    ((<span class="builtin">or</span> x) x)
+    ((<span class="builtin">or</span> x1 x2 ...)
+     (<span class="keyword">let</span> ((v x1))               <span class="comment">; evaluate x1 ONCE, save in v</span>
+       (<span class="keyword">if</span> v v (<span class="builtin">or</span> x2 ...)))))  <span class="comment">; reuse v — no double evaluation</span></pre>
+
+    <p>Now <code>(or (getenv "PATH") "/bin")</code> expands to:</p>
+    <pre>(<span class="keyword">let</span> ((v (<span class="builtin">getenv</span> <span class="string">"PATH"</span>)))
+  (<span class="keyword">if</span> v v <span class="string">"/bin"</span>))
+<span class="comment">; getenv called exactly once. Correct and efficient.</span></pre>
+
+    <p>But this creates a new problem: what if the caller already has a variable named <code>v</code>? That's the problem of <strong>capture</strong>, which leads us to hygienic macros...</p>
+  </section>
+
+  <!-- ========== SECTION 13: MACRO LET ========== -->
+  <section id="macro-let">
+    <h2>13. Macros: <code>let</code> in Terms of Lambda</h2>
+    <p>Here's one of the most satisfying demonstrations of the core-vs-extensions idea: <code>let</code> is just syntactic sugar for a lambda call.</p>
+
+    <h3>Ordinary let</h3>
+    <pre><span class="comment">; What you write:</span>
+(<span class="keyword">let</span> ((x (* a a))
+      (y (* b b)))
+  (- x (* <span class="value">2</span> y)))
+
+<span class="comment">; What it really means (macro-expanded):</span>
+((<span class="keyword">lambda</span> (x y) (- x (* <span class="value">2</span> y)))
+ (* a a)
+ (* b b))</pre>
+
+    <p>The <code>let</code> creates variables and binds values to them. Under the hood, it becomes a lambda (the function) applied to the values (the arguments). The lambda's parameters are the variable names; the arguments are the initial values.</p>
+
+    <div class="concept-card">
+      <div class="tag">Why let is Nicer</div>
+      <p>In the lambda version, the evaluation order is: first evaluate <code>(* a a)</code> and <code>(* b b)</code> (the arguments), <em>then</em> execute the body. But textually, the body appears <em>before</em> the arguments.</p>
+      <p style="margin-top:8px">With <code>let</code>, you read top-to-bottom in evaluation order: first the bindings, then the body. Textual order = execution order. Much easier to read.</p>
+    </div>
+
+    <h3>Named let → letrec</h3>
+    <p>Named <code>let</code> is similarly just sugar for <code>letrec</code> (which allows recursive bindings):</p>
+    <pre><span class="comment">; Named let:</span>
+(<span class="keyword">let</span> revapp ((l ls) (a '()))
+  (<span class="keyword">if</span> (<span class="builtin">null?</span> l) a
+      (revapp (<span class="builtin">cdr</span> l) (<span class="builtin">cons</span> (<span class="builtin">car</span> l) a))))
+
+<span class="comment">; Expands to:</span>
+((<span class="keyword">letrec</span> ((revapp (<span class="keyword">lambda</span> (l a)
+           (<span class="keyword">if</span> (<span class="builtin">null?</span> l) a
+               (revapp (<span class="builtin">cdr</span> l) (<span class="builtin">cons</span> (<span class="builtin">car</span> l) a))))))
+   revapp)
+ ls '())</pre>
+
+    <p>The <code>letrec</code> defines <code>revapp</code> as a recursive function, then the expression returns that function, which is immediately called with the initial arguments <code>ls</code> and <code>'()</code>.</p>
+  </section>
+
+  <!-- ========== SECTION 14: HYGIENE ========== -->
+  <section id="hygiene">
+    <h2>14. Hygienic Macros</h2>
+    <p>Scheme solves a fundamental problem that plagues C/C++ macros: <strong>variable capture</strong>.</p>
+
+    <h3>The Problem</h3>
+    <p>Remember our <code>or</code> macro introduces a local variable <code>v</code>. What if the caller <em>also</em> has a variable named <code>v</code>?</p>
+
+    <pre>(<span class="keyword">let</span> ((u (<span class="builtin">getenv</span> <span class="string">"USER"</span>))
+      (v (<span class="builtin">getenv</span> <span class="string">"VERBOSE"</span>)))
+  (<span class="builtin">or</span> u v))
+
+<span class="comment">; Naive macro expansion of (or u v):</span>
+(<span class="keyword">let</span> ((v u))        <span class="comment">; OOPS! This v shadows the caller's v!</span>
+  (<span class="keyword">if</span> v v v))       <span class="comment">; All three v's refer to the SAME variable</span>
+                    <span class="comment">; We've lost access to (getenv "VERBOSE")!</span></pre>
+
+    <p>In C/C++, this exact problem happens constantly with macros — it's called <strong>name collision</strong> or <strong>capture</strong>. C programmers work around it with ugly naming conventions (like <code>__MACRO_INTERNAL_v</code>), but that's fragile.</p>
+
+    <h3>Scheme's Solution: Hygienic Macros</h3>
+    <p>Scheme determines the scope of all variables <em>before</em> macro expansion happens. When the macro introduces a <code>v</code>, Scheme knows it's a <em>different</em> <code>v</code> from the caller's <code>v</code>. Conceptually, it renames them:</p>
+
+    <pre><span class="comment">; Scheme internally distinguishes the two v's:</span>
+(<span class="keyword">let</span> ((v₁ u))       <span class="comment">; v₁ = macro's internal variable</span>
+  (<span class="keyword">if</span> v₁ v₁ v₂))   <span class="comment">; v₂ = caller's variable (getenv "VERBOSE")</span>
+                    <span class="comment">; Correct! No confusion.</span></pre>
+
+    <p>This is called <strong>hygienic</strong> macro expansion — "hygienic" meaning "clean." The macro can't accidentally mess up the caller's variables, and vice versa. It works because Scheme resolves scope <em>before</em> expanding macros, not after.</p>
+
+    <div class="big-idea">
+      <strong>Why this matters:</strong> Hygienic macros make it safe to extend the language with new syntax. You can write complex macros without worrying about name clashes. This is a significant advantage over C/C++ preprocessor macros, which do purely textual substitution and have no understanding of scope.
+    </div>
+  </section>
+
+  <!-- ========== SECTION 15: CONTINUATIONS ========== -->
+  <section id="continuations">
+    <h2>15. Continuations</h2>
+    <p>Now we're entering the most mind-bending part of the lecture. Continuations are Scheme's way of exposing something that exists in <em>every</em> programming language's runtime — but that most languages hide from you.</p>
+
+    <div class="big-idea">
+      <strong>Definition:</strong> A <strong>continuation</strong> is a representation of what a program will do in the future — its "bucket list" of remaining work. It captures the entire future of the computation from a given point.
+    </div>
+
+    <h3>What the Interpreter Needs to Know</h3>
+    <p>At any point during execution, the Scheme interpreter needs exactly two things to keep running:</p>
+
+    <div class="step-flow">
+      <div class="step-item">
+        <div class="step-num">IP</div>
+        <div class="step-text"><strong>Instruction Pointer</strong> — what code to execute next. Points to the next machine instruction or bytecode.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">EP</div>
+        <div class="step-text"><strong>Environment Pointer</strong> — the context in which that code runs. Points to the activation record with local variables, temporaries, and a pointer to the caller's environment.</div>
+      </div>
+    </div>
+
+    <p>Together, the IP/EP pair tells the interpreter everything it needs: what to do and what context to do it in.</p>
+
+    <h3>Activation Records (Stack Frames)</h3>
+    <p>Each function call creates an activation record containing:</p>
+
+    <div class="concept-card">
+      <div class="tag">Inside an Activation Record</div>
+      <p><strong>Local variables</strong> — the values of x, y, etc. in this function call</p>
+      <p><strong>Temporaries</strong> — unnamed intermediate values the compiler needs</p>
+      <p><strong>Caller's EP</strong> — pointer to the calling function's activation record</p>
+      <p><strong>Return address</strong> — the IP to jump back to when this function returns</p>
+    </div>
+
+    <p>These records form a chain: each one points to its caller's record, all the way back to <code>main</code>. This entire chain — all the IP/EP pairs — represents the continuation: everything the program still plans to do.</p>
+
+    <div class="analogy">
+      <strong>Analogy:</strong> Imagine you're reading a book, and you use bookmarks. Your current bookmark is where you are now (IP). The stack of notes you've written about context for each chapter is your environment (EP). If someone asked "what will you do next?", the answer is: finish this page, then continue from each bookmark in order. That chain of bookmarks <em>is</em> your continuation.
+    </div>
+
+    <h3>Scheme vs. C/C++</h3>
+    <p>In C/C++, a function is represented by just an instruction pointer (a function pointer). But in Scheme and OCaml, a function (closure) needs <em>two</em> pointers: the code (IP) and the environment in which it was created (EP). This is because closures can capture variables from their enclosing scope.</p>
+
+    <p>Also unlike C/C++, Scheme's activation records may live on the <strong>heap</strong> (not just the stack) and may need garbage collection. This is essential for continuations to work correctly, since a continuation might outlive the function call that created it.</p>
+  </section>
+
+  <!-- ========== SECTION 16: CALL/CC ========== -->
+  <section id="callcc">
+    <h2>16. <code>call/cc</code></h2>
+    <p>Now for the big reveal: how Scheme actually lets you <em>use</em> continuations.</p>
+
+    <pre>(<span class="keyword">call-with-current-continuation</span> P)
+(<span class="keyword">call/cc</span> P)   <span class="comment">; shorter alias — same thing</span></pre>
+
+    <p>Here's a fun fact about how controversial this feature is: people who <em>love</em> continuations use the short name <code>call/cc</code>. People who think continuations are dangerous and too low-level use the long name <code>call-with-current-continuation</code> — partly because it's annoying to type, which discourages casual use!</p>
+
+    <h3>What call/cc Does (Step by Step)</h3>
+
+    <div class="step-flow">
+      <div class="step-item">
+        <div class="step-num">Step 1</div>
+        <div class="step-text"><strong>Create a continuation <code>k</code></strong> that captures the future of the computation from this point. It's just an IP/EP pair — very cheap to create.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">Step 2</div>
+        <div class="step-text"><strong>Call <code>(P k)</code></strong> — invoke the function P, passing the continuation as its argument. Return whatever P returns.</div>
+      </div>
+    </div>
+
+    <p>Creating a continuation is cheap — it's just storing two pointers. No copying of the entire stack or anything expensive.</p>
+
+    <h3>Using a Continuation</h3>
+    <p>The power comes from what you can do with <code>k</code>. If you call <code>(k v)</code> from <em>anywhere</em>:</p>
+
+    <pre><span class="comment">; Calling a continuation:</span>
+(k v)
+<span class="comment">; 1. Immediately abandons whatever you're currently doing</span>
+<span class="comment">; 2. Restores BOTH the IP and EP from when k was created</span>
+<span class="comment">; 3. The call/cc expression "returns" with value v</span></pre>
+
+    <p>This is like a super-powered <code>goto</code>. A regular <code>goto</code> in C only changes the instruction pointer. Calling a continuation changes <em>both</em> the instruction pointer <strong>and</strong> the environment pointer — it teleports you back to a completely different execution context and makes it look like <code>call/cc</code> just returned with the value <code>v</code>.</p>
+
+    <div class="concept-card">
+      <div class="tag">Key Insight</div>
+      <p>A continuation is <strong>not</strong> a copy of the future — it's a <em>pointer</em> to the future. If parts of the computation modify variables between when <code>k</code> was created and when it's invoked, those changes will be visible. The continuation says "resume from here," but "here" might have changed.</p>
+    </div>
+
+    <div class="big-idea">
+      <strong>Why continuations matter:</strong> They're a building block for implementing exceptions, coroutines, backtracking, cooperative multitasking, and more. Every language has continuations internally — Scheme is unique in making them accessible to programmers. This gives you power that Java, C++, and Python don't offer directly, but it also gives you enough rope to hang yourself — which is why they're controversial.
+    </div>
+
+    <div class="quiz" data-correct="1">
+      <div class="quiz-label">Check Your Understanding</div>
+      <p class="question">What two pieces of information does a continuation store?</p>
+      <div class="quiz-options">
+        <div class="quiz-option" data-idx="0"><span class="letter">A</span> The source code and the call stack</div>
+        <div class="quiz-option" data-idx="1"><span class="letter">B</span> An instruction pointer and an environment pointer</div>
+        <div class="quiz-option" data-idx="2"><span class="letter">C</span> A copy of all variables and the return value</div>
+        <div class="quiz-option" data-idx="3"><span class="letter">D</span> The function name and its arguments</div>
+      </div>
+      <div class="quiz-feedback correct">Correct! A continuation is an IP/EP pair. The IP says what code to execute next; the EP says in what context (local variables, caller chain, etc.). It's a pointer to the computation's future, not a copy of it.</div>
+      <div class="quiz-feedback wrong">A continuation is simply an IP (instruction pointer) and EP (environment pointer) pair — it says what code to execute next and in what context. It doesn't copy anything; it just stores two pointers. The answer is <strong>B</strong>.</div>
+      <button class="quiz-btn">Check Answer</button>
+    </div>
+  </section>
+
+  <section style="border-top: 2px solid var(--border); padding-top: 40px;">
+    <h2 style="font-size:22px;">Recap: The Core Language</h2>
+    <p>Here's what we've established as Scheme's core — the primitives that can't be reduced further:</p>
+    <table class="comp-table">
+      <tr><th>Core Primitive</th><th>Why It Must Be Core</th></tr>
+      <tr><td><code>lambda</code></td><td>Creates functions — the fundamental building block</td></tr>
+      <tr><td><code>if</code></td><td>Conditional — can't be a function (must skip one branch)</td></tr>
+      <tr><td><code>cons</code>, <code>car</code>, <code>cdr</code></td><td>Build and access pairs — the basic data structure</td></tr>
+      <tr><td><code>define</code></td><td>Top-level bindings</td></tr>
+      <tr><td><code>call/cc</code></td><td>Continuation access — can't be written in Scheme itself</td></tr>
+    </table>
+    <p>Everything else — <code>and</code>, <code>or</code>, <code>let</code>, named <code>let</code>, <code>list</code>, <code>not</code>, <code>null?</code> — can be defined in terms of these core primitives using <code>define-syntax</code>. That's the beauty of Scheme's design.</p>
+  </section>
+
+</main>
+
+
+</body>
+</html>

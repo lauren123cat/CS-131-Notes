@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 7 — Type Parametrization, Bindings & Namespaces</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf8f5;
+  --bg-warm: #f5f0ea;
+  --text: #2a2520;
+  --text-light: #6b6055;
+  --accent: #c45d3e;
+  --accent-light: #e8a48e;
+  --accent-bg: #fdf0ec;
+  --blue: #3a6ea5;
+  --blue-light: #dbe8f4;
+  --green: #4a7c59;
+  --green-light: #e2f0e6;
+  --purple: #6b5b8a;
+  --purple-light: #ece7f4;
+  --yellow: #c49a2a;
+  --yellow-light: #faf3dc;
+  --code-bg: #1e1e2e;
+  --code-text: #cdd6f4;
+  --code-comment: #6c7086;
+  --code-keyword: #cba6f7;
+  --code-string: #a6e3a1;
+  --code-type: #89b4fa;
+  --border: #e0dbd4;
+  --shadow: 0 2px 12px rgba(42,37,32,0.06);
+  --radius: 10px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Source Serif 4', Georgia, serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.75;
+  font-size: 17px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* === LAYOUT === */
+.container {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 0 28px;
+}
+
+/* === HEADER === */
+header {
+  background: linear-gradient(135deg, #2a2520 0%, #3d342c 100%);
+  color: #faf8f5;
+  padding: 60px 0 50px;
+  margin-bottom: 50px;
+}
+header .container { position: relative; }
+header h1 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 38px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+header .subtitle {
+  font-size: 18px;
+  color: var(--accent-light);
+  font-weight: 400;
+}
+header .lecture-num {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent-light);
+  margin-bottom: 12px;
+  display: block;
+}
+
+/* === NAV / TOC === */
+.toc {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 32px;
+  margin-bottom: 50px;
+  box-shadow: var(--shadow);
+}
+.toc h2 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-light);
+  margin-bottom: 16px;
+}
+.toc ol {
+  list-style: none;
+  counter-reset: toc-counter;
+}
+.toc li {
+  counter-increment: toc-counter;
+  margin-bottom: 6px;
+}
+.toc li a {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  color: var(--text);
+  text-decoration: none;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 4px 0;
+  transition: color 0.2s;
+}
+.toc li a:hover { color: var(--accent); }
+.toc li a::before {
+  content: counter(toc-counter, decimal-leading-zero);
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 13px;
+  min-width: 22px;
+}
+
+/* === SECTIONS === */
+.section {
+  margin-bottom: 60px;
+}
+.section h2 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--accent);
+  display: inline-block;
+}
+.section h3 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 32px 0 12px;
+}
+.section p {
+  margin-bottom: 16px;
+}
+
+/* === SPECIAL BLOCKS === */
+.big-idea {
+  background: var(--accent-bg);
+  border-left: 4px solid var(--accent);
+  padding: 20px 24px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 24px 0;
+}
+.big-idea .label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.definition {
+  background: var(--blue-light);
+  border-left: 4px solid var(--blue);
+  padding: 18px 22px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 20px 0;
+}
+.definition .label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--blue);
+  margin-bottom: 4px;
+}
+
+.why-box {
+  background: var(--purple-light);
+  border-left: 4px solid var(--purple);
+  padding: 18px 22px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 20px 0;
+}
+.why-box .label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--purple);
+  margin-bottom: 4px;
+}
+
+.analogy {
+  background: var(--yellow-light);
+  border-left: 4px solid var(--yellow);
+  padding: 18px 22px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 20px 0;
+}
+.analogy .label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--yellow);
+  margin-bottom: 4px;
+}
+
+.warning {
+  background: #fef2f2;
+  border-left: 4px solid #dc3545;
+  padding: 18px 22px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 20px 0;
+}
+.warning .label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #dc3545;
+  margin-bottom: 4px;
+}
+
+/* === CODE BLOCKS === */
+.code-block {
+  background: var(--code-bg);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  margin: 20px 0;
+  overflow-x: auto;
+  position: relative;
+}
+.code-block .code-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #89b4fa;
+  margin-bottom: 12px;
+  display: block;
+}
+.code-block pre {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--code-text);
+  white-space: pre;
+}
+.code-block .comment { color: var(--code-comment); font-style: italic; }
+.code-block .keyword { color: var(--code-keyword); }
+.code-block .type { color: var(--code-type); }
+.code-block .string { color: var(--code-string); }
+.code-block .error { color: #f38ba8; }
+.code-block .highlight-line {
+  background: rgba(137,180,250,0.1);
+  display: inline-block;
+  width: 100%;
+  margin: 0 -24px;
+  padding: 0 24px;
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.88em;
+  background: #eee8e1;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+/* === COMPARISON TABLE === */
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 24px 0;
+  font-size: 15px;
+  background: white;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.comparison-table th {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg-warm);
+  padding: 14px 18px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-light);
+  border-bottom: 2px solid var(--border);
+}
+.comparison-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.comparison-table tr:last-child td { border-bottom: none; }
+
+/* === QUIZ / INTERACTIVE === */
+.quiz {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 30px;
+  margin: 30px 0;
+  box-shadow: var(--shadow);
+}
+.quiz .quiz-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--green);
+  margin-bottom: 10px;
+}
+.quiz .question {
+  font-weight: 500;
+  font-size: 17px;
+  margin-bottom: 16px;
+}
+.quiz .options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.quiz .option {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  padding: 12px 18px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+  text-align: left;
+  color: var(--text);
+}
+.quiz .option:hover {
+  border-color: var(--blue);
+  background: var(--blue-light);
+}
+.quiz .option.selected {
+  border-color: var(--blue);
+  background: var(--blue-light);
+  font-weight: 600;
+}
+.quiz .option.correct {
+  border-color: var(--green);
+  background: var(--green-light);
+}
+.quiz .option.incorrect {
+  border-color: #dc3545;
+  background: #fef2f2;
+}
+.quiz .option.disabled {
+  pointer-events: none;
+  opacity: 0.7;
+}
+.quiz .feedback {
+  padding: 14px 18px;
+  border-radius: 8px;
+  font-size: 15px;
+  line-height: 1.6;
+  display: none;
+}
+.quiz .feedback.show { display: block; }
+.quiz .feedback.correct-fb {
+  background: var(--green-light);
+  border: 1px solid var(--green);
+  color: #2d5a3a;
+}
+.quiz .feedback.incorrect-fb {
+  background: #fef2f2;
+  border: 1px solid #dc3545;
+  color: #8b2030;
+}
+
+/* === REVEAL BLOCKS === */
+.reveal-block {
+  margin: 20px 0;
+}
+.reveal-btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  background: white;
+  color: var(--accent);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.reveal-btn:hover {
+  background: var(--accent);
+  color: white;
+}
+.reveal-content {
+  display: none;
+  margin-top: 14px;
+  padding: 20px 24px;
+  background: var(--bg-warm);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.reveal-content.show { display: block; }
+
+/* === STEP THROUGH === */
+.step-through {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin: 24px 0;
+  box-shadow: var(--shadow);
+}
+.step-through .step-header {
+  background: var(--bg-warm);
+  padding: 14px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+.step-through .step-header span {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-light);
+}
+.step-through .step-nav {
+  display: flex;
+  gap: 8px;
+}
+.step-through .step-nav button {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  color: var(--text);
+  transition: all 0.15s;
+}
+.step-through .step-nav button:hover {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+.step-through .step-nav button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.step-through .step-nav button:disabled:hover {
+  background: white;
+  color: var(--text);
+  border-color: var(--border);
+}
+.step-through .step-body {
+  padding: 22px;
+}
+.step-through .step { display: none; }
+.step-through .step.active { display: block; }
+
+/* === MISC === */
+.spacer { height: 30px; }
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 50px 0;
+}
+.connection {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: var(--text-light);
+  padding: 12px 18px;
+  background: var(--bg-warm);
+  border-radius: var(--radius);
+  margin: 24px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.connection::before {
+  content: '🔗';
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+footer {
+  text-align: center;
+  padding: 40px 0;
+  color: var(--text-light);
+  font-size: 14px;
+  border-top: 1px solid var(--border);
+  margin-top: 60px;
+}
+
+/* Smooth scroll */
+html { scroll-behavior: smooth; }
+
+/* Responsive */
+@media (max-width: 600px) {
+  header h1 { font-size: 28px; }
+  .container { padding: 0 18px; }
+  .code-block { padding: 16px; }
+  .code-block pre { font-size: 12.5px; }
+}
+</style>
+
+<style>
+/* === Printable Override === */
+
+/* Hide non-content elements */
+.sidebar, .sidebar-toggle, .progress-bar, .quiz, .quiz-btn { display: none !important; }
+
+/* Base typography */
+html { font-size: 12px !important; }
+body { line-height: 1.3 !important; }
+
+/* Layout */
+.main {
+  margin-left: 0 !important;
+  padding: 0.5rem !important;
+  max-width: 100% !important;
+}
+
+/* Headings */
+h1 { font-size: 1.4rem !important; }
+h2 { font-size: 1.15rem !important; margin-top: 0.5rem !important; }
+h3 { font-size: 1.05rem !important; margin-top: 0.4rem !important; }
+
+/* Spacing */
+p { margin-bottom: 0.25rem !important; }
+ul, ol { margin-bottom: 0.25rem !important; }
+li { margin-bottom: 0.1rem !important; }
+
+.callout {
+  padding: 0.3rem 0.5rem !important;
+  margin: 0.3rem 0 !important;
+}
+
+.code-block {
+  margin: 0.3rem 0 !important;
+  overflow: visible !important;
+}
+.code-block pre {
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+}
+.code-body, .code-block code {
+  padding: 0.3rem 0.5rem !important;
+  font-size: 0.85rem !important;
+}
+
+section, .section { margin-bottom: 0.3rem !important; }
+.subtitle { margin-bottom: 0.3rem !important; }
+
+/* Force expandables open and remove toggle UI */
+.expandable-content {
+  display: block !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+.expandable-arrow { display: none !important; }
+.expandable-header { cursor: default !important; }
+
+/* Kill animations */
+* {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+}
+</style>
+
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <span class="lecture-num">Lecture 7 — Programming Languages</span>
+    <h1>Type Parametrization, Bindings &amp; Namespaces</h1>
+    <div class="subtitle">Templates vs. Generics, Wildcards, Duck Typing, Names, and How Code Gets Organized</div>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- TABLE OF CONTENTS -->
+<nav class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#s1">The Big Picture: Why Type Parametrization?</a></li>
+    <li><a href="#s2">Templates — The "Recompile Per Type" Approach</a></li>
+    <li><a href="#s3">Generics — The "Compile Once" Approach</a></li>
+    <li><a href="#s4">Templates vs. Generics: Head-to-Head</a></li>
+    <li><a href="#s5">Subtypes Meet Generics: The Invariance Problem</a></li>
+    <li><a href="#s6">Wildcards — The <code>?</code> Escape Hatch</a></li>
+    <li><a href="#s7">Bounded Wildcards &amp; Bounded Generics</a></li>
+    <li><a href="#s8">Duck Typing — The Opposite Philosophy</a></li>
+    <li><a href="#s9">Names (Identifiers)</a></li>
+    <li><a href="#s10">Bindings — What Gets Bound, and When</a></li>
+    <li><a href="#s11">Binding Time — When Associations Are Created</a></li>
+    <li><a href="#s12">Explicit vs. Implicit Binding / Static vs. Dynamic</a></li>
+    <li><a href="#s13">Namespaces — Organizing Bindings</a></li>
+    <li><a href="#s14">Primitive Namespaces (The C/C++ Jungle)</a></li>
+    <li><a href="#s15">Declaration vs. Definition</a></li>
+    <li><a href="#s16">Labeled Namespaces &amp; Access Control</a></li>
+    <li><a href="#s17">Explicit Namespace Creation (OCaml Modules)</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ -->
+<!-- SECTION 1 -->
+<!-- ============================================================ -->
+<div class="section" id="s1">
+  <h2>1. The Big Picture: Why Type Parametrization?</h2>
+
+  <p>Imagine you've written a function that finds the first element of a list of strings. It works great! But now you need the same function for a list of integers. And a list of threads. And a list of anything else you might invent tomorrow.</p>
+
+  <p>You could copy-paste your function and change "String" to "Integer" every time. But that's terrible — you'd have dozens of near-identical functions, and a bug fix in one wouldn't automatically fix the others.</p>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    <strong>Type parametrization</strong> is writing the same code so it works with <em>different types</em>, for reusability. Instead of writing <code>headOfStringList</code>, <code>headOfIntList</code>, etc., you write <em>one</em> piece of code that says "give me a list of <em>some type T</em>, and I'll give you back a <em>T</em>."
+  </div>
+
+  <div class="why-box">
+    <div class="label">Why does this matter?</div>
+    Type parametrization is <strong>the foundation of reusable data structures and algorithms</strong>. Without it, every library would need to be rewritten for every type. The collections in Java (<code>List</code>, <code>Map</code>, <code>Set</code>), the containers in C++ (<code>vector</code>, <code>map</code>), and the polymorphic types in OCaml (<code>'a list</code>) all rely on this idea.
+  </div>
+
+  <p>There are two major approaches to achieving type parametrization, and they differ in a fundamental way: <strong>when</strong> the code gets compiled and <strong>how much</strong> the compiler knows about the type at compile time.</p>
+
+  <p>Those two approaches are <strong>templates</strong> and <strong>generics</strong>. Let's learn each one from scratch.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 2 -->
+<!-- ============================================================ -->
+<div class="section" id="s2">
+  <h2>2. Templates — The "Recompile Per Type" Approach</h2>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    A <strong>template</strong> is a blueprint for code with an unspecified, fill-in-the-blank type <code>T</code>. The code <em>doesn't actually become real machine code</em> until you fill in what <code>T</code> is. Used in languages like <strong>C++</strong> and <strong>Ada</strong>.
+  </div>
+
+  <p>Think of a template like a form letter with a blank: "Dear ______, thank you for your purchase." The letter doesn't exist as a real, sendable letter until you fill in the name. Similarly, a template doesn't exist as executable code until you fill in the type.</p>
+
+  <h3>How Templates Work, Step by Step</h3>
+
+  <p><strong>Step 1: You write the template.</strong> At this point, no machine code is generated. It's just a blueprint sitting there.</p>
+
+  <div class="code-block">
+    <span class="code-label">C++ — Writing a Template</span>
+    <pre><span class="keyword">template</span> &lt;<span class="keyword">typename</span> <span class="type">T</span>&gt;
+<span class="type">T</span> head(<span class="type">List</span>&lt;<span class="type">T</span>&gt; lst) {
+    <span class="comment">// return the first element of the list</span>
+    <span class="keyword">return</span> lst.first();
+}</pre>
+  </div>
+
+  <p>At this point, the compiler has <em>not</em> compiled this function. It doesn't know what <code>T</code> is, so it can't generate actual machine code yet. The template is just sitting in the compiler's memory, waiting.</p>
+
+  <p><strong>Step 2: You instantiate the template.</strong> Somewhere in your code, you use the template with a specific type:</p>
+
+  <div class="code-block">
+    <span class="code-label">C++ — Instantiating the Template</span>
+    <pre><span class="type">List</span>&lt;<span class="type">String</span>&gt; myList = ...;
+<span class="type">String</span> first = head(myList);  <span class="comment">// T = String</span></pre>
+  </div>
+
+  <p>NOW the compiler goes back to the template, mentally replaces every <code>T</code> with <code>String</code>, and compiles the result. It's as if you had written:</p>
+
+  <div class="code-block">
+    <span class="code-label">What the Compiler Effectively Generates</span>
+    <pre><span class="type">String</span> head(<span class="type">List</span>&lt;<span class="type">String</span>&gt; lst) {
+    <span class="keyword">return</span> lst.first();
+}</pre>
+  </div>
+
+  <p><strong>Step 3: A different instantiation causes a SECOND compilation.</strong> If somewhere else you write:</p>
+
+  <div class="code-block">
+    <span class="code-label">C++ — Another Instantiation</span>
+    <pre><span class="type">List</span>&lt;<span class="type">Thread</span>&gt; threadList = ...;
+<span class="type">Thread</span> firstThread = head(threadList);  <span class="comment">// T = Thread</span></pre>
+  </div>
+
+  <p>The compiler goes back to the <em>same</em> template, replaces <code>T</code> with <code>Thread</code>, and compiles it <em>again</em>. You now have <strong>two separate copies</strong> of the machine code — one for <code>String</code>, one for <code>Thread</code>.</p>
+
+  <div class="big-idea">
+    <div class="label">Key Insight</div>
+    Templates are <strong>instantiated per type</strong>. Each instantiation can behave differently, generate different machine code, or even <strong>fail to compile</strong>. A template that works perfectly for <code>String</code> might not compile at all for <code>Thread</code> — and that's allowed!
+  </div>
+
+  <h3>Why This Matters: Compile-Time Constants</h3>
+
+  <p>Because the compiler knows the exact type when it compiles a template, it can do powerful optimizations. Consider:</p>
+
+  <div class="code-block">
+    <span class="code-label">C++ — sizeof Becomes a Constant</span>
+    <pre><span class="keyword">template</span> &lt;<span class="keyword">typename</span> <span class="type">T</span>&gt;
+<span class="keyword">void</span> process() {
+    <span class="keyword">int</span> size = <span class="keyword">sizeof</span>(<span class="type">T</span>);  <span class="comment">// What value does this have?</span>
+}</pre>
+  </div>
+
+  <p>Before instantiation, <code>sizeof(T)</code> is unknown — <code>T</code> doesn't exist yet. But the moment you say <code>process&lt;String&gt;()</code>, the compiler knows <code>T = String</code>, so <code>sizeof(T)</code> becomes a <strong>compile-time constant</strong> (say, 32 bytes). The compiler can bake this number directly into the machine code, making the program faster.</p>
+
+  <p>If you later call <code>process&lt;int&gt;()</code>, the compiler generates a <em>different</em> version where <code>sizeof(T)</code> is 4. Each version is optimized for its specific type.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 3 -->
+<!-- ============================================================ -->
+<div class="section" id="s3">
+  <h2>3. Generics — The "Compile Once" Approach</h2>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    <strong>Generics</strong> are type-parametrized code that is compiled <em>once</em> and then reused for <em>all</em> types. The code must be written so that it works <strong>no matter what type is plugged in</strong>. Used in languages like <strong>Java</strong>, <strong>C#</strong>, and <strong>OCaml</strong>.
+  </div>
+
+  <p>With generics, the attitude is completely different from templates. Instead of "wait and see what type comes in, then compile," generics say: "compile it <em>right now</em>, and make sure it will work for <em>every possible type</em>."</p>
+
+  <h3>How Generics Work</h3>
+
+  <p>When you write generic code in Java, the compiler compiles it <strong>immediately and once</strong>:</p>
+
+  <div class="code-block">
+    <span class="code-label">Java — A Generic Method</span>
+    <pre><span class="keyword">public</span> &lt;<span class="type">T</span>&gt; <span class="type">T</span> head(<span class="type">List</span>&lt;<span class="type">T</span>&gt; lst) {
+    <span class="keyword">return</span> lst.get(0);
+}</pre>
+  </div>
+
+  <p>This gets compiled <em>once</em>. When someone calls <code>head(myStringList)</code> or <code>head(myThreadList)</code>, they're calling the <strong>same compiled code</strong>. No recompilation happens.</p>
+
+  <div class="analogy">
+    <div class="label">Analogy — "Every Object Smells the Same"</div>
+    Your professor used this memorable phrase: in a generic system, every object "smells the same." This means that from the compiler's perspective, <em>it doesn't matter what the type is</em> — every object is just a pointer (an address), typically 8 bytes on a modern machine. A <code>String</code>, a <code>Thread</code>, a <code>Rectangle</code> — they're all just pointers of the same size. The generic code manipulates these opaque pointers without caring what's behind them.
+  </div>
+
+  <h3>The Catch: No Compile-Time Constants</h3>
+
+  <p>Because generics are compiled once <em>before</em> knowing the type, the compiler can't do type-specific optimizations:</p>
+
+  <div class="code-block">
+    <span class="code-label">Generics — sizeof(T) is NOT a Constant</span>
+    <pre><span class="keyword">sizeof</span>(<span class="type">T</span>)   <span class="comment">// NOT a constant expression!</span>
+              <span class="comment">// Because T could be anything, and we compile once.</span>
+              <span class="comment">// We don't know T at compile time → can't use this.</span></pre>
+  </div>
+
+  <p>In a generic system, <code>sizeof(T)</code> depends on what type <code>T</code> ends up being for a particular call, but the code is already compiled. So <code>sizeof(T)</code> <strong>cannot be a compile-time constant</strong> and can't be used in contexts that require one.</p>
+
+  <div class="big-idea">
+    <div class="label">Key Insight</div>
+    Generic code makes sure objects "smell the same" — the code does <strong>not</strong> depend on arbitrary characteristics like the size of <code>T</code> or specific behaviors unique to <code>T</code>. Everything must be <strong>type-safe in general</strong>. This is the tradeoff: you lose per-type optimization but gain the guarantee that <em>once the generic code compiles, it works for every type</em>.
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 4 -->
+<!-- ============================================================ -->
+<div class="section" id="s4">
+  <h2>4. Templates vs. Generics: Head-to-Head</h2>
+
+  <table class="comparison-table">
+    <tr><th>Feature</th><th>Templates (C++, Ada)</th><th>Generics (Java, C#, OCaml)</th></tr>
+    <tr>
+      <td><strong>Compilation</strong></td>
+      <td>Recompiled <em>per type</em>. Each instantiation generates its own machine code.</td>
+      <td>Compiled <em>once</em>. One copy of machine code is reused for all types.</td>
+    </tr>
+    <tr>
+      <td><strong>When errors are found</strong></td>
+      <td>At <em>instantiation time</em>. You might not discover a bug in a template until you try to use it with a specific type.</td>
+      <td>At <em>definition time</em>. Once the generic code compiles successfully, you know it's valid for all types.</td>
+    </tr>
+    <tr>
+      <td><strong>Performance</strong></td>
+      <td>Can be <em>optimized per type</em> (e.g., <code>sizeof(T)</code> becomes a constant). Potentially faster.</td>
+      <td><em>Uniform performance</em>. All types go through the same code. "All smell the same."</td>
+    </tr>
+    <tr>
+      <td><strong>Code size</strong></td>
+      <td>Larger — one copy of code per type used ("code bloat").</td>
+      <td>Smaller — one copy of code total.</td>
+    </tr>
+    <tr>
+      <td><strong>Complexity for programmer</strong></td>
+      <td>More complex (have to understand that code is compiled twice, error messages can be cryptic).</td>
+      <td>Simpler rules, but type system can still get complex (as we'll see with wildcards).</td>
+    </tr>
+  </table>
+
+  <div class="quiz" id="quiz1">
+    <div class="quiz-label">Check Your Understanding</div>
+    <div class="question">You write a template in C++ that calls <code>x.sort()</code> on a parameter of type <code>T</code>. You instantiate it with <code>int</code> (which has no <code>.sort()</code> method). When will you discover the error?</div>
+    <div class="options">
+      <button class="option" onclick="checkQuiz('quiz1', this, false)">When you first write the template</button>
+      <button class="option" onclick="checkQuiz('quiz1', this, true)">When you instantiate the template with <code>int</code></button>
+      <button class="option" onclick="checkQuiz('quiz1', this, false)">At runtime when <code>sort()</code> is called</button>
+      <button class="option" onclick="checkQuiz('quiz1', this, false)">Never — it will be silently ignored</button>
+    </div>
+    <div class="feedback correct-fb">Correct! With templates, the code isn't compiled until you instantiate it with a specific type. The compiler only discovers that <code>int</code> has no <code>.sort()</code> method at the moment you try to use the template with <code>int</code>. This is a key difference from generics, where the error would be caught when you <em>define</em> the generic code (the compiler would demand that <code>T</code> supports <code>.sort()</code> up front).</div>
+    <div class="feedback incorrect-fb">Not quite. With templates, code is only compiled when instantiated. The template itself is just a blueprint — the compiler doesn't try to compile it until you fill in <code>T</code>. So the error appears at <strong>instantiation time</strong>, when <code>T = int</code> and the compiler discovers <code>int</code> has no <code>.sort()</code>.</div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 5 -->
+<!-- ============================================================ -->
+<div class="section" id="s5">
+  <h2>5. Subtypes Meet Generics: The Invariance Problem</h2>
+
+  <div class="connection">This section connects type parametrization to the concept of <strong>subtypes</strong> from the previous lecture. You need to understand that in Java, <code>String</code> is a subtype of <code>Object</code> (every <code>String</code> IS an <code>Object</code>). Java uses <strong>single inheritance</strong> — each class extends exactly one parent. <code>Object</code> is at the very top.</div>
+
+  <p>Here's the puzzle: <code>String</code> is a subtype of <code>Object</code>. So intuitively, a <code>List&lt;String&gt;</code> should be a subtype of <code>List&lt;Object&gt;</code>, right? After all, a list of strings <em>is</em> a list of objects…</p>
+
+  <p><strong>Wrong.</strong> And the reason is subtle but critical. Let's walk through the professor's example to see why.</p>
+
+  <div class="step-through" id="invariance-demo">
+    <div class="step-header">
+      <span>Step-by-Step: Why <code>List&lt;String&gt;</code> ≠ subtype of <code>List&lt;Object&gt;</code></span>
+      <div class="step-nav">
+        <button onclick="stepPrev('invariance-demo')" disabled>← Back</button>
+        <button onclick="stepNext('invariance-demo')">Next →</button>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="step active" data-step="0">
+        <p><strong>Step 1:</strong> We create a list of Strings and give it a name.</p>
+        <div class="code-block"><pre><span class="type">List</span>&lt;<span class="type">String</span>&gt; ls = ...;   <span class="comment">// a list containing Strings</span></pre></div>
+        <p>So far so good. <code>ls</code> is a list that's supposed to contain <em>only</em> Strings.</p>
+      </div>
+      <div class="step" data-step="1">
+        <p><strong>Step 2:</strong> Now suppose Java <em>allowed</em> us to assign a <code>List&lt;String&gt;</code> to a <code>List&lt;Object&gt;</code> variable. (Spoiler: it doesn't, but let's pretend.)</p>
+        <div class="code-block"><pre><span class="type">List</span>&lt;<span class="type">Object</span>&gt; lo = ls;   <span class="comment">// lo and ls point to THE SAME LIST!</span></pre></div>
+        <p>This is key: <code>lo</code> and <code>ls</code> are <strong>two names for the same list object in memory</strong>. They are not copies. Changing one changes the other.</p>
+      </div>
+      <div class="step" data-step="2">
+        <p><strong>Step 3:</strong> Since <code>lo</code> is a <code>List&lt;Object&gt;</code>, its <code>.add()</code> method accepts <em>any Object</em>. <code>Thread</code> is an <code>Object</code>. So we can do this:</p>
+        <div class="code-block"><pre>lo.add(<span class="keyword">new</span> <span class="type">Thread</span>());   <span class="comment">// ✓ Thread is an Object, lo is List&lt;Object&gt;</span></pre></div>
+        <p>But remember — <code>lo</code> and <code>ls</code> are the <strong>same list</strong>. We just put a <code>Thread</code> into what's supposed to be a list of Strings!</p>
+      </div>
+      <div class="step" data-step="3">
+        <p><strong>Step 4:</strong> Now someone reads from <code>ls</code>, expecting to get a <code>String</code>:</p>
+        <div class="code-block"><pre><span class="type">String</span> s = ls.get(0);   <span class="comment">// We expect a String...</span>
+                           <span class="comment">// ...but we get a Thread! 💥 CRASH!</span></pre></div>
+        <p>The type system promised that <code>ls.get()</code> returns a <code>String</code>. But the actual object is a <code>Thread</code>. This is a <strong>runtime type error</strong> — exactly what Java's type system is designed to prevent!</p>
+      </div>
+      <div class="step" data-step="4">
+        <p><strong>The Verdict:</strong> Java catches this at the <em>very first problematic step</em>:</p>
+        <div class="code-block"><pre><span class="type">List</span>&lt;<span class="type">Object</span>&gt; lo = ls;   <span class="error">// ✗ COMPILE ERROR!</span>
+                           <span class="error">// List&lt;String&gt; is NOT a subtype of List&lt;Object&gt;</span></pre></div>
+        <p>The compiler <strong>refuses</strong> this assignment. By preventing line 2, lines 3 and 4 can never happen. The type system stays sound.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    <strong>Invariance:</strong> Even if <code>A</code> is a subtype of <code>B</code>, <code>Generic&lt;A&gt;</code> is <strong>NOT</strong> a subtype of <code>Generic&lt;B&gt;</code>. This guarantees that no invalid elements ever get inserted, no runtime type corruption occurs, and the compiler can enforce strong compile-time safety.
+  </div>
+
+  <div class="why-box">
+    <div class="label">The Deep Reason</div>
+    Remember from last lecture: if <code>X</code> is a subtype of <code>Y</code>, then you can do a <em>superset</em> of operations on <code>X</code> compared to <code>Y</code>. But <code>List&lt;Object&gt;</code> has an operation — <code>.add(new Thread())</code> — that is <strong>NOT valid</strong> on <code>List&lt;String&gt;</code>. Since <code>List&lt;String&gt;</code> can't support all operations of <code>List&lt;Object&gt;</code>, it can't be its subtype.
+  </div>
+
+  <p>But this creates a practical problem: how do we write generic code that works on lists of <em>any</em> type?</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 6 -->
+<!-- ============================================================ -->
+<div class="section" id="s6">
+  <h2>6. Wildcards — The <code>?</code> Escape Hatch</h2>
+
+  <p>Because of invariance, this innocent-looking function <strong>doesn't work</strong> the way you'd expect:</p>
+
+  <div class="code-block">
+    <span class="code-label">Java — Broken: Too Restrictive</span>
+    <pre><span class="keyword">void</span> printAll(<span class="type">Collection</span>&lt;<span class="type">Object</span>&gt; c) {
+    <span class="keyword">for</span> (<span class="type">Object</span> o : c)
+        System.out.println(o);
+}</pre>
+  </div>
+
+  <p>This function <em>seems</em> like it should accept a collection of <em>anything</em> — after all, every object in Java is an <code>Object</code>. But because of invariance, you <strong>cannot</strong> pass a <code>Collection&lt;String&gt;</code> or <code>Collection&lt;Thread&gt;</code> to this function. You can <em>only</em> pass a <code>Collection&lt;Object&gt;</code> exactly. That's useless!</p>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    A <strong>wildcard <code>?</code></strong> is a generic, unknown type that tells the compiler "I don't care exactly what the type is." It promises the compiler that <code>?</code> is <em>one fixed element type</em> that is unknown at compile time, but can be <strong>read safely</strong>.
+  </div>
+
+  <p>The fix is to use <code>?</code> instead of <code>Object</code>:</p>
+
+  <div class="code-block">
+    <span class="code-label">Java — Fixed with Wildcard</span>
+    <pre><span class="keyword">void</span> printAll(<span class="type">Collection</span>&lt;<span class="keyword">?</span>&gt; c) {
+    <span class="keyword">for</span> (<span class="type">Object</span> o : c)     <span class="comment">// ✓ Every element is at least an Object</span>
+        System.out.println(o); <span class="comment">// ✓ println accepts any Object</span>
+}</pre>
+  </div>
+
+  <p>Now you <em>can</em> pass <code>Collection&lt;String&gt;</code>, <code>Collection&lt;Thread&gt;</code>, <code>Collection&lt;anything&gt;</code> to this function. The <code>?</code> says "this collection holds some type, I don't know which, and I don't care."</p>
+
+  <h3>The Tradeoff: Read-Only Access</h3>
+
+  <p>Here's the crucial restriction: with a wildcard <code>?</code>, you can <strong>read</strong> from the collection (you'll always get at least an <code>Object</code>), but you <strong>cannot add</strong> elements to it (except <code>null</code>). Why? Because the compiler doesn't know what type the collection holds, so it can't verify that your addition is safe.</p>
+
+  <div class="code-block">
+    <span class="code-label">Java — Wildcards Prevent the Original Problem</span>
+    <pre><span class="type">List</span>&lt;<span class="type">String</span>&gt; ls = ...;
+<span class="type">List</span>&lt;<span class="keyword">?</span>&gt; lo = ls;          <span class="comment">// ✓ This is allowed now!</span>
+
+lo.add(<span class="keyword">new</span> <span class="type">Thread</span>());     <span class="error">// ✗ COMPILE ERROR!</span>
+                            <span class="error">// Can't add to List&lt;?&gt; — type unknown</span></pre>
+  </div>
+
+  <p>The wildcard makes the reference <em>more restrictive</em> (can't write), which means it <em>can't break type safety</em>. The original problem from Section 5 is impossible now.</p>
+
+  <div class="big-idea">
+    <div class="label">Rule of Thumb</div>
+    Use wildcards when you want to <strong>consume (read)</strong> values from a collection, but not <strong>produce (write)</strong> them.
+  </div>
+
+  <div class="quiz" id="quiz2">
+    <div class="quiz-label">Check Your Understanding</div>
+    <div class="question">Given <code>Collection&lt;?&gt; c</code>, which of the following is <strong>allowed</strong>?</div>
+    <div class="options">
+      <button class="option" onclick="checkQuiz('quiz2', this, false)"><code>c.add("hello")</code></button>
+      <button class="option" onclick="checkQuiz('quiz2', this, false)"><code>c.add(new Thread())</code></button>
+      <button class="option" onclick="checkQuiz('quiz2', this, true)">Iterating through <code>c</code> and printing each element</button>
+      <button class="option" onclick="checkQuiz('quiz2', this, false)"><code>c.add(null); c.add(42);</code></button>
+    </div>
+    <div class="feedback correct-fb">Correct! With <code>Collection&lt;?&gt;</code>, you can <em>read</em> from the collection — every element is guaranteed to be at least an <code>Object</code>, so iterating and printing works. But you <strong>cannot add</strong> non-null elements because the compiler doesn't know what type the collection actually holds. (Adding <code>null</code> alone is technically allowed, but adding <code>42</code> after is not.)</div>
+    <div class="feedback incorrect-fb">Not quite. With <code>Collection&lt;?&gt;</code>, the compiler doesn't know the actual element type, so it won't let you <code>add</code> anything (except <code>null</code>). But <strong>reading</strong> is fine — every element is at least an <code>Object</code>, so iterating and printing is the correct answer.</div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 7 -->
+<!-- ============================================================ -->
+<div class="section" id="s7">
+  <h2>7. Bounded Wildcards &amp; Bounded Generics</h2>
+
+  <p>Plain wildcards still aren't enough for everything. Consider:</p>
+
+  <div class="code-block">
+    <span class="code-label">Java — Still Broken with Plain Wildcard</span>
+    <pre><span class="keyword">void</span> printShapes(<span class="type">Collection</span>&lt;<span class="type">Shape</span>&gt; c) {
+    <span class="keyword">for</span> (<span class="type">Shape</span> s : c)
+        printShape(s);
+}
+
+<span class="comment">// We CANNOT pass Collection&lt;Rectangle&gt; here!</span>
+<span class="comment">// Because Collection&lt;Rectangle&gt; is not a subtype of Collection&lt;Shape&gt;</span>
+<span class="type">Collection</span>&lt;<span class="type">Rectangle</span>&gt; cr = ...;
+printShapes(cr);  <span class="error">// ✗ COMPILE ERROR</span></pre>
+  </div>
+
+  <p>If we change <code>Shape</code> to <code>?</code>, we'd accept anything — but then we can't treat elements as <code>Shape</code> inside the loop (they'd just be <code>Object</code>). We need something in between.</p>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    A <strong>bounded wildcard</strong> restricts the wildcard <code>?</code> to be a subtype of a specified upper bound. The syntax <code>? extends Shape</code> means "some unknown type that is <code>Shape</code> or any subtype of <code>Shape</code> (like <code>Rectangle</code>, <code>Ellipse</code>, <code>Square</code>)."
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">Java — Fixed with Bounded Wildcard</span>
+    <pre><span class="keyword">void</span> printShapes(<span class="type">Collection</span>&lt;<span class="keyword">? extends</span> <span class="type">Shape</span>&gt; c) {
+    <span class="keyword">for</span> (<span class="type">Shape</span> s : c)    <span class="comment">// ✓ We know ? is at least a Shape</span>
+        printShape(s);    <span class="comment">// ✓ So we can treat each element as Shape</span>
+}
+
+<span class="type">Collection</span>&lt;<span class="type">Rectangle</span>&gt; cr = ...;
+printShapes(cr);  <span class="comment">// ✓ Rectangle extends Shape, so this works!</span></pre>
+  </div>
+
+  <h3>Named Type Parameters: When <code>?</code> Isn't Enough</h3>
+
+  <p>What if you need <strong>two parameters to match the same type</strong>? A wildcard can't do that — each <code>?</code> is independent.</p>
+
+  <div class="code-block">
+    <span class="code-label">Java — BAD: Two Independent Wildcards</span>
+    <pre><span class="keyword">void</span> convert(<span class="keyword">?</span>[] a, <span class="type">Collection</span>&lt;<span class="keyword">?</span>&gt; c) {
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = 0; i &lt; a.length; i++)
+        c.add(a[i]);  <span class="error">// ✗ The two ?'s could be different types!</span>
+}</pre>
+  </div>
+
+  <p>The first <code>?</code> might be <code>String</code> and the second might be <code>Integer</code>. The compiler can't guarantee safety. The fix is to give the type a <strong>name</strong>:</p>
+
+  <div class="code-block">
+    <span class="code-label">Java — GOOD: Named Type Parameter</span>
+    <pre>&lt;<span class="type">T</span>&gt; <span class="keyword">void</span> convert(<span class="type">T</span>[] a, <span class="type">Collection</span>&lt;<span class="type">T</span>&gt; c) {
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = 0; i &lt; a.length; i++)
+        c.add(a[i]);  <span class="comment">// ✓ T is the SAME type in both places</span>
+}</pre>
+  </div>
+
+  <p><code>T</code> is <strong>stricter</strong> than <code>?</code>: all occurrences of <code>T</code> must be the same type. The wildcard <code>?</code> is more flexible — each <code>?</code> could represent a different type.</p>
+
+  <h3>The Full Solution: Bounded Generics with <code>super</code></h3>
+
+  <p>But even the named <code>T</code> has a limitation. What if we want to convert a <code>Rectangle[]</code> into a <code>Collection&lt;Shape&gt;</code>? With <code>&lt;T&gt; void convert(T[] a, Collection&lt;T&gt; c)</code>, <code>T</code> would have to be both <code>Rectangle</code> and <code>Shape</code> — that's impossible.</p>
+
+  <p>The solution uses the <code>super</code> keyword — the opposite of <code>extends</code>:</p>
+
+  <div class="code-block">
+    <span class="code-label">Java — Bounded Generics with super</span>
+    <pre>&lt;<span class="type">T</span>&gt; <span class="keyword">void</span> convert(<span class="type">T</span>[] a, <span class="type">Collection</span>&lt;<span class="keyword">? super</span> <span class="type">T</span>&gt; c) {
+    <span class="keyword">for</span> (<span class="keyword">int</span> i = 0; i &lt; a.length; i++)
+        c.add(a[i]);  <span class="comment">// ✓ The collection accepts T or any supertype of T</span>
+}
+
+<span class="comment">// Now this works:</span>
+<span class="type">Rectangle</span>[] rects = ...;
+<span class="type">Collection</span>&lt;<span class="type">Shape</span>&gt; shapes = ...;
+convert(rects, shapes);  <span class="comment">// ✓ T = Rectangle, Shape is a supertype of Rectangle</span></pre>
+  </div>
+
+  <p><code>? super T</code> means "some type that is <code>T</code> or a <strong>supertype</strong> of <code>T</code>." Since <code>Shape</code> is a supertype of <code>Rectangle</code>, the collection can safely accept <code>Rectangle</code> objects.</p>
+
+  <div class="analogy">
+    <div class="label">? is Like Underscore in OCaml</div>
+    The professor made an important connection: <code>?</code> in Java is like <code>_</code> in OCaml. Both mean "there's a value/type here, but I'm not going to name it because I'll never reference it elsewhere." You <em>could</em> always replace <code>?</code> with a named type parameter <code>T</code>, but <code>?</code> signals to the reader "this type doesn't matter for understanding the code." Only give names to things when you might need them later.
+  </div>
+
+  <div class="quiz" id="quiz3">
+    <div class="quiz-label">Check Your Understanding</div>
+    <div class="question">You have <code>&lt;T&gt; void process(Collection&lt;? extends T&gt; src, Collection&lt;T&gt; dest)</code>. Which call is valid?</div>
+    <div class="options">
+      <button class="option" onclick="checkQuiz('quiz3', this, true)"><code>process(listOfRectangles, listOfShapes)</code> where Rectangle extends Shape, and T = Shape</button>
+      <button class="option" onclick="checkQuiz('quiz3', this, false)"><code>process(listOfShapes, listOfRectangles)</code> where Rectangle extends Shape</button>
+      <button class="option" onclick="checkQuiz('quiz3', this, false)">Neither — you can't mix subtypes in generic methods</button>
+    </div>
+    <div class="feedback correct-fb">Correct! With <code>T = Shape</code>, the source is <code>Collection&lt;? extends Shape&gt;</code> which accepts <code>Collection&lt;Rectangle&gt;</code> (since Rectangle extends Shape), and the destination is <code>Collection&lt;Shape&gt;</code>. Reading Rectangles as Shapes to put into a Shape collection is safe.</div>
+    <div class="feedback incorrect-fb">Think about the direction: <code>? extends T</code> in the source means you're <em>reading</em> subtypes of T. You need to read from the source (which could contain subtypes) and write to the destination (which holds T). The first option works with <code>T = Shape</code>.</div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 8 -->
+<!-- ============================================================ -->
+<div class="section" id="s8">
+  <h2>8. Duck Typing — The Opposite Philosophy</h2>
+
+  <div class="connection">Everything we've learned about generics, wildcards, and bounded types represents one end of a spectrum: <strong>maximum compile-time safety</strong>. Duck typing sits at the opposite end: <strong>maximum flexibility</strong>. Understanding both extremes helps you see the tradeoffs every language designer faces.</div>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    <strong>Behavioral polymorphism</strong> is based on what methods an object supports, rather than what an object is <em>declared</em> to be. Some languages, like Python, take this approach — prioritizing flexibility over safety, relying on runtime behaviors.
+  </div>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    <strong>Duck typing</strong> is typically dynamic type checking that doesn't concern itself with object types — it only cares about <strong>behavior</strong>. "If it walks like a duck, quacks like a duck, and swims like a duck — it's a duck."
+  </div>
+
+  <p>In duck typing, you don't ask "is this object a Duck?" Instead, you call <code>quack()</code>, <code>waddle()</code>, <code>swim()</code>, <code>fly()</code>, <code>lay_eggs()</code> — and if all of those work, <em>it's a duck</em>. If they don't, you get a runtime error.</p>
+
+  <p>This means you could have a <code>Mouse</code> class that you've given wings and a quack method to, and it would pass the duck test. In Java, this would be impossible unless <code>Mouse</code> formally implemented a <code>Duck</code> interface.</p>
+
+  <table class="comparison-table">
+    <tr><th>Feature</th><th>Duck Typing (Python)</th><th>Generics (Java)</th></tr>
+    <tr><td><strong>Type checking</strong></td><td>Runtime — errors found late</td><td>Compile-time — errors found early</td></tr>
+    <tr><td><strong>Based on</strong></td><td>Behavior (what methods exist)</td><td>Types (formal declarations)</td></tr>
+    <tr><td><strong>Flexibility</strong></td><td>Very flexible</td><td>Less flexible, more constrained</td></tr>
+    <tr><td><strong>Safety</strong></td><td>Less safe — crashes at runtime</td><td>Safer — caught at compile time</td></tr>
+    <tr><td><strong>Performance</strong></td><td>Slower (runtime checks)</td><td>Faster (no runtime type dispatch)</td></tr>
+    <tr><td><strong>Large codebases</strong></td><td>Needs lots of testing to compensate</td><td>Type system provides safety guarantees</td></tr>
+  </table>
+
+  <div class="why-box">
+    <div class="label">The Tradeoff</div>
+    All that complexity of bounded wildcards and bounded generics exists to buy <strong>compile-time type safety</strong> — the guarantee that an entire class of errors (wrong type) is impossible. Duck typing gives up that guarantee in exchange for simplicity and flexibility. Neither is universally "better" — it depends on whether you value <strong>reliability</strong> or <strong>simplicity</strong> more for your particular project.
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ============================================================ -->
+<!-- SECTION 9 -->
+<!-- ============================================================ -->
+<div class="section" id="s9">
+  <h2>9. Names (Identifiers)</h2>
+
+  <div class="connection">We're shifting gears from <em>types</em> to <em>names</em>. But they're deeply connected: types exist to describe what operations are valid on named things. Names are how we refer to values, functions, types, and everything else in a program.</div>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    A <strong>name</strong> (or <strong>identifier</strong>) is a symbol you write in code to refer to things — variables, functions, types, modules, labels, etc.
+  </div>
+
+  <p>Every language has rules about names: which characters are allowed, whether names are case-sensitive, and which names are <strong>reserved words</strong> (keywords like <code>if</code>, <code>while</code>, <code>return</code> that you can't use as variable names).</p>
+
+  <div class="why-box">
+    <div class="label">Why Do These Rules Exist?</div>
+    These rules exist for <strong>compilers and parsers</strong>. The compiler needs to unambiguously recognize the structure of your source code. If <code>while</code> could be both a keyword and a variable name, the parser wouldn't know if <code>while(x)</code> is a loop or a function call.
+  </div>
+
+  <h3>A Security Concern: Confusables</h3>
+
+  <p>With Unicode, some characters look identical on screen but are different bytes. The classic example: the Cyrillic letter "о" looks exactly like the Latin letter "o." An attacker could write a variable name that <em>looks</em> normal but is actually a different identifier, hiding malicious code in a publicly available library. This is a real security concern with open-source code — the code <em>looks</em> right but does something unexpected.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 10 -->
+<!-- ============================================================ -->
+<div class="section" id="s10">
+  <h2>10. Bindings — What Gets Bound, and When</h2>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    A <strong>binding</strong> is an association between a name and a value. Programming languages fundamentally concern <strong>what</strong> gets bound and <strong>when</strong>.
+  </div>
+
+  <p>Consider this seemingly simple line of C code:</p>
+
+  <div class="code-block">
+    <span class="code-label">C</span>
+    <pre><span class="keyword">int</span> i = 19;</pre>
+  </div>
+
+  <p>You might think: "The name <code>i</code> is bound to the value <code>19</code>. Done." But there's much more going on. The name <code>i</code> is actually bound to <strong>multiple things at once</strong>:</p>
+
+  <div class="step-through" id="binding-demo">
+    <div class="step-header">
+      <span>What Does <code>int i = 19;</code> Actually Bind?</span>
+      <div class="step-nav">
+        <button onclick="stepPrev('binding-demo')" disabled>← Back</button>
+        <button onclick="stepNext('binding-demo')">Next →</button>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="step active" data-step="0">
+        <p><strong>Binding 1: Name → Value</strong></p>
+        <p>The obvious one: <code>i</code> is bound to the value <code>19</code>. When you write <code>i</code> in an expression, you get <code>19</code>.</p>
+        <div class="code-block"><pre>i          <span class="comment">// → 19 (the value)</span></pre></div>
+        <p>But this binding is <strong>mutable</strong> — some other code could change <code>i</code> to <code>20</code> later. This value exists only at runtime.</p>
+      </div>
+      <div class="step" data-step="1">
+        <p><strong>Binding 2: Name → Address</strong></p>
+        <p>The variable <code>i</code> lives somewhere in memory. It has an address — a specific location where its bytes are stored.</p>
+        <div class="code-block"><pre>&amp;i         <span class="comment">// → 0x7F9C1300 (the memory address)</span></pre></div>
+        <p>This is why <code>i = 19</code> is NOT the same as just writing <code>19</code> everywhere. The name <code>i</code> refers to a <em>location</em> that <em>contains</em> 19. You can store new values at that location.</p>
+      </div>
+      <div class="step" data-step="2">
+        <p><strong>Binding 3: Name → Size</strong></p>
+        <p>The variable <code>i</code> takes up a certain amount of memory.</p>
+        <div class="code-block"><pre><span class="keyword">sizeof</span>(i)  <span class="comment">// → 4 (bytes, on most modern systems)</span></pre></div>
+        <p>This is independent of the value and the address — it's about how many bytes the machine uses to represent an <code>int</code>.</p>
+      </div>
+      <div class="step" data-step="3">
+        <p><strong>Binding 4: Name → Type</strong></p>
+        <p>The name <code>i</code> is bound to the type <code>int</code>.</p>
+        <div class="code-block"><pre><span class="keyword">typeof</span>(i)  <span class="comment">// → int</span></pre></div>
+        <p>This tells the compiler what operations are valid on <code>i</code> (addition, subtraction, etc.), how to interpret its bytes, and whether the code is type-correct. In C/C++, <strong>the type has no runtime representation</strong> — it exists only in the compiler's understanding.</p>
+      </div>
+    </div>
+  </div>
+
+  <p>So a single declaration like <code>int i = 19;</code> creates <strong>at least four different bindings</strong>: to a value, an address, a size, and a type. Understanding what gets bound is essential for understanding any language.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 11 -->
+<!-- ============================================================ -->
+<div class="section" id="s11">
+  <h2>11. Binding Time — When Associations Are Created</h2>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    <strong>Binding time</strong> is when the association between a name and a value gets created (or destroyed). Different elements of a binding are created at <strong>different times</strong>.
+  </div>
+
+  <p>Let's trace when each binding of <code>int i = 19;</code> is created:</p>
+
+  <table class="comparison-table">
+    <tr><th>Element</th><th>When is it bound?</th><th>Explanation</th></tr>
+    <tr>
+      <td><strong>Value</strong> (i = 19)</td>
+      <td>Runtime / execution</td>
+      <td>The actual value stored in <code>i</code> exists only when the program is running. Some other function might change it to 20 later.</td>
+    </tr>
+    <tr>
+      <td><strong>Address</strong> (&amp;i)</td>
+      <td>Link time (static) or block entry time (local)</td>
+      <td>For a global/static variable, the <strong>linker</strong> decides where it lives in memory. For a local variable inside a function, the address is determined when the block <code>{}</code> is entered.</td>
+    </tr>
+    <tr>
+      <td><strong>Size</strong> (sizeof)</td>
+      <td>ABI definition time</td>
+      <td>Not decided by the compiler or language spec, but by the <strong>ABI</strong> — a contract defined by hardware/OS engineers. For x86-64, they decided <code>int</code> = 4 bytes back in the 1980s.</td>
+    </tr>
+    <tr>
+      <td><strong>Type</strong> (typeof)</td>
+      <td>Compile time</td>
+      <td>The compiler decides what type <code>i</code> has, what operations are valid on it, and whether the code is type-correct.</td>
+    </tr>
+  </table>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    The <strong>Application Binary Interface (ABI)</strong> is a contract that defines how compiled code interacts with machine code and other compiled code. It specifies the size of primitive types, memory layout, alignment rules, stack layout, calling conventions, and more. The ABI ensures that code compiled by <em>different compilers</em> on the same platform can link and work together.
+  </div>
+
+  <div class="analogy">
+    <div class="label">ABI vs. Compiler vs. Language</div>
+    Think of it this way: the <strong>language spec</strong> says "there exists a type called <code>int</code>." The <strong>ABI</strong> says "on this platform, an <code>int</code> is 4 bytes, stored in two's complement, aligned to 4-byte boundaries." The <strong>compiler</strong> says "this particular variable <code>i</code> is an <code>int</code>." Each operates at a different level and a different time.
+  </div>
+
+  <div class="quiz" id="quiz4">
+    <div class="quiz-label">Check Your Understanding</div>
+    <div class="question">You have a local variable <code>int x = 42;</code> inside a function. The function is called 1000 times. How many times is <code>x</code> bound to a <strong>memory address</strong>?</div>
+    <div class="options">
+      <button class="option" onclick="checkQuiz('quiz4', this, false)">Once — at compile time</button>
+      <button class="option" onclick="checkQuiz('quiz4', this, false)">Once — at link time</button>
+      <button class="option" onclick="checkQuiz('quiz4', this, true)">1000 times — at each block entry</button>
+      <button class="option" onclick="checkQuiz('quiz4', this, false)">It depends on the ABI</button>
+    </div>
+    <div class="feedback correct-fb">Correct! Since <code>x</code> is a local (automatic) variable, it lives on the stack. Each time the function is called, a new stack frame is created, and <code>x</code> gets a (potentially different) address. The address binding happens at <strong>block entry time</strong>, which occurs with every function call. The <em>type</em> binding (int) happens once at compile time, and the <em>size</em> binding (4 bytes) was determined even earlier by the ABI.</div>
+    <div class="feedback incorrect-fb">Think about where local variables live — on the <strong>stack</strong>. Each function call creates a new stack frame at a potentially different position. So the address of a local variable is determined each time the block is entered — <strong>1000 calls means 1000 address bindings</strong>.</div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 12 -->
+<!-- ============================================================ -->
+<div class="section" id="s12">
+  <h2>12. Explicit vs. Implicit / Static vs. Dynamic Binding</h2>
+
+  <h3>Explicit vs. Implicit Binding</h3>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    <strong>Explicit binding:</strong> The programmer writes down the binding directly. There is nothing left for the system to infer. Example: <code>int i = 19</code> — the programmer specifies the type, name, and value.
+  </div>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    <strong>Implicit binding:</strong> The programmer does NOT write down the binding; the language <strong>infers</strong> it from context. Example: In FORTRAN, variable names starting with I–N are automatically integers; names starting with A–H or O–Z are automatically floats.
+  </div>
+
+  <p>Modern implicit binding is much more sophisticated: OCaml and languages with <strong>type inference</strong> use implicit binding where the compiler deduces the type from how the variable is used. This is still statically typed and safe — unlike the old FORTRAN approach, which was error-prone because the compiler didn't enforce type checking.</p>
+
+  <h3>Static vs. Dynamic Binding</h3>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    <strong>Dynamic binding:</strong> You cannot determine the binding until the program is running. The binding depends on a runtime state. Example: the value of <code>i</code> is unknown until it gets its value during execution.
+  </div>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    <strong>Static binding:</strong> The binding is known before the program runs — at compile time, link time, or load time. Example: the type of <code>i</code> in a statically-typed language is known by the compiler before execution.
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ============================================================ -->
+<!-- SECTION 13 -->
+<!-- ============================================================ -->
+<div class="section" id="s13">
+  <h2>13. Namespaces — Organizing Bindings</h2>
+
+  <div class="connection">Names and bindings bring up a natural question: what happens when <strong>two things have the same name</strong>? Namespaces are the answer — they're the system that prevents (or allows) name collisions.</div>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    A <strong>namespace</strong> is a context in which names must be unique. Two names can be identical as long as they live in <em>different</em> namespaces.
+  </div>
+
+  <p>You already use namespaces intuitively. Your contact list might have two friends named "Alex" — one from work, one from school. "Work" and "School" are namespaces that let you have the same name without confusion.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 14 -->
+<!-- ============================================================ -->
+<div class="section" id="s14">
+  <h2>14. Primitive Namespaces (The C/C++ Jungle)</h2>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    <strong>Primitive namespaces:</strong> A language has multiple, separate name tables that represent different things. The same spelling <code>f</code> can refer to many different entities, as long as they all live in different namespaces.
+  </div>
+
+  <p>C and C++ have a surprisingly large number of primitive namespaces. Your professor demonstrated this by writing a single function where the identifier <code>f</code> is used in <strong>many different namespaces simultaneously</strong> without any collisions. Let's walk through each one:</p>
+
+  <div class="step-through" id="namespace-demo">
+    <div class="step-header">
+      <span>How Many Namespaces Can <code>f</code> Live In?</span>
+      <div class="step-nav">
+        <button onclick="stepPrev('namespace-demo')" disabled>← Back</button>
+        <button onclick="stepNext('namespace-demo')">Next →</button>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="step active" data-step="0">
+        <p><strong>Namespace 1: Function names</strong></p>
+        <div class="code-block"><pre><span class="keyword">int</span> <span class="type">f</span>() {   <span class="comment">// f is a function name</span></pre></div>
+        <p>The name <code>f</code> here identifies the function. This lives in the namespace for function/variable identifiers at file scope.</p>
+      </div>
+      <div class="step" data-step="1">
+        <p><strong>Namespace 2: Struct tags</strong></p>
+        <div class="code-block"><pre>    <span class="keyword">struct</span> <span class="type">f</span> { <span class="keyword">int</span> f; };  <span class="comment">// f is a struct tag</span></pre></div>
+        <p>The <code>f</code> after <code>struct</code> is a <strong>struct tag</strong>. Struct tags live in their own namespace, completely separate from function names. No collision!</p>
+      </div>
+      <div class="step" data-step="2">
+        <p><strong>Namespace 3: Struct members</strong></p>
+        <div class="code-block"><pre>    <span class="keyword">struct</span> f { <span class="keyword">int</span> <span class="type">f</span>; };  <span class="comment">// f is a member of struct f</span></pre></div>
+        <p>The <code>f</code> inside the struct is a <strong>member name</strong>. Each struct has its own private namespace for members. So this <code>f</code> doesn't collide with the struct tag <code>f</code> or the function <code>f</code>.</p>
+      </div>
+      <div class="step" data-step="3">
+        <p><strong>Namespace 4: Local variables</strong></p>
+        <div class="code-block"><pre>    <span class="keyword">struct</span> f <span class="type">f</span>;  <span class="comment">// f is a local variable of type struct f</span></pre></div>
+        <p>Here <code>f</code> is a <strong>local variable</strong> whose type is <code>struct f</code>. Local variables live in yet another namespace from struct tags and members.</p>
+      </div>
+      <div class="step" data-step="4">
+        <p><strong>Namespace 5: Enum tags</strong></p>
+        <div class="code-block"><pre>    <span class="keyword">enum</span> <span class="type">f</span> { zero };  <span class="comment">// f is an enum tag</span></pre></div>
+        <p>Enum tags have their own namespace (separate from struct tags). But note: enum <em>values</em> (like <code>zero</code>) share a namespace with local variables — so we can't call the value <code>f</code>.</p>
+      </div>
+      <div class="step" data-step="5">
+        <p><strong>Namespace 6: Members of a different struct</strong></p>
+        <div class="code-block"><pre>    <span class="keyword">struct</span> g { <span class="keyword">int</span> <span class="type">f</span>; };  <span class="comment">// f is a member of struct g</span></pre></div>
+        <p>Even though there's already a <code>struct f</code> with a member <code>f</code>, this <code>struct g</code> has its own private member namespace. So another member called <code>f</code> is fine.</p>
+      </div>
+      <div class="step" data-step="6">
+        <p><strong>Namespace 7: Preprocessor headers (file names)</strong></p>
+        <div class="code-block"><pre>    <span class="keyword">#include</span> &lt;<span class="type">f</span>&gt;  <span class="comment">// f is a filename / preprocessor header</span></pre></div>
+        <p>This <code>f</code> refers to a file in the filesystem. File names are in a completely different "namespace" — the filesystem.</p>
+      </div>
+      <div class="step" data-step="7">
+        <p><strong>Namespace 8: Labels</strong></p>
+        <div class="code-block"><pre>    <span class="keyword">goto</span> f;
+    <span class="type">f</span>: ;  <span class="comment">// f is a label (for goto)</span></pre></div>
+        <p>Labels have their own namespace. Note: labels in C are scoped to the <strong>entire function</strong>, not just the enclosing block. This was designed to allow loop-and-a-half patterns with <code>goto</code>.</p>
+      </div>
+      <div class="step" data-step="8">
+        <p><strong>Namespace 9: Preprocessor macros</strong></p>
+        <div class="code-block"><pre>    <span class="keyword">#define</span> <span class="type">f</span> g  <span class="comment">// f is a macro name</span></pre></div>
+        <p>Macro names live in their own namespace. <strong>Warning:</strong> the preprocessor runs <em>before</em> the compiler. If this <code>#define</code> appeared at the top of the function, every subsequent <code>f</code> would be replaced with <code>g</code> before the compiler even sees the code!</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="warning">
+    <div class="label">Important: Macro Pitfall</div>
+    <code>#define</code> macros are processed by the preprocessor, which runs before compilation. The preprocessor doesn't know about blocks, functions, or scoping — it just does text substitution. So <code>#define f g</code> inside a function still affects all subsequent code in the file, not just the function.
+  </div>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    <strong>Macro names</strong> (<code>#define f g</code>): Tells the preprocessor "every time you see <code>f</code> (after this line), replace it with <code>g</code>." Macros have their own namespace and are processed before compilation.
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 15 -->
+<!-- ============================================================ -->
+<div class="section" id="s15">
+  <h2>15. Declaration vs. Definition</h2>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    A <strong>declaration</strong> is a promise that tells the compiler: "this name exists somewhere, and here's its type/signature." It does NOT allocate memory or provide implementation. The keyword <code>extern</code> in C means "this will be defined elsewhere — don't allocate space here."
+  </div>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    A <strong>definition</strong> is the actual thing — it allocates memory for variables and provides the implementation code for functions.
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">C — Declaration vs. Definition</span>
+    <pre><span class="comment">// DECLARATIONS (promises — no memory allocated, no code generated)</span>
+<span class="keyword">extern</span> <span class="keyword">int</span> xi;          <span class="comment">// "there is an int called xi somewhere"</span>
+<span class="keyword">extern</span> <span class="keyword">int</span> f(<span class="keyword">float</span>);    <span class="comment">// "there is a function f(float)→int somewhere"</span>
+
+<span class="comment">// DEFINITIONS (the real thing — memory allocated, code generated)</span>
+<span class="keyword">int</span> xi = 10;            <span class="comment">// actually allocate memory and store 10</span>
+<span class="keyword">int</span> f(<span class="keyword">float</span> x) {        <span class="comment">// actually define what f does</span>
+    <span class="keyword">return</span> x + xi;
+}</pre>
+  </div>
+
+  <h3>Why Separate Them? Separate Compilation</h3>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    <strong>Separate compilation:</strong> Languages like C use the distinction between declaration and definition to compile programs piece by piece. The <strong>linker</strong> connects declarations with definitions.
+  </div>
+
+  <p>In practice, declarations go in a <strong>header file</strong> (<code>foo.h</code>) and definitions go in an <strong>implementation file</strong> (<code>foo.c</code>):</p>
+
+  <div class="code-block">
+    <span class="code-label">foo.h — The Interface (Declarations Only)</span>
+    <pre><span class="keyword">extern</span> <span class="keyword">int</span> xi;
+<span class="keyword">int</span> f(<span class="keyword">float</span>);</pre>
+  </div>
+  <div class="code-block">
+    <span class="code-label">foo.c — The Implementation (Definitions)</span>
+    <pre><span class="keyword">int</span> xi = 10;
+<span class="keyword">int</span> f(<span class="keyword">float</span> x) { <span class="keyword">return</span> x + xi; }</pre>
+  </div>
+  <div class="code-block">
+    <span class="code-label">main.c — Uses the Interface</span>
+    <pre><span class="keyword">#include</span> <span class="string">"foo.h"</span>
+<span class="keyword">int</span> main() {
+    <span class="keyword">return</span> f(2.0);  <span class="comment">// Knows about f from the declaration</span>
+}</pre>
+  </div>
+
+  <div class="why-box">
+    <div class="label">Three Reasons for Separating Declaration from Definition</div>
+    <strong>1. Fast builds:</strong> If you change <code>foo.c</code>, only <code>foo.c</code> needs to be recompiled. <code>main.c</code> doesn't change.
+    <br><br>
+    <strong>2. Abstraction / information hiding:</strong> Users see <em>what</em> a function does (from the header), but not <em>how</em> (the implementation). This lets you change the implementation without affecting users.
+    <br><br>
+    <strong>3. Modularity:</strong> You can replace one implementation with another (e.g., swap database backends) as long as it conforms to the same interface. Prevents collisions during collaboration.
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 16 -->
+<!-- ============================================================ -->
+<div class="section" id="s16">
+  <h2>16. Labeled Namespaces &amp; Access Control</h2>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    A <strong>labeled namespace</strong> is a named container that holds a group of declarations. Unlike primitive namespaces, it lets the language control <strong>who is allowed to see what</strong> inside it (through classes, packages, modules, etc.).
+  </div>
+
+  <p>In Java, this is done with <strong>access modifier keywords</strong>:</p>
+
+  <table class="comparison-table">
+    <tr>
+      <th>Keyword</th>
+      <th>Same package (not subclass)</th>
+      <th>Subclass (different package)</th>
+      <th>Everyone else</th>
+    </tr>
+    <tr><td><strong><code>public</code></strong></td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td><strong><code>protected</code></strong></td><td>✓</td><td>✓</td><td>✗</td></tr>
+    <tr><td><strong>(default)</strong> — no keyword</td><td>✓</td><td>✗</td><td>✗</td></tr>
+    <tr><td><strong><code>private</code></strong></td><td>✗</td><td>✗</td><td>✗</td></tr>
+  </table>
+
+  <div class="definition">
+    <div class="label">Definitions</div>
+    <strong>public:</strong> Visible to anyone, anywhere. Used for external interfaces/APIs.
+    <br><br>
+    <strong>protected:</strong> Visible to subclasses (through inheritance) and classes in the same package. Controls extension.
+    <br><br>
+    <strong>(default / package-private):</strong> Visible only within the same package. No keyword needed. Common for internal helper functions.
+    <br><br>
+    <strong>private:</strong> Visible only within the declaring class. The strongest form of hiding.
+  </div>
+
+  <p>Packages group related classes together, define who can see what, and draw boundaries between different parts of the system:</p>
+
+  <div class="code-block">
+    <span class="code-label">Java — Package Structure Example</span>
+    <pre><span class="comment">// The world sees graphics.Shape and graphics.Rectangle</span>
+<span class="comment">// The world CANNOT touch Renderer or Utils</span>
+
+graphics/
+├── Shape.java        <span class="string">(public)</span>
+├── Rectangle.java    <span class="string">(public)</span>
+├── Renderer.java     <span class="comment">(package-private — internal)</span>
+└── Utils.java        <span class="comment">(package-private — internal)</span></pre>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 17 -->
+<!-- ============================================================ -->
+<div class="section" id="s17">
+  <h2>17. Explicit Namespace Creation (OCaml Modules)</h2>
+
+  <div class="definition">
+    <div class="label">Definition</div>
+    <strong>Explicit namespace creation:</strong> The programmer manually creates and controls namespaces, including their contents and visibility. Namespaces are not implicit (tied to a class or file) but constructed deliberately. This allows separating interface from implementation with fine-grained control.
+  </div>
+
+  <p>OCaml provides <code>module</code> for creating namespaces and <code>module type</code> for defining interfaces (what's visible to the outside world):</p>
+
+  <div class="code-block">
+    <span class="code-label">OCaml — Defining an Interface (Module Type)</span>
+    <pre><span class="keyword">module type</span> <span class="type">A</span> =
+<span class="keyword">sig</span>
+  <span class="comment">(* This is the interface — only these are visible outside *)</span>
+  <span class="keyword">val</span> f : <span class="type">int</span> -> <span class="type">int</span>     <span class="comment">(* any module of type A must have this function *)</span>
+<span class="keyword">end</span></pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">OCaml — Creating a Namespace (Module)</span>
+    <pre><span class="keyword">module</span> <span class="type">N</span> : <span class="type">A</span> = <span class="keyword">struct</span>
+  <span class="comment">(* Implementation — hidden details *)</span>
+  <span class="keyword">let</span> x = 3            <span class="comment">(* internal, NOT in interface A *)</span>
+  <span class="keyword">let</span> f y = x + y      <span class="comment">(* visible, because interface A requires it *)</span>
+<span class="keyword">end</span></pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">OCaml — Accessing the Module from Outside</span>
+    <pre>N.f 4    <span class="comment">(* ✓ Valid — f is defined in the interface A *)</span>
+         <span class="comment">(* Returns 7 (because x=3, f y = 3 + 4) *)</span>
+
+N.x      <span class="error">(* ✗ Error! x is NOT visible — not in the interface *)</span></pre>
+  </div>
+
+  <p>This approach gives the programmer complete control: the <code>module type</code> defines exactly what's visible (the interface), and the <code>module</code> provides the implementation. Anything not listed in the interface is hidden, even though it exists internally.</p>
+
+  <div class="why-box">
+    <div class="label">Connecting It All Together</div>
+    The progression across this lecture has been: we want to write <strong>reusable code</strong> (type parametrization) → but we need to keep it <strong>type-safe</strong> (generics, wildcards, bounded types) → to organize all these names and types, we need <strong>namespaces</strong> → and to build reliable systems from pieces, we need <strong>declarations vs. definitions</strong> and <strong>access control</strong>. Each concept builds on the last to help us write large, safe, modular programs.
+  </div>
+</div>
+
+<!-- FINAL QUIZ -->
+<div class="quiz" id="quiz5">
+  <div class="quiz-label">Final Comprehension Check</div>
+  <div class="question">In OCaml, module <code>N</code> is defined with type <code>A</code>. Inside <code>N</code>, there's <code>let secret = 42</code> which is NOT listed in <code>A</code>. What happens when someone writes <code>N.secret</code> from outside the module?</div>
+  <div class="options">
+    <button class="option" onclick="checkQuiz('quiz5', this, false)">Returns 42 — all module contents are accessible</button>
+    <button class="option" onclick="checkQuiz('quiz5', this, true)">Compile error — <code>secret</code> is not in the interface, so it's hidden</button>
+    <button class="option" onclick="checkQuiz('quiz5', this, false)">Runtime error — the module can't find the binding</button>
+    <button class="option" onclick="checkQuiz('quiz5', this, false)">Returns <code>None</code> — unlisted values default to null</button>
+  </div>
+  <div class="feedback correct-fb">Correct! The module type <code>A</code> acts as a filter — only names listed in the interface are visible to the outside world. Since <code>secret</code> isn't in <code>A</code>, the compiler rejects any attempt to access <code>N.secret</code> at <strong>compile time</strong>. This is the power of explicit namespace creation: fine-grained control over what's hidden and what's exposed.</div>
+  <div class="feedback incorrect-fb">Not quite. When a module is given a type signature (like <code>N : A</code>), only the names listed in that signature are accessible from outside. <code>secret</code> isn't in <code>A</code>, so the compiler produces a <strong>compile error</strong>. The value exists internally but is invisible externally.</div>
+</div>
+
+<footer>
+  Lecture 7 — Type Parametrization, Bindings &amp; Namespaces &nbsp;•&nbsp; Programming Languages
+</footer>
+
+</div><!-- /container -->
+
+
+</body>
+</html>

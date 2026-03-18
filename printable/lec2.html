@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Programming Languages — Lecture 2: Interactive Textbook</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf8f4;
+  --bg-warm: #f5f0e8;
+  --bg-code: #1e1e2e;
+  --text: #2c2416;
+  --text-secondary: #6b5d4f;
+  --accent: #c44d2b;
+  --accent-light: #f8ebe6;
+  --accent-dark: #9e3518;
+  --green: #2d7a4f;
+  --green-light: #e6f5ed;
+  --blue: #2b5fc4;
+  --blue-light: #e8eff8;
+  --purple: #6b3fa0;
+  --purple-light: #f0e8f8;
+  --yellow: #c49a2b;
+  --yellow-light: #fdf6e3;
+  --border: #e0d8cc;
+  --shadow: rgba(44, 36, 22, 0.08);
+  --code-text: #cdd6f4;
+  --code-keyword: #cba6f7;
+  --code-string: #a6e3a1;
+  --code-comment: #6c7086;
+  --code-number: #fab387;
+  --code-func: #89b4fa;
+  --serif: 'Source Serif 4', Georgia, serif;
+  --sans: 'DM Sans', -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; font-size: 17px; }
+
+body {
+  font-family: var(--serif);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── NAV SIDEBAR ─── */
+.sidebar {
+  position: fixed;
+  top: 0; left: 0;
+  width: 300px; height: 100vh;
+  background: #2c2416;
+  color: #d4c9b8;
+  overflow-y: auto;
+  z-index: 100;
+  transform: translateX(-100%);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 2rem 1.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: #5a4d3e #2c2416;
+}
+.sidebar.open { transform: translateX(0); }
+.sidebar h2 {
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #a89880;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #4a3d2e;
+}
+.sidebar a {
+  display: block;
+  color: #c4b8a4;
+  text-decoration: none;
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  margin-bottom: 2px;
+  transition: all 0.2s;
+  line-height: 1.4;
+}
+.sidebar a:hover { background: rgba(255,255,255,0.07); color: #fff; }
+.sidebar a.sub { padding-left: 1.4rem; font-size: 0.78rem; color: #9a8e7e; }
+.sidebar-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 99;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+}
+.sidebar-overlay.show { opacity: 1; pointer-events: all; }
+
+.menu-btn {
+  position: fixed;
+  top: 1.2rem; left: 1.2rem;
+  z-index: 101;
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px var(--shadow);
+  transition: all 0.2s;
+}
+.menu-btn:hover { background: var(--bg-warm); }
+.menu-btn svg { width: 20px; height: 20px; stroke: var(--text); }
+
+/* ─── PROGRESS BAR ─── */
+.progress-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--border);
+  z-index: 98;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  width: 0%;
+  transition: width 0.1s;
+}
+
+/* ─── MAIN CONTENT ─── */
+.content {
+  max-width: 740px;
+  margin: 0 auto;
+  padding: 4rem 2rem 6rem;
+}
+
+/* ─── HERO ─── */
+.hero {
+  text-align: center;
+  margin-bottom: 4rem;
+  padding: 3rem 0;
+}
+.hero-label {
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  margin-bottom: 1rem;
+}
+.hero h1 {
+  font-size: 2.8rem;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+.hero-sub {
+  font-size: 1.15rem;
+  color: var(--text-secondary);
+  max-width: 560px;
+  margin: 0 auto 2rem;
+  line-height: 1.7;
+}
+.hero-takeaway {
+  background: var(--yellow-light);
+  border: 1px solid #e8d9a8;
+  border-radius: 12px;
+  padding: 1.2rem 1.5rem;
+  font-size: 0.95rem;
+  color: #5c4a10;
+  max-width: 580px;
+  margin: 0 auto;
+  text-align: left;
+  line-height: 1.65;
+}
+.hero-takeaway strong { color: #8a6d10; }
+
+/* ─── SECTIONS ─── */
+.chapter {
+  margin-bottom: 4rem;
+  scroll-margin-top: 2rem;
+}
+.chapter-num {
+  font-family: var(--sans);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+.chapter h2 {
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin-bottom: 0.6rem;
+  color: var(--text);
+}
+.chapter-intro {
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+  line-height: 1.75;
+  border-left: 3px solid var(--border);
+  padding-left: 1.2rem;
+}
+
+h3 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin: 2.5rem 0 0.8rem;
+  color: var(--text);
+}
+h4 {
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 2rem 0 0.6rem;
+  color: var(--text);
+}
+
+p { margin-bottom: 1.1rem; }
+
+/* ─── SPECIAL BLOCKS ─── */
+.concept-box {
+  background: var(--blue-light);
+  border: 1px solid #c4d4ee;
+  border-radius: 12px;
+  padding: 1.3rem 1.5rem;
+  margin: 1.5rem 0;
+}
+.concept-box .label {
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--blue);
+  margin-bottom: 0.4rem;
+}
+
+.why-box {
+  background: var(--purple-light);
+  border: 1px solid #d4c4ee;
+  border-radius: 12px;
+  padding: 1.3rem 1.5rem;
+  margin: 1.5rem 0;
+}
+.why-box .label {
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--purple);
+  margin-bottom: 0.4rem;
+}
+
+.example-box {
+  background: var(--green-light);
+  border: 1px solid #b8dfc8;
+  border-radius: 12px;
+  padding: 1.3rem 1.5rem;
+  margin: 1.5rem 0;
+}
+.example-box .label {
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--green);
+  margin-bottom: 0.4rem;
+}
+
+.warning-box {
+  background: var(--accent-light);
+  border: 1px solid #e8c4b8;
+  border-radius: 12px;
+  padding: 1.3rem 1.5rem;
+  margin: 1.5rem 0;
+}
+.warning-box .label {
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin-bottom: 0.4rem;
+}
+
+.connection-box {
+  background: var(--yellow-light);
+  border: 1px solid #e8d9a8;
+  border-radius: 12px;
+  padding: 1.3rem 1.5rem;
+  margin: 1.5rem 0;
+}
+.connection-box .label {
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #8a6d10;
+  margin-bottom: 0.4rem;
+}
+
+/* ─── CODE BLOCKS ─── */
+pre {
+  background: var(--bg-code);
+  border-radius: 12px;
+  padding: 1.3rem 1.5rem;
+  margin: 1.2rem 0;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  line-height: 1.7;
+  color: var(--code-text);
+  border: 1px solid #313244;
+}
+code {
+  font-family: var(--mono);
+  font-size: 0.85em;
+}
+p code, li code {
+  background: var(--bg-warm);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  color: var(--accent-dark);
+  font-size: 0.82em;
+  border: 1px solid var(--border);
+}
+.kw { color: var(--code-keyword); }
+.str { color: var(--code-string); }
+.cmt { color: var(--code-comment); font-style: italic; }
+.num { color: var(--code-number); }
+.fn { color: var(--code-func); }
+.typ { color: #f9e2af; }
+
+/* ─── QUIZ / INTERACTIVE ─── */
+.quiz {
+  background: var(--bg-warm);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 1.8rem;
+  margin: 2rem 0;
+}
+.quiz-header {
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  margin-bottom: 0.8rem;
+}
+.quiz p { font-weight: 500; margin-bottom: 1rem; }
+.quiz-options { display: flex; flex-direction: column; gap: 0.5rem; }
+.quiz-opt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-family: var(--sans);
+  font-size: 0.88rem;
+  padding: 0.8rem 1.2rem;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text);
+  line-height: 1.5;
+}
+.quiz-opt:hover { border-color: var(--accent); background: var(--accent-light); }
+.quiz-opt.correct {
+  border-color: var(--green) !important;
+  background: var(--green-light) !important;
+  color: #1a5a32 !important;
+}
+.quiz-opt.wrong {
+  border-color: var(--accent) !important;
+  background: var(--accent-light) !important;
+  color: var(--accent-dark) !important;
+}
+.quiz-opt:disabled { cursor: default; opacity: 0.85; }
+.quiz-opt:disabled:hover { border-color: var(--border); background: #fff; }
+.quiz-explain {
+  margin-top: 1rem;
+  padding: 1rem 1.2rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  display: none;
+}
+.quiz-explain.show { display: block; }
+.quiz-explain.right { background: var(--green-light); color: #1a5a32; }
+.quiz-explain.wrong-exp { background: var(--accent-light); color: var(--accent-dark); }
+
+/* ─── ANALOGY CARD ─── */
+.analogy {
+  background: linear-gradient(135deg, #fdf6e3, #f8efe0);
+  border: 1px solid #e8d9a8;
+  border-radius: 14px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  position: relative;
+}
+.analogy::before {
+  content: '💡';
+  font-size: 1.3rem;
+  position: absolute;
+  top: -0.6rem;
+  left: 1rem;
+  background: var(--bg);
+  padding: 0 0.3rem;
+  border-radius: 50%;
+}
+.analogy .atitle {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #8a6d10;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* ─── COMPARISON TABLE ─── */
+.comp-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 1.5rem 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  font-size: 0.88rem;
+}
+.comp-table th {
+  background: #2c2416;
+  color: #d4c9b8;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.9rem 1.2rem;
+  text-align: left;
+}
+.comp-table td {
+  padding: 0.8rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.5;
+}
+.comp-table tr:last-child td { border-bottom: none; }
+.comp-table tr:nth-child(even) td { background: var(--bg-warm); }
+
+/* ─── TIMELINE ─── */
+.timeline { margin: 2rem 0; padding-left: 2rem; border-left: 3px solid var(--accent); }
+.timeline-item { margin-bottom: 2rem; position: relative; }
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -2rem;
+  top: 0.55rem;
+  transform: translateX(-50%);
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid var(--bg);
+}
+.timeline-item .year {
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.timeline-item .machine {
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin: 0.2rem 0 0.4rem;
+}
+
+/* ─── DIAGRAM ─── */
+.diagram {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 2rem;
+  margin: 2rem 0;
+  text-align: center;
+}
+.diagram svg { max-width: 100%; height: auto; }
+
+/* ─── EXPAND/COLLAPSE ─── */
+details {
+  margin: 1rem 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+summary {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 1rem 1.3rem;
+  cursor: pointer;
+  background: var(--bg-warm);
+  transition: background 0.2s;
+  list-style: none;
+}
+summary::-webkit-details-marker { display: none; }
+summary::before {
+  content: '▸ ';
+  color: var(--accent);
+  transition: transform 0.2s;
+  display: inline-block;
+}
+details[open] summary::before { content: '▾ '; }
+summary:hover { background: #ede5d8; }
+details .details-body { padding: 1.2rem 1.3rem; }
+
+/* ─── MISC ─── */
+strong { font-weight: 600; }
+em { font-style: italic; }
+.highlight { background: #fce4b8; padding: 0.1em 0.3em; border-radius: 3px; }
+.sep {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 3rem 0;
+}
+
+@media (max-width: 768px) {
+  html { font-size: 16px; }
+  .content { padding: 3rem 1.2rem 4rem; }
+  .hero h1 { font-size: 2rem; }
+  .sidebar { width: 280px; }
+  pre { font-size: 0.78rem; padding: 1rem; }
+}
+</style>
+
+<style>
+/* === Printable Override === */
+
+/* Hide non-content elements */
+.sidebar, .sidebar-toggle, .progress-bar, .quiz, .quiz-btn { display: none !important; }
+
+/* Base typography */
+html { font-size: 12px !important; }
+body { line-height: 1.3 !important; }
+
+/* Layout */
+.main {
+  margin-left: 0 !important;
+  padding: 0.5rem !important;
+  max-width: 100% !important;
+}
+
+/* Headings */
+h1 { font-size: 1.4rem !important; }
+h2 { font-size: 1.15rem !important; margin-top: 0.5rem !important; }
+h3 { font-size: 1.05rem !important; margin-top: 0.4rem !important; }
+
+/* Spacing */
+p { margin-bottom: 0.25rem !important; }
+ul, ol { margin-bottom: 0.25rem !important; }
+li { margin-bottom: 0.1rem !important; }
+
+.callout {
+  padding: 0.3rem 0.5rem !important;
+  margin: 0.3rem 0 !important;
+}
+
+.code-block {
+  margin: 0.3rem 0 !important;
+  overflow: visible !important;
+}
+.code-block pre {
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+}
+.code-body, .code-block code {
+  padding: 0.3rem 0.5rem !important;
+  font-size: 0.85rem !important;
+}
+
+section, .section { margin-bottom: 0.3rem !important; }
+.subtitle { margin-bottom: 0.3rem !important; }
+
+/* Force expandables open and remove toggle UI */
+.expandable-content {
+  display: block !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+.expandable-arrow { display: none !important; }
+.expandable-header { cursor: default !important; }
+
+/* Kill animations */
+* {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+}
+</style>
+
+</head>
+<body>
+
+<!-- Progress Bar -->
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+<!-- Menu Button -->
+<button class="menu-btn" id="menuBtn" aria-label="Open navigation">
+  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+  <h2>Table of Contents</h2>
+  <a href="#hero">Introduction</a>
+  <a href="#ch1">Part 1: Why So Many Languages?</a>
+  <a href="#ch1-goals" class="sub">Language Design Goals</a>
+  <a href="#ch1-compat" class="sub">Compatibility</a>
+  <a href="#ch1-understand" class="sub">Understandability</a>
+  <a href="#ch1-perf" class="sub">Performance</a>
+  <a href="#ch1-safety" class="sub">Safety & Undefined Behavior</a>
+  <a href="#ch1-security" class="sub">Privacy & Security</a>
+  <a href="#ch1-other" class="sub">More Goals</a>
+  <a href="#ch1-ortho" class="sub">Orthogonality</a>
+  <a href="#ch1-extend" class="sub">Extensibility</a>
+  <a href="#ch2">Part 2: Hardware Shapes Languages</a>
+  <a href="#ch2-basic" class="sub">BASIC & the GE 225</a>
+  <a href="#ch2-c" class="sub">C & the PDP-11</a>
+  <a href="#ch2-js" class="sub">JavaScript & the Pentium</a>
+  <a href="#ch2-today" class="sub">The Modern Memory Problem</a>
+  <a href="#ch3">Part 3: The 3D Design Space</a>
+  <a href="#ch3-imp" class="sub">Imperative Languages</a>
+  <a href="#ch3-func" class="sub">Functional Languages</a>
+  <a href="#ch3-logic" class="sub">Logic Languages</a>
+  <a href="#ch3-compiled" class="sub">Compiled vs Interpreted</a>
+  <a href="#ch3-oop" class="sub">Object-Oriented</a>
+  <a href="#ch4">Part 4: Functional Programming</a>
+  <a href="#ch4-why" class="sub">Why Functional?</a>
+  <a href="#ch4-vonneumann" class="sub">The Von Neumann Bottleneck</a>
+  <a href="#ch4-math" class="sub">Mathematical Functions</a>
+  <a href="#ch4-higher" class="sub">Higher-Order Functions</a>
+  <a href="#ch4-ref" class="sub">Referential Transparency</a>
+  <a href="#ch5">Part 5: OCaml Basics</a>
+  <a href="#ch5-props" class="sub">Properties of OCaml</a>
+  <a href="#ch5-ifelse" class="sub">If/Else Expressions</a>
+  <a href="#ch5-tuples" class="sub">Tuples</a>
+  <a href="#ch5-lists" class="sub">Lists</a>
+  <a href="#ch5-funcs" class="sub">Defining Functions</a>
+  <a href="#ch5-anon" class="sub">Anonymous Functions</a>
+  <a href="#ch5-call" class="sub">Calling Functions</a>
+  <a href="#ch5-multi" class="sub">Multi-Argument Functions</a>
+  <a href="#ch5-match" class="sub">Pattern Matching</a>
+  <a href="#ch5-curry" class="sub">Currying</a>
+</div>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- Main Content -->
+<div class="content">
+
+<!-- ════════════════════ HERO ════════════════════ -->
+<div class="hero" id="hero">
+  <div class="hero-label">CS 131 — Programming Languages · Lecture 2</div>
+  <h1>Language Design &amp;<br>Functional Programming</h1>
+  <p class="hero-sub">Why do programming languages look the way they do? What tradeoffs do designers wrestle with? And what is functional programming — the paradigm that gives up assignment statements and gains enormous power in return?</p>
+  <div class="hero-takeaway">
+    <strong>Core takeaway:</strong> Language features aren't random or arbitrary. They're the result of hardware constraints, safety tradeoffs, backward compatibility pressures, compiler optimization strategies, and how human brains think about computation.
+  </div>
+</div>
+
+<!-- ════════════════════ CHAPTER 1 ════════════════════ -->
+<div class="chapter" id="ch1">
+  <div class="chapter-num">Part 1</div>
+  <h2>Why Are There So Many Programming Languages?</h2>
+  <p class="chapter-intro">A professor once asked: "Why can't there just be <em>one</em> programming language? Wouldn't that make life simpler?" This deceptively simple question has a deep answer — and understanding it is the foundation for everything else we'll learn.</p>
+
+  <p>Think about the question for a moment. If one language could do everything, you'd learn it once and be done. No need for a course on programming languages at all. But the reality is that there are hundreds of programming languages in active use, and new ones keep being created. Why?</p>
+
+  <p>The answer is that every programming language is a <em>set of tradeoffs</em>. A language that's excellent at one thing is often mediocre or even terrible at another. These tradeoffs stem from <strong>design goals</strong> — the priorities that the language's creators had in mind. Since different people have different priorities, they create different languages.</p>
+
+  <div class="analogy">
+    <div class="atitle">Analogy: Tools in a Workshop</div>
+    <p>Think of programming languages like tools. A hammer is great for nails but terrible for screws. A screwdriver handles screws perfectly but can't drive nails. You <em>could</em> build a multi-tool that sort of does everything — but it wouldn't do any single thing as well as a dedicated tool. Languages are the same: each one is optimized for certain jobs.</p>
+  </div>
+
+  <h3 id="ch1-goals">Language Design Goals</h3>
+
+  <p>Let's walk through the major goals that language designers care about. These goals often <em>compete</em> with each other — optimizing for one frequently means sacrificing another. Understanding these tradeoffs is essential for choosing the right language for a project.</p>
+
+  <!-- PERFORMANCE -->
+  <h4 id="ch1-perf">Goal 1: Performance</h4>
+  <p>Performance means how fast your programs run and how efficiently they use resources like memory. Some applications — video games, operating systems, real-time control systems — need to squeeze every last bit of speed out of the hardware.</p>
+
+  <p>Languages like <strong>C</strong> and <strong>C++</strong> are designed with performance as a top priority. They give you fine-grained control over memory, let you work close to the hardware, and their compilers can produce extremely optimized machine code. But this control comes at a cost: these languages are among the <em>hardest</em> to learn and use correctly.</p>
+
+  <!-- UNDERSTANDABILITY -->
+  <h4 id="ch1-understand">Goal 2: Understandability</h4>
+  <p>Understandability means how easy it is for a human to read, write, and reason about code. This matters enormously because code is read far more often than it's written — by you later, by your teammates, by people who maintain the code after you've moved on.</p>
+
+  <p>There's an interesting sub-question here: should a language give you <strong>one way</strong> to write something, or <strong>many ways</strong>?</p>
+
+  <div class="example-box">
+    <div class="label">Example: Perl vs Python</div>
+    <p><strong>Perl</strong> was designed by a linguist, and its motto was "there's more than one way to do it." Just like English lets you say "if X, call Y" or "call Y if X," Perl lets you write the same logic multiple ways:</p>
+    <pre><span class="cmt"># Both do the same thing in Perl:</span>
+<span class="kw">if</span> ($x) { call_y(); }
+call_y() <span class="kw">if</span> $x;</pre>
+    <p><strong>Python</strong> was originally created as a reaction to Perl's approach. The Python philosophy said: "There should be one — and preferably only one — obvious way to do it." Having one way means consistency and easier readability. Having many ways means flexibility but makes unfamiliar code harder to read.</p>
+    <p>Ironically, as Python has grown over the decades, it has gradually gained many alternative ways to express things — falling into what the professor calls "the Perl trap."</p>
+  </div>
+
+  <div class="connection-box">
+    <div class="label">Connection: The Sapir-Whorf Hypothesis</div>
+    <p>In the previous lecture, the class discussed the <strong>Sapir-Whorf hypothesis</strong> from linguistics: the language you speak shapes how you think. This applies to programming too! The language you program in affects how you <em>think about</em> problems. This is exactly why we study multiple language paradigms — they teach us different ways to think about computation.</p>
+  </div>
+
+  <!-- COMPATIBILITY -->
+  <h4 id="ch1-compat">Goal 3: Compatibility with Existing Practice</h4>
+  <p>No language exists in a vacuum. Real software interacts with libraries, operating systems, hardware, and other software — often written in different languages. A new language needs to be <em>compatible</em> with the existing ecosystem, or nobody will adopt it.</p>
+
+  <p>At the lowest level, most systems have some kind of <strong>C interface</strong> — C is like the "common tongue" that almost every other language can talk to. For example, C++ has a feature called <code>extern C</code> that lets C++ code expose functions in a way that C code can call. This compatibility exists at two levels:</p>
+
+  <div class="concept-box">
+    <div class="label">Key Concepts</div>
+    <p><strong>API compatibility</strong> (Application Programming Interface): source-level compatibility. Your old source code still compiles with the new version of the language.</p>
+    <p><strong>ABI compatibility</strong> (Application Binary Interface): binary-level compatibility. Programs and libraries that were <em>already compiled</em> still link and run correctly, even with newer code.</p>
+  </div>
+
+  <div class="why-box">
+    <div class="label">Why this matters</div>
+    <p>If a language breaks compatibility when it updates, companies can lose the ability to run important programs, and developers have to rewrite their code every time an update occurs. This is enormously expensive. Languages that break backward compatibility (like Python 2 → Python 3) cause years of migration pain.</p>
+  </div>
+
+  <!-- SAFETY -->
+  <h3 id="ch1-safety">Goal 4: Safety</h3>
+  <p>Safety means: do your programs behave predictably? When something goes wrong, does the system tell you about it in a controlled way — or does it silently misbehave in dangerous ways?</p>
+
+  <p>This isn't just about your laptop showing a "blue screen of death." Safety failures can cause <em>real-world disasters</em> — like a car whose brakes don't work, or a medical device that gives the wrong dosage. This is why safety is a <strong>huge deal</strong> in modern language design.</p>
+
+  <h4>Undefined Behavior: The Dark Side of C/C++</h4>
+  <p>C and C++ are the classic examples of <em>unsafe</em> languages. They give you enormous power, but that power includes many ways to "shoot yourself in the foot." The key concept here is <strong>undefined behavior (UB)</strong>.</p>
+
+  <div class="concept-box">
+    <div class="label">Definition: Undefined Behavior (UB)</div>
+    <p>Undefined behavior occurs when the language standard says: "if your program does this, we're <em>not going to define</em> what happens." The program can do <em>anything</em> — crash, produce wrong results, delete your files, or even appear to work correctly. The compiler is free to generate whatever code it likes.</p>
+  </div>
+
+  <p>Here's a concrete example that surprises most people, even experienced C/C++ programmers:</p>
+
+  <div class="example-box">
+    <div class="label">Example: Integer Overflow is Undefined</div>
+    <p>What happens when you take the maximum integer value and add 1?</p>
+    <pre><span class="cmt">// What does this do in C/C++?</span>
+<span class="typ">int</span> x = INT_MAX;  <span class="cmt">// Maximum int value: 2,147,483,647</span>
+x = x + <span class="num">1</span>;        <span class="cmt">// What is x now?</span></pre>
+    <p>If you took a computer architecture class, you might have been taught that this "wraps around" to INT_MIN (the most negative integer). And on most hardware, that <em>is</em> what the machine does. But the C and C++ language <em>standards</em> say this is <strong>undefined behavior</strong>. The compiler can assume it never happens — and use that assumption to optimize your code in surprising ways.</p>
+  </div>
+
+  <p>This isn't just theoretical. Modern compilers like GCC and Clang actively <em>exploit</em> undefined behavior to optimize code. Here's a striking example from the lecture:</p>
+
+  <div class="example-box">
+    <div class="label">Example: How UB Changes Your Program's Meaning</div>
+    <pre><span class="cmt">// What does this loop do?</span>
+<span class="kw">for</span> (<span class="typ">int</span> i = x - <span class="num">3</span>; i <= INT_MAX; i++)
+    j++;</pre>
+    <p>If you believe integer overflow wraps around (as hardware actually does), this loop runs forever — because <code>i</code> would eventually overflow past INT_MAX and wrap to a negative number, which is still ≤ INT_MAX, so the loop never ends.</p>
+    <p>But GCC, with optimization enabled, compiles this to the equivalent of <code>j += 334</code> (or whatever the mathematically correct count is). Why? Because the standard says signed overflow is undefined, so the compiler <em>assumes it never happens</em>. If overflow can't happen, then <code>i</code> will eventually exceed INT_MAX, and the loop terminates after a finite number of iterations.</p>
+    <p>The ironic thing is: the compiler's version gives the mathematically "correct" answer — the one a naive programmer would expect. But it does so by reasoning that your loop can't possibly run forever.</p>
+  </div>
+
+  <div class="quiz" id="q1">
+    <div class="quiz-header">Check Your Understanding</div>
+    <p>In C/C++, what happens when signed integer overflow occurs?</p>
+    <div class="quiz-options">
+      <button class="quiz-opt" onclick="checkQuiz('q1', this, false)">It always wraps around to the minimum negative integer</button>
+      <button class="quiz-opt" onclick="checkQuiz('q1', this, false)">The program immediately crashes with an error</button>
+      <button class="quiz-opt" onclick="checkQuiz('q1', this, true)">The behavior is undefined — the compiler can do anything</button>
+      <button class="quiz-opt" onclick="checkQuiz('q1', this, false)">It produces infinity, like floating-point division by zero</button>
+    </div>
+    <div class="quiz-explain" id="q1-right">Correct! The C/C++ standard says signed integer overflow is <strong>undefined behavior</strong>. While the hardware typically wraps around, the compiler is free to assume overflow never occurs and optimize accordingly. This is a key reason C/C++ are considered "unsafe" — programmers can be surprised by compiler optimizations that exploit UB.</div>
+    <div class="quiz-explain" id="q1-wrong">Not quite. While the hardware typically does wrap around, the C/C++ language <em>standard</em> says signed integer overflow is <strong>undefined behavior</strong>. The compiler can assume it never happens and produce surprising optimizations. This is fundamentally different from "always wraps around" or "always crashes."</div>
+  </div>
+
+  <!-- SECURITY -->
+  <h3 id="ch1-security">Goal 5: Privacy &amp; Security</h3>
+  <p>Safety and security often go hand in hand. Here's a fascinating example of how they intersect in C:</p>
+
+  <div class="example-box">
+    <div class="label">Example: memset vs memset_explicit</div>
+    <p>C has a function called <code>memset</code> that fills a block of memory with a value (usually zeros). There's also a newer function called <code>memset_explicit</code> that does the same thing. Why do we need two functions that do the same thing?</p>
+    <p>The difference is that <code>memset</code> can be <em>optimized away</em> by the compiler. If the compiler notices that nobody reads the memory after the <code>memset</code> call, it might skip the zeroing entirely — it's "dead code" from the optimizer's perspective.</p>
+    <pre><span class="cmt">// Scenario: you just finished using a password</span>
+<span class="typ">char</span> password[<span class="num">256</span>];
+<span class="cmt">// ... use the password for authentication ...</span>
+
+<span class="fn">memset</span>(password, <span class="num">0</span>, <span class="kw">sizeof</span>(password));  <span class="cmt">// Try to clear it</span>
+<span class="kw">return</span>;  <span class="cmt">// Function ends — nobody reads password after this</span>
+<span class="cmt">// Compiler thinks: "Nobody reads password, so I'll skip the memset!"</span>
+<span class="cmt">// Password remains in memory! An attacker can find it.</span></pre>
+    <p><code>memset_explicit</code> tells the compiler: "No, <em>really</em> zero this memory, no matter what. Don't optimize this away." This exists for exactly the security scenario above — you want to erase sensitive data from memory even if the compiler thinks nobody will read it, because an <em>attacker</em> might read it through a bug in another part of your program.</p>
+    <pre><span class="fn">memset_explicit</span>(password, <span class="num">0</span>, <span class="kw">sizeof</span>(password));  <span class="cmt">// MUST zero this memory!</span>
+<span class="kw">return</span>;  <span class="cmt">// Password is guaranteed to be erased</span></pre>
+    <p>This function was added to the C23 standard specifically for this security use case.</p>
+  </div>
+
+  <div class="connection-box">
+    <div class="label">Connection: Safety ↔ Security ↔ Optimization</div>
+    <p>Notice how security, safety, and performance are all tangled together. The compiler optimizes away the <code>memset</code> for <em>performance</em> (why do work nobody needs?), but this creates a <em>security</em> vulnerability. <code>memset_explicit</code> sacrifices a tiny bit of performance to gain security. This is the essence of language design tradeoffs.</p>
+  </div>
+
+  <!-- OTHER GOALS -->
+  <h3 id="ch1-other">More Design Goals</h3>
+
+  <p>The class identified several additional goals. Each one represents a dimension along which languages make different choices:</p>
+
+  <p><strong>Modularity &amp; Abstraction</strong> — The ability to break large programs into manageable components. You want to write a 10-million-line program and have it work. Some languages (like Java, with its package system and interfaces) are designed for this scale. Others (like the original Python) weren't really designed for programs that large.</p>
+
+  <p><strong>Scalability to Large Programs</strong> — Related to modularity, this is about how well a language handles massive codebases. Features like strong type systems, module systems, and visibility controls all help here.</p>
+
+  <p><strong>Portability</strong> — Can the same code run on different machines and operating systems? C has portability problems: the size of an <code>int</code> is "at least 32 bits" but could be 64. Microsoft keeps it at 32 bits while most other platforms use 64. This means C code that assumes a specific <code>int</code> size can break when moved to a different platform.</p>
+
+  <p><strong>Concurrency &amp; Parallelism</strong> — Parallelism means different parts of your program can run at the same time. Concurrency means those parts can coordinate without stepping on each other's toes. Threading is a common approach to concurrency, but it's notoriously hard to get right — threads can interfere with each other in subtle, hard-to-reproduce ways.</p>
+
+  <p><strong>Debuggability &amp; Robustness</strong> — Debuggability: how easy is it to find and fix bugs? Robustness: do programs degrade gracefully with unusual input, or do they crash? Interestingly, these goals connect to safety in a subtle way: if a language prevents certain bugs from ever occurring (like null pointer dereferences), you don't <em>need</em> to debug those bugs — they can't happen.</p>
+
+  <p><strong>Ease of Implementation</strong> — How hard is it to build a compiler or interpreter for the language? This matters enormously when a language is getting started. JavaScript's early success partly came from being easy to implement — browser makers could add it quickly. C's initial compilers were crude by today's standards, but they were easy to write.</p>
+
+  <!-- ORTHOGONALITY -->
+  <h3 id="ch1-ortho">Goal 6: Orthogonality</h3>
+
+  <p>This is a design goal that's less commonly discussed but deeply important. The name comes from mathematics.</p>
+
+  <div class="concept-box">
+    <div class="label">Definition: Orthogonality</div>
+    <p>In mathematics, orthogonal vectors are at right angles to each other — choosing a value along one axis doesn't constrain your choices along the other axes. In language design, <strong>orthogonality</strong> means that the language's features don't interfere with each other. If feature A works with X, then it should also work with Y and Z. You can combine features freely without running into unexpected restrictions.</p>
+  </div>
+
+  <div class="analogy">
+    <div class="atitle">Analogy: Think of a 3D Space</div>
+    <p>Imagine picking a point in 3D space. You choose an X coordinate, a Y coordinate, and a Z coordinate. Your choice of X doesn't limit your options for Y or Z — you can independently pick any value for each. An orthogonal language works the same way: choosing one feature doesn't restrict what you can do with other features.</p>
+  </div>
+
+  <p>The best way to understand orthogonality is through a <em>counter-example</em> — a case where a language is <em>not</em> orthogonal:</p>
+
+  <div class="example-box">
+    <div class="label">Example: C's Non-Orthogonal Return Types</div>
+    <p>In C and C++, a function can return a value of <em>any</em> type — except arrays. You can return an <code>int</code>, a <code>double</code>, a pointer, a struct (even a massive 400,000-byte struct!) — but you cannot return an array.</p>
+    <pre><span class="cmt">// These are all fine:</span>
+<span class="typ">int</span> <span class="fn">f1</span>() { <span class="kw">return</span> <span class="num">42</span>; }
+<span class="typ">double</span> <span class="fn">f2</span>() { <span class="kw">return</span> <span class="num">3.14</span>; }
+
+<span class="typ">struct</span> Big { <span class="typ">char</span> data[<span class="num">400000</span>]; };
+<span class="typ">struct</span> Big <span class="fn">f3</span>() { <span class="cmt">/* ... */</span> }  <span class="cmt">// This is fine too!</span>
+
+<span class="cmt">// But this is NOT allowed:</span>
+<span class="typ">int</span>[<span class="num">10</span>] <span class="fn">f4</span>() { <span class="cmt">/* ... */</span> }  <span class="cmt">// ERROR! Can't return an array</span></pre>
+    <p>This is <strong>non-orthogonal</strong>: you've chosen to write a function (one axis), and you want to choose what type to return (another axis), but certain return types are forbidden. Your choice along one dimension restricts your choices along the other.</p>
+  </div>
+
+  <details>
+    <summary>Why can't C functions return arrays? (Historical deep-dive)</summary>
+    <div class="details-body">
+      <p>It's a combination of historical accidents and design decisions:</p>
+      <p><strong>1. The original calling convention:</strong> When C was first designed on the PDP-11, functions returned their value in a CPU register. Ints, pointers, and doubles fit in a register. Arrays don't. So the designers simply said: you can't return an array.</p>
+      <p><strong>2. Structs were added later:</strong> When structs were added to C, they came up with a new calling convention where the caller provides the address of where the return value should go. This works fine for structs.</p>
+      <p><strong>3. Array-to-pointer decay:</strong> In C, an array name automatically "decays" into a pointer to its first element. This implicit conversion (e.g., <code>int a[1000]; int *p = a;</code>) would make it confusing to combine with function returns — would you be returning the array or a pointer to it?</p>
+      <p>In contrast, <strong>Python is orthogonal</strong> in this regard: a function can return any type of value, including lists (Python's equivalent of arrays). No restrictions, no special cases.</p>
+    </div>
+  </details>
+
+  <div class="quiz" id="q2">
+    <div class="quiz-header">Check Your Understanding</div>
+    <p>Division by zero is related to orthogonality because:</p>
+    <div class="quiz-options">
+      <button class="quiz-opt" onclick="checkQuiz('q2', this, true)">You can divide any two integers, except when the second is zero — a restriction on one "axis" based on a value</button>
+      <button class="quiz-opt" onclick="checkQuiz('q2', this, false)">Division by zero is undefined behavior, just like integer overflow</button>
+      <button class="quiz-opt" onclick="checkQuiz('q2', this, false)">It has nothing to do with orthogonality</button>
+    </div>
+    <div class="quiz-explain" id="q2-right">Correct! It's a case of non-orthogonality: you've chosen the division operator (one axis) and an operand value (another axis), but certain operand values (zero) are forbidden. Interestingly, floating-point <em>is</em> more orthogonal here — dividing by zero gives infinity and the program keeps running.</div>
+    <div class="quiz-explain" id="q2-wrong">Not quite. Division by zero <em>is</em> related to orthogonality: you can divide any two numbers except when the second is zero. This restriction makes the division feature non-orthogonal. Floating-point partially fixes this by returning infinity instead of erroring.</div>
+  </div>
+
+  <!-- EXTENSIBILITY -->
+  <h3 id="ch1-extend">Goal 7: Mutability / Extensibility</h3>
+  <p>Languages aren't frozen in time. They need to evolve — adding new features, fixing design mistakes, improving performance. But critically, <strong>old programs should still work</strong>. This is the tension between extensibility and backward compatibility.</p>
+
+  <div class="example-box">
+    <div class="label">Example: The Many Meanings of "static" in C/C++</div>
+    <p>The keyword <code>static</code> in C/C++ is a poster child for how backward compatibility can distort a language. It has <em>at least three completely different meanings</em> depending on context:</p>
+    <pre><span class="cmt">/* Meaning 1: Inside a function — persistent local variable */</span>
+<span class="typ">void</span> <span class="fn">counter</span>() {
+    <span class="kw">static</span> <span class="typ">int</span> x = <span class="num">0</span>;  <span class="cmt">// Created once, keeps its value between calls</span>
+    x++;
+    <span class="fn">printf</span>(<span class="str">"%d\n"</span>, x);   <span class="cmt">// Prints 1, 2, 3, ... on successive calls</span>
+}
+
+<span class="cmt">/* Meaning 2: At file scope — limits visibility to this file */</span>
+<span class="kw">static</span> <span class="typ">int</span> secret = <span class="num">42</span>;  <span class="cmt">// Only this .c file can see this variable</span>
+
+<span class="cmt">/* Meaning 3: In function parameters — minimum array size */</span>
+<span class="typ">int</span> <span class="fn">f</span>(<span class="typ">int</span> a[<span class="kw">static</span> <span class="num">2</span>]) <span class="cmt">// "a" points to at least 2 elements</span></pre>
+    <p>Meaning 1 is about <strong>lifetime</strong> (how long the variable exists). Meaning 2 is about <strong>scope</strong> (who can see it). Meaning 3 is about <strong>minimum size guarantees</strong>. These are completely unrelated concepts crammed into a single keyword!</p>
+    <p>Why? Because introducing a new keyword (like <code>atleast</code> for meaning 3) would <em>break</em> any existing program that uses <code>atleast</code> as a variable or function name. So the designers reused <code>static</code> to maintain backward compatibility — sacrificing understandability in the process.</p>
+  </div>
+
+  <div class="connection-box">
+    <div class="label">The Big Picture: Goals Compete</div>
+    <p>The <code>static</code> example perfectly illustrates how design goals compete. <strong>Extensibility</strong> (adding new features) conflicts with <strong>compatibility</strong> (not breaking old code), which then undermines <strong>understandability</strong> (having one keyword mean three things is confusing). Language designers constantly navigate these tradeoffs.</p>
+  </div>
+</div>
+
+<hr class="sep">
+
+<!-- ════════════════════ CHAPTER 2 ════════════════════ -->
+<div class="chapter" id="ch2">
+  <div class="chapter-num">Part 2</div>
+  <h2>Hardware Shapes Languages</h2>
+  <p class="chapter-intro">Languages don't exist in a vacuum. They're designed for <em>specific machines</em>, and the constraints of those machines fundamentally shape the language. Understanding this history explains why languages look and act the way they do.</p>
+
+  <p>Programming languages evolve much like human languages do — they change over time in response to their environment. A Fortran programmer from the 1950s would barely recognize a modern Fortran program. The same goes for C and C++ — they've evolved enormously from their origins.</p>
+
+  <p>Let's look at three specific examples of how hardware shaped language design:</p>
+
+  <div class="timeline">
+    <div class="timeline-item" id="ch2-basic">
+      <div class="year">Late 1950s / 1960s</div>
+      <div class="machine">BASIC on the General Electric GE 225</div>
+      <p>The GE 225 mainframe cost $1 million. It was designed by Arnold Spielberg (Steven Spielberg's father!) as a skunkworks project at General Electric. Its specs:</p>
+      <table class="comp-table" style="margin: 0.8rem 0;">
+        <tr><td style="width:60%">Integer addition time</td><td><strong>40 microseconds</strong></td></tr>
+        <tr><td>Integer division time</td><td><strong>500 microseconds</strong></td></tr>
+        <tr><td>RAM</td><td><strong>~40 KB</strong></td></tr>
+        <tr><td>Simultaneous users</td><td><strong>10</strong></td></tr>
+      </table>
+      <p>BASIC was designed under these brutal constraints. With only 40 KB of RAM shared among 10 users, identifiers could only be 1 or 2 characters long — there simply wasn't memory for longer names. Everything was interpreted and slow. But it was "good enough to teach programming" — which was the goal.</p>
+    </div>
+
+    <div class="timeline-item" id="ch2-c">
+      <div class="year">1970s</div>
+      <div class="machine">C on the PDP-11</div>
+      <p>The PDP-11 was the machine C was born on. Its specs:</p>
+      <table class="comp-table" style="margin: 0.8rem 0;">
+        <tr><td style="width:60%">Integer addition time</td><td><strong>4 microseconds</strong> (10x faster than GE 225)</td></tr>
+        <tr><td>RAM</td><td><strong>16 KB</strong> (smaller than GE 225!)</td></tr>
+        <tr><td>Memory cycle time</td><td><strong>1.2 microseconds</strong></td></tr>
+      </table>
+      <p>Here's a critical detail: the memory cycle time (1.2 μs) was <em>about 3 times faster</em> than the CPU's addition time (4 μs). Memory was <strong>faster than the CPU</strong>! This explains a core feature of C:</p>
+    </div>
+  </div>
+
+  <div class="concept-box">
+    <div class="label">Why C Loves Pointers</div>
+    <p>The <code>*p</code> dereference operator — taking a pointer and following it to the data — was <em>cheap</em> on the PDP-11 because memory access was faster than arithmetic. C's syntax was designed to encourage dereferencing because it was a fast operation. Expressions like <code>*p++</code> were fast, while arithmetic like <code>a + b * c</code> was relatively slow. C's syntax was optimized for this reality.</p>
+  </div>
+
+  <div class="timeline">
+    <div class="timeline-item" id="ch2-js">
+      <div class="year">1995</div>
+      <div class="machine">JavaScript on the Pentium</div>
+      <p>JavaScript was developed roughly in 1995. The typical target machine:</p>
+      <table class="comp-table" style="margin: 0.8rem 0;">
+        <tr><td style="width:60%">Integer addition time</td><td><strong>~0.015 microseconds</strong> (~1000x faster than GE 225)</td></tr>
+        <tr><td>Integer division time</td><td><strong>~0.06 microseconds</strong></td></tr>
+        <tr><td>RAM</td><td><strong>~4 MB</strong> (100x more than GE 225)</td></tr>
+      </table>
+      <p>With 1000x more speed and 100x more memory, JavaScript could afford features that would have been unthinkable for BASIC or C — garbage collection, dynamic typing, flexible data structures — because the hardware was powerful enough to absorb the overhead.</p>
+    </div>
+  </div>
+
+  <h3 id="ch2-today">The Modern Memory Problem</h3>
+  <p>Here's where things get really interesting — and where this history connects to today.</p>
+
+  <p>Remember how on the PDP-11, memory was <em>faster</em> than the CPU? On modern machines, the relationship has <strong>completely flipped</strong>. If you access RAM and the data isn't in the cache, it takes roughly <strong>100 to 200 times</strong> longer than a simple addition.</p>
+
+  <div class="warning-box">
+    <div class="label">The Irony</div>
+    <p>C was designed for a machine where memory access was cheap and fast. We're still teaching and using C and C++ today, on machines where memory access is <em>relatively extremely slow</em>. The language's syntax still encourages heavy pointer dereferencing, but on modern hardware, that's often the <em>most expensive</em> thing you can do. The language was designed for "kind of the wrong machine."</p>
+  </div>
+
+  <div class="quiz" id="q3">
+    <div class="quiz-header">Check Your Understanding</div>
+    <p>On the PDP-11 (where C was designed), memory access was about ___ compared to CPU addition. On modern machines, uncached memory access is about ___.</p>
+    <div class="quiz-options">
+      <button class="quiz-opt" onclick="checkQuiz('q3', this, true)">3x faster than CPU; 100-200x slower than CPU</button>
+      <button class="quiz-opt" onclick="checkQuiz('q3', this, false)">About the same speed; about the same speed</button>
+      <button class="quiz-opt" onclick="checkQuiz('q3', this, false)">10x slower than CPU; 10x slower than CPU</button>
+    </div>
+    <div class="quiz-explain" id="q3-right">Correct! This dramatic reversal — from memory being faster than CPU to memory being 100-200x slower — is one of the most important shifts in computing history. Modern machines get decent performance only because of aggressive caching.</div>
+    <div class="quiz-explain" id="q3-wrong">Not quite. On the PDP-11, memory was about 3x faster than the CPU. On modern machines, uncached RAM is roughly 100-200x slower than a CPU addition. This massive reversal fundamentally changes which operations are "cheap" and "expensive."</div>
+  </div>
+</div>
+
+<hr class="sep">
+
+<!-- ════════════════════ CHAPTER 3 ════════════════════ -->
+<div class="chapter" id="ch3">
+  <div class="chapter-num">Part 3</div>
+  <h2>The 3D Design Space of Languages</h2>
+  <p class="chapter-intro">Beyond the design <em>goals</em> (where we want to go), there's the design <em>space</em> (what tools and approaches we have to get there). Think of this as a multi-dimensional map of all possible languages.</p>
+
+  <p>While the full design space is enormous and multi-dimensional, we can simplify it into three main axes that capture the most important distinctions.</p>
+
+  <h3>Axis 1: Paradigm — How You Structure Computation</h3>
+
+  <h4 id="ch3-imp">Imperative (Procedural) Languages</h4>
+  <p>These are the languages you're most familiar with. A program is like a cooking recipe: a sequence of instructions that the computer executes one at a time.</p>
+
+  <div class="concept-box">
+    <div class="label">Definition: Imperative Language</div>
+    <p>In an imperative language, you write <strong>commands</strong> (statements) that tell the computer <em>what to do</em>, step by step. The fundamental way to connect pieces of your program is <strong>sequencing</strong> — do this, then do that, then do the next thing.</p>
+    <pre><span class="cmt">// The semicolon is the "sequence operator"</span>
+C1; C2; C3;
+<span class="cmt">// Execute C1, then C2, then C3 — strictly in order</span></pre>
+    <p>You have loops, conditionals, and recursion, but at the bottom level, everything is sequential execution of commands. Examples: C, C++, Java, Python.</p>
+  </div>
+
+  <h4 id="ch3-func">Functional Languages</h4>
+  <p>In a functional language, the fundamental unit isn't commands — it's <strong>functions</strong>. You write your program as a collection of functions, and you run it by calling a function with arguments.</p>
+
+  <div class="concept-box">
+    <div class="label">Definition: Functional Language</div>
+    <p>The fundamental way to connect pieces of your program is <strong>nested function calls</strong>:</p>
+    <pre>F1( F2(x), F3(y) )
+<span class="cmt">// Compute F2(x), compute F3(y), feed both results into F1</span>
+<span class="cmt">// We don't care if F2 or F3 runs first!</span>
+<span class="cmt">// They could even run in parallel — doesn't matter</span></pre>
+    <p>The crucial insight: functional programming takes away two features you're used to — the <strong>semicolon</strong> (sequencing) and <strong>assignment statements</strong> (changing variables). Once a variable has a value, it can never change. If you want a new value, you call a new function.</p>
+  </div>
+
+  <div class="analogy">
+    <div class="atitle">Analogy: The Functional Restriction</div>
+    <p>Think of functional programming as starting with your imperative language and then tying one arm behind your back. You can no longer write <code>x = x + 1</code> (that changes a variable). You can no longer write <code>for</code> loops (those need changing variables). Instead, you do everything through function calls and recursion. It sounds limiting — and it is — but it gives you surprising new powers, especially for parallelism.</p>
+  </div>
+
+  <p>An important nuance: most real languages support multiple paradigms. OCaml <em>has</em> assignment statements — it's just that in this class, you'll be working within its functional subset and not using the imperative features. Even C++ has a functional subset. The paradigm classification describes the language's <em>primary</em> design philosophy.</p>
+
+  <h4 id="ch3-logic">Logic Languages</h4>
+  <p>Logic languages are the most different from what you're used to. There are no commands, no functions, no assignment statements. Instead, you write <strong>predicates</strong> — statements about the world that are either true or false.</p>
+
+  <div class="concept-box">
+    <div class="label">Definition: Logic Language</div>
+    <p>You write your program as a logical expression describing <em>what you want</em>, and the system finds values that make your description true.</p>
+    <pre>P1(x) AND P2(y) AND NOT P3(z)
+<span class="cmt">// "Find me values of x, y, z that make this expression true"</span>
+<span class="cmt">// Similar in spirit to a database query language</span></pre>
+    <p>You describe the specification of what you want. The system solves it. The main example is <strong>Prolog</strong>.</p>
+  </div>
+
+  <div class="quiz" id="q4">
+    <div class="quiz-header">Check Your Understanding</div>
+    <p>In a functional language, which of the following is NOT allowed (in the pure functional subset)?</p>
+    <div class="quiz-options">
+      <button class="quiz-opt" onclick="checkQuiz('q4', this, false)">Calling a function with an argument</button>
+      <button class="quiz-opt" onclick="checkQuiz('q4', this, true)">Changing the value of an existing variable</button>
+      <button class="quiz-opt" onclick="checkQuiz('q4', this, false)">Defining new local variables inside a function</button>
+      <button class="quiz-opt" onclick="checkQuiz('q4', this, false)">Using recursion</button>
+    </div>
+    <div class="quiz-explain" id="q4-right">Correct! The defining restriction of functional programming is that once a variable has a value, you cannot change it. You <em>can</em> create new variables (by calling functions — their parameters are new variables), and you <em>must</em> use recursion heavily (since you can't have traditional loops without changing a counter variable).</div>
+    <div class="quiz-explain" id="q4-wrong">Not quite. The key restriction is that you cannot <em>change</em> an existing variable's value. Things like <code>c = a + b; c = c + 1;</code> are forbidden because the second line changes <code>c</code>. You can still call functions, define new variables through function parameters, and use recursion (in fact, recursion replaces loops).</div>
+  </div>
+
+  <h3>Axis 2: Execution — Compiled vs Interpreted</h3>
+  <h4 id="ch3-compiled">How Your Code Gets Executed</h4>
+
+  <div class="concept-box">
+    <div class="label">Definition: Compiled Language</div>
+    <p>A <strong>compiled language</strong> is one where the source code is translated into machine code <em>before</em> the program runs. The compiler reads your entire program, checks for errors, optimizes it, and produces an executable binary. The process is: write → compile → run.</p>
+    <p>Think of it like translating a book into another language once — then anyone can read the translated version forever, without needing the translator.</p>
+  </div>
+
+  <div class="concept-box">
+    <div class="label">Definition: Interpreted Language</div>
+    <p>An <strong>interpreted language</strong> is one where an interpreter reads and executes your code as the program runs. There's no separate compilation step — you just write and run. The process is: write → run.</p>
+    <p>Think of it like having a simultaneous translator at a meeting — they translate each sentence as it's spoken, which is slower but more flexible.</p>
+  </div>
+
+  <table class="comp-table">
+    <tr><th>Property</th><th>Compiled</th><th>Interpreted</th></tr>
+    <tr><td>When is code translated?</td><td>Before running</td><td>While running</td></tr>
+    <tr><td>Binary executable?</td><td>Yes — after compilation</td><td>No</td></tr>
+    <tr><td>Runtime speed</td><td>Faster</td><td>Slower</td></tr>
+    <tr><td>Error detection</td><td>At compile time (before running)</td><td>At runtime (while running)</td></tr>
+    <tr><td>Changing code</td><td>Harder — must recompile</td><td>Easier — just edit and rerun</td></tr>
+  </table>
+
+  <p>These two axes combine. You can have imperative compiled languages (C, C++), imperative interpreted languages (Python, Perl), functional compiled languages (OCaml), functional interpreted languages (Lisp), and so on.</p>
+
+  <h4 id="ch3-oop">Axis 3: Object-Oriented vs Not</h4>
+  <p>A third dimension is whether a language is <strong>object-oriented</strong> (OOP). In OOP, programs are organized around "objects" that bundle data together with the functions that operate on that data.</p>
+
+  <div class="example-box">
+    <div class="label">Example: OOP vs Non-OOP</div>
+    <p>In an object-oriented language (like Java or C++), you define a <em>class</em> that encapsulates data and behavior:</p>
+    <pre><span class="cmt">// Object-oriented: data and functions live together</span>
+<span class="kw">class</span> <span class="typ">BankAccount</span> {
+    <span class="typ">int</span> balance;
+    <span class="typ">void</span> <span class="fn">deposit</span>(<span class="typ">int</span> amount) { balance += amount; }
+    <span class="typ">void</span> <span class="fn">withdraw</span>(<span class="typ">int</span> amount) { balance -= amount; }
+};
+<span class="cmt">// Only these functions can touch 'balance' — encapsulation!</span></pre>
+    <p>In a non-OOP language (like C), you use separate structs and functions:</p>
+    <pre><span class="cmt">// Non-OOP: data and functions are separate</span>
+<span class="kw">struct</span> <span class="typ">BankAccount</span> { <span class="typ">int</span> balance; };
+
+<span class="cmt">// Anyone can write a function that modifies the struct!</span>
+<span class="typ">void</span> <span class="fn">deposit</span>(<span class="kw">struct</span> <span class="typ">BankAccount</span>* acc, <span class="typ">int</span> amount) {
+    acc->balance += amount;
+}</pre>
+    <p>The OOP version provides <strong>encapsulation</strong> — only the class's own methods can access the data, which prevents bugs and enforces rules. The compiler can verify these access rules statically.</p>
+  </div>
+</div>
+
+<hr class="sep">
+
+<!-- ════════════════════ CHAPTER 4 ════════════════════ -->
+<div class="chapter" id="ch4">
+  <div class="chapter-num">Part 4</div>
+  <h2>Why Functional Programming?</h2>
+  <p class="chapter-intro">Functional programming might seem like tying one arm behind your back — giving up assignment statements and loops. So why would anyone do it? There are two powerful motivations: clarity and parallelizability.</p>
+
+  <h3 id="ch4-why">Motivation 1: Clarity</h3>
+  <p>Mathematicians have been working with functions (in the modern sense) since at least the 17th century — that's roughly 300-400 years of experience reasoning about functions. Mathematical functions are extremely well understood. Functional programming builds on this centuries of experience rather than reinventing the wheel.</p>
+
+  <p>Consider the first thing taught in introductory programming:</p>
+
+  <div class="example-box">
+    <div class="label">Example: The Mathematician's Objection</div>
+    <pre><span class="typ">int</span> i = <span class="num">1</span>;
+i = i + <span class="num">1</span>;  <span class="cmt">// In CSS 31, this is "increment i"</span></pre>
+    <p>Show this to a mathematician and they'll say: "This is nonsense! There's no integer <code>i</code> such that <code>i = i + 1</code>. This is an unsolvable equation."</p>
+    <p>And yet, this is literally the first thing we teach beginning programmers. The <code>=</code> sign doesn't mean mathematical equality — it means "take the current value of <code>i</code>, add 1, and store the result back into <code>i</code>." Functional programming says: let's stop confusing people. Let's use <code>=</code> to mean what mathematicians have always meant by it.</p>
+  </div>
+
+  <h3 id="ch4-vonneumann">Motivation 2: Escaping the Von Neumann Bottleneck</h3>
+
+  <div class="concept-box">
+    <div class="label">Definition: The Von Neumann Bottleneck</div>
+    <p>John von Neumann, one of the greatest mathematicians of the 20th century, designed the basic architecture used by virtually all modern computers: a CPU connected to RAM through a bus. The CPU can only ask for one word at a time and get one word back. This is the bottleneck — no matter how many processors you have, they all have to go through this narrow channel to access memory.</p>
+  </div>
+
+  <p>The problem with imperative programming is that variables can change at any time. If two parts of your program use the same variable <code>i</code>, and one part changes <code>i</code>, the other part needs to know about it. This means the two parts can't easily run in parallel — they need to constantly communicate about shared state.</p>
+
+  <div class="example-box">
+    <div class="label">Example: Why Mutable Variables Kill Parallelism</div>
+    <pre><span class="cmt">// Imperative code with mutable variable i</span>
+<span class="cmt">// ... some code using i ...</span>
+i = <span class="num">5</span>;
+<span class="cmt">// ... more code using i ...</span>
+i = <span class="num">10</span>;
+<span class="cmt">// ... even more code using i ...</span></pre>
+    <p>You want to split this across two processors. But Processor 1 might change <code>i</code>, and Processor 2 needs to see the update. Now you need communication between processors, and communication is expensive.</p>
+    <p>In a functional language, <code>i</code> can never change. If Processor 1 and Processor 2 both see <code>i</code>, they know it has the same value — forever. No communication needed. They can run in parallel without worrying about each other.</p>
+  </div>
+
+  <h3 id="ch4-math">Mathematical Functions: The Foundation</h3>
+  <p>In mathematics, a function is a mapping from a <strong>domain</strong> (input) to a <strong>range</strong> (output). If you think of it as a set of ordered pairs (input, output), the key rule is: no two pairs have the same input with different outputs. Once you know the input, the output is determined.</p>
+
+  <p>A <strong>partial function</strong> is one that isn't defined for all possible inputs. For example, the function f(x) = 1/x is a partial function from integers to reals — it's not defined when x is 0.</p>
+
+  <h3 id="ch4-higher">Higher-Order Functions (Functional Forms)</h3>
+
+  <div class="concept-box">
+    <div class="label">Definition: Higher-Order Function (Functional Form)</div>
+    <p>A <strong>higher-order function</strong> (also called a <em>functional form</em>) is a function where at least one of its arguments is itself a function, or it returns a function. This is like a "function of functions."</p>
+  </div>
+
+  <div class="example-box">
+    <div class="label">Example: Integration as a Higher-Order Function</div>
+    <p>The definite integral from calculus is a familiar higher-order function:</p>
+    <pre><span class="cmt">// The integral ∫₀¹⁰⁰ f(x) dx can be thought of as:</span>
+<span class="fn">integral</span>(f, <span class="num">0</span>, <span class="num">100</span>)
+<span class="cmt">// Three arguments: f (a FUNCTION), 0 (a number), 100 (a number)</span>
+<span class="cmt">// The first argument is a function, not a number!</span></pre>
+    <p>The integral takes a function <code>f</code> and two numbers, and returns a number (the area under the curve). It operates <em>on</em> a function — it's a function about functions.</p>
+  </div>
+
+  <div class="why-box">
+    <div class="label">Why this matters for the course</div>
+    <p>In OCaml, almost every function you write for homework will be a higher-order function. This is normal in functional programming — OCaml programmers use them constantly and don't think twice about it. In C++, higher-order functions are technically possible but painful to use (partly because of memory management complications). OCaml makes them natural and easy.</p>
+  </div>
+
+  <h3 id="ch4-ref">Referential Transparency</h3>
+
+  <div class="concept-box">
+    <div class="label">Definition: Referential Transparency</div>
+    <p><strong>Referential transparency</strong> means that when you look at an identifier (variable name) in your code, you can easily determine its value by looking at where it was defined. The value is "transparent" to you — you don't have to trace through the program's execution to figure out what it might be at any given point.</p>
+  </div>
+
+  <p>In an imperative language, the variable <code>i</code> might have different values every time you encounter it in the code. In a functional language, since you can't change variables, every occurrence of <code>i</code> in the same scope has the <em>same</em> value. The compiler can use this for optimization, and — perhaps more importantly — the programmer can use this to read and understand code more easily.</p>
+
+  <p>Since functional programs don't modify variables, they have no "side effects" — calling a function doesn't change any state outside the function. The only thing a function does is compute and return a value.</p>
+</div>
+
+<hr class="sep">
+
+<!-- ════════════════════ CHAPTER 5 ════════════════════ -->
+<div class="chapter" id="ch5">
+  <div class="chapter-num">Part 5</div>
+  <h2>OCaml: Your First Functional Language</h2>
+  <p class="chapter-intro">Now we get hands-on. OCaml is the functional language you'll be using for homework. Let's learn it from the ground up, starting with its core properties and building up to defining and calling functions.</p>
+
+  <h3 id="ch5-props">Key Properties of OCaml</h3>
+  <p>Before writing any code, let's understand what makes OCaml distinctive:</p>
+
+  <p><strong>1. Static Type Checking</strong> — Before your program runs, OCaml figures out the type of <em>every</em> expression and makes sure everything is consistent. If there's a type mismatch, the program doesn't run at all. This catches bugs early and prevents surprise crashes at runtime.</p>
+
+  <p><strong>2. Type Inference</strong> — Even though OCaml checks all types statically, you <em>almost never have to write types yourself</em>. OCaml figures them out automatically from how you use things. In C++, you write <code>int x = 5;</code> and must declare the type. In OCaml, you write <code>let x = 5</code> and OCaml infers that <code>x</code> is an <code>int</code>. This idea was so popular that C++ eventually adopted it with the <code>auto</code> keyword — stolen directly from ML (OCaml's ancestor).</p>
+
+  <p><strong>3. Automatic Memory Management (Garbage Collection)</strong> — You never call <code>malloc</code>, <code>free</code>, <code>new</code>, or <code>delete</code>. You can allocate objects freely, and the system will reclaim memory automatically when it's no longer needed. This eliminates two of the most common bug categories in C/C++: use-after-free (using memory that's been freed) and memory leaks (forgetting to free memory).</p>
+
+  <p><strong>4. Good Support for Higher-Order Functions</strong> — Functions that take other functions as arguments, or return functions, are natural and easy in OCaml. This is the bread and butter of functional programming.</p>
+
+  <h3 id="ch5-ifelse">If/Else Expressions</h3>
+
+  <p>In OCaml, there are no "statements" — everything is an <strong>expression</strong> that produces a value. Even <code>if/else</code> is an expression that returns a value, not a statement that controls flow.</p>
+
+  <div class="example-box">
+    <div class="label">Example: Basic If/Else</div>
+    <pre><span class="cmt">(* This is an expression that evaluates to a string *)</span>
+# (<span class="kw">if</span> <span class="num">10</span> < <span class="num">11</span> <span class="kw">then</span> <span class="str">"a"</span> <span class="kw">else</span> <span class="str">"b"</span>);;
+- : <span class="typ">string</span> = <span class="str">"a"</span>
+
+<span class="cmt">(* Since 10 IS less than 11, the expression evaluates to "a" *)</span>
+<span class="cmt">(* OCaml tells us the TYPE (string) and the VALUE ("a") *)</span></pre>
+    <p>The parentheses are optional — they don't change the meaning. You can always put parentheses around an expression in OCaml.</p>
+  </div>
+
+  <p>Because OCaml is statically type-checked, the <code>then</code> and <code>else</code> branches <strong>must have the same type</strong>:</p>
+
+  <div class="warning-box">
+    <div class="label">Type Error Example</div>
+    <pre><span class="cmt">(* This produces an ERROR! *)</span>
+# (<span class="kw">if</span> <span class="num">10</span> < <span class="num">11</span> <span class="kw">then</span> <span class="str">"a"</span> <span class="kw">else</span> <span class="num">2</span>);;
+<span class="cmt">(* ERROR: "then" branch is string, "else" branch is int *)</span>
+<span class="cmt">(* Even though the else branch would never execute, OCaml rejects this *)</span></pre>
+    <p>This is an important principle: OCaml is <strong>conservative</strong>. It rejects programs that <em>might</em> have type errors, even if a particular execution path would never trigger the error. This is the price of static type safety.</p>
+  </div>
+
+  <div class="quiz" id="q5">
+    <div class="quiz-header">Check Your Understanding</div>
+    <p>What will OCaml do with this expression: <code>if true then 5 else 10</code>?</p>
+    <div class="quiz-options">
+      <button class="quiz-opt" onclick="checkQuiz('q5', this, true)">Accept it and return 5, with type int</button>
+      <button class="quiz-opt" onclick="checkQuiz('q5', this, false)">Reject it because "if" is a statement, not an expression</button>
+      <button class="quiz-opt" onclick="checkQuiz('q5', this, false)">Reject it because both branches return the same type</button>
+    </div>
+    <div class="quiz-explain" id="q5-right">Correct! Both branches have type <code>int</code>, so the types match. The condition is <code>true</code>, so the <code>then</code> branch is taken and the result is 5. OCaml reports: <code>- : int = 5</code>.</div>
+    <div class="quiz-explain" id="q5-wrong">Not quite. In OCaml, <code>if</code> IS an expression (not a statement) that returns a value. Both branches return <code>int</code>, so the types match. The result is <code>5</code> with type <code>int</code>.</div>
+  </div>
+
+  <h3 id="ch5-tuples">Tuples</h3>
+  <p>A <strong>tuple</strong> is a collection of values that can have <em>different types</em>. Think of it as a fixed-size container where each slot can hold a different kind of value.</p>
+
+  <div class="example-box">
+    <div class="label">Example: Creating a Tuple</div>
+    <pre><span class="cmt">(* A 3-tuple containing an int, a string, and a bool *)</span>
+# (<span class="num">1</span>, <span class="str">"ok"</span>, <span class="kw">true</span>);;
+- : <span class="typ">int</span> * <span class="typ">string</span> * <span class="typ">bool</span> = (<span class="num">1</span>, <span class="str">"ok"</span>, <span class="kw">true</span>)
+
+<span class="cmt">(* The * symbol means "cross product" — like mathematical notation *)</span>
+<span class="cmt">(* int * string * bool = "an int AND a string AND a bool" *)</span></pre>
+    <p>Internally, a tuple is stored as a block of memory with slots for each element, accessed through a pointer. Since OCaml is functional, the contents of a tuple <em>can never change</em> — if you want a tuple with different values, you build a new one.</p>
+  </div>
+
+  <h3 id="ch5-lists">Lists</h3>
+  <p>A <strong>list</strong> is a collection of values that must all be the <em>same type</em> (homogeneous). Unlike tuples, lists can be any length.</p>
+
+  <div class="example-box">
+    <div class="label">Example: Lists</div>
+    <pre><span class="cmt">(* A list of integers — this works *)</span>
+# [<span class="num">1</span>; <span class="num">19</span>; <span class="num">3</span>-<span class="num">27</span>];;
+- : <span class="typ">int list</span> = [<span class="num">1</span>; <span class="num">19</span>; <span class="num">-24</span>]
+
+<span class="cmt">(* A mixed list — this DOESN'T work *)</span>
+# [<span class="num">1</span>; <span class="str">"a"</span>; <span class="kw">true</span>];;
+<span class="cmt">(* ERROR! All elements must be the same type *)</span></pre>
+  </div>
+
+  <div class="why-box">
+    <div class="label">Why lists are homogeneous but tuples are heterogeneous</div>
+    <p>It comes down to the type system. A list type is written as <code>int list</code> — the type specifies what kind of elements it contains. Since there's only <em>one</em> element type, all elements must match it. But because you only specify one type, the list can have <em>any length</em>.</p>
+    <p>A tuple type is written as <code>int * string * bool</code> — each position has its own type. This lets you mix types, but the number of elements is fixed by the type.</p>
+    <p>It's a tradeoff: <strong>lists</strong> give you flexible length but require uniform types. <strong>Tuples</strong> give you flexible types but require fixed length.</p>
+  </div>
+
+  <h4>List Operators</h4>
+
+  <p>OCaml gives you two operators for building lists:</p>
+
+  <p><strong>The cons operator <code>::</code></strong> — Adds an element to the <em>front</em> of a list:</p>
+  <pre><span class="cmt">(* value :: list = new list with value at the front *)</span>
+# <span class="num">1</span> :: [<span class="num">2</span>; <span class="num">5</span>];;
+- : <span class="typ">int list</span> = [<span class="num">1</span>; <span class="num">2</span>; <span class="num">5</span>]
+
+<span class="cmt">(* The left side must be an element, the right side must be a list *)</span>
+<span class="cmt">(* Their types must be compatible *)</span></pre>
+
+  <p><strong>The concatenation operator <code>@</code></strong> — Joins two lists together:</p>
+  <pre><span class="cmt">(* list @ list = concatenated list *)</span>
+# [<span class="num">1</span>; <span class="num">7</span>] @ [<span class="num">2</span>; <span class="num">5</span>];;
+- : <span class="typ">int list</span> = [<span class="num">1</span>; <span class="num">7</span>; <span class="num">2</span>; <span class="num">5</span>]
+
+<span class="cmt">(* Both sides must be lists of the same type *)</span></pre>
+
+  <div class="quiz" id="q6">
+    <div class="quiz-header">Check Your Understanding</div>
+    <p>What is the result of <code>3 :: [1; 2] @ [4; 5]</code>?</p>
+    <div class="quiz-options">
+      <button class="quiz-opt" onclick="checkQuiz('q6', this, false)">[3; 1; 2; 4; 5] — cons first, then concat</button>
+      <button class="quiz-opt" onclick="checkQuiz('q6', this, true)">[3; 1; 2; 4; 5] — but because concat happens first, then cons</button>
+      <button class="quiz-opt" onclick="checkQuiz('q6', this, false)">Error — you can't mix :: and @</button>
+    </div>
+    <div class="quiz-explain" id="q6-right">Correct! The <code>@</code> operator has lower precedence than <code>::</code>, but actually <code>::</code> is right-associative and this expression is parsed as <code>3 :: ([1; 2] @ [4; 5])</code>, which first concatenates to get <code>[1; 2; 4; 5]</code>, then prepends 3 to get <code>[3; 1; 2; 4; 5]</code>. The result is the same either way in this case.</div>
+    <div class="quiz-explain" id="q6-wrong">The result is actually <code>[3; 1; 2; 4; 5]</code>. The <code>@</code> concatenation produces <code>[1; 2; 4; 5]</code>, and then <code>::</code> prepends 3 to the front.</div>
+  </div>
+
+  <h3 id="ch5-funcs">Defining Functions</h3>
+  <p>Now we get to the heart of OCaml. Since this is a <em>functional</em> language, functions are the most important concept.</p>
+
+  <div class="example-box">
+    <div class="label">Example: Your First OCaml Function</div>
+    <pre><span class="cmt">(* Define a function f that takes x and returns x + 1 *)</span>
+# <span class="kw">let</span> <span class="fn">f</span> x = x + <span class="num">1</span>;;
+<span class="kw">val</span> f : <span class="typ">int -> int</span> = &lt;fun&gt;
+
+<span class="cmt">(* Let's break this down: *)</span>
+<span class="cmt">(*   "let" = "I'm defining something"          *)</span>
+<span class="cmt">(*   "f" = the name of the function             *)</span>
+<span class="cmt">(*   "x" = the single argument                  *)</span>
+<span class="cmt">(*   "= x + 1" = the body (what it returns)     *)</span>
+
+<span class="cmt">(* OCaml responds: *)</span>
+<span class="cmt">(*   "val f" = "f is a value" (functions are values!) *)</span>
+<span class="cmt">(*   "int -> int" = "takes an int, returns an int"    *)</span>
+<span class="cmt">(*   "<fun>" = "this is compiled function code"        *)</span></pre>
+    <p>Notice: we never wrote any types! OCaml saw <code>x + 1</code>, knew that <code>+</code> works on integers, and inferred that <code>x</code> must be an <code>int</code> and the result must be an <code>int</code>. That's <strong>type inference</strong> in action.</p>
+  </div>
+
+  <p>The <code>-></code> symbol in the type <code>int -> int</code> is a <strong>type constructor</strong> that means "function from … to …". It's OCaml's way of writing the mathematical arrow ↦. Just like <code>*</code> in <code>int * string</code> means "product of" (a tuple), <code>-></code> means "function from … to …".</p>
+
+  <div class="example-box">
+    <div class="label">Example: A Function with Different Input/Output Types</div>
+    <pre><span class="cmt">(* A function that checks if x is negative *)</span>
+# <span class="kw">let</span> <span class="fn">g</span> x = x < <span class="num">0</span>;;
+<span class="kw">val</span> g : <span class="typ">int -> bool</span> = &lt;fun&gt;
+
+<span class="cmt">(* int -> bool = takes an int, returns a boolean *)</span></pre>
+  </div>
+
+  <p>You can also bind non-function values with <code>let</code>:</p>
+  <pre><span class="cmt">(* This is NOT a function — just a named value *)</span>
+# <span class="kw">let</span> foo = <span class="num">37</span> * <span class="num">37</span>;;
+<span class="kw">val</span> foo : <span class="typ">int</span> = <span class="num">1369</span></pre>
+
+  <h3 id="ch5-anon">Anonymous Functions</h3>
+  <p>Just like you can write an integer without giving it a name (<code>37 * 37</code> is a perfectly valid expression), you can write a <em>function</em> without giving it a name:</p>
+
+  <div class="concept-box">
+    <div class="label">Key Insight: Named Functions Are Syntactic Sugar</div>
+    <pre><span class="cmt">(* These two lines are EXACTLY equivalent: *)</span>
+# <span class="kw">let</span> <span class="fn">f</span> x = x + <span class="num">1</span>;;        <span class="cmt">(* The shorthand version *)</span>
+# <span class="kw">let</span> f = <span class="kw">fun</span> x -> x + <span class="num">1</span>;; <span class="cmt">(* What's really happening *)</span>
+
+<span class="cmt">(* "fun x -> x + 1" is an anonymous function: *)</span>
+<span class="cmt">(*   "fun" = "here's a function"              *)</span>
+<span class="cmt">(*   "x" = its argument                       *)</span>
+<span class="cmt">(*   "->" = "maps to" (produces)               *)</span>
+<span class="cmt">(*   "x + 1" = the result                     *)</span>
+<span class="cmt">(* Then "let f = ..." gives that function the name f *)</span></pre>
+    <p>The first form (<code>let f x = x + 1</code>) is <strong>syntactic sugar</strong> — a sweeter, easier-to-read version — for the second form. Under the hood, OCaml always creates an anonymous function and then binds it to a name.</p>
+  </div>
+
+  <h3 id="ch5-call">Calling Functions</h3>
+  <p>In OCaml, every function takes <strong>exactly one argument</strong>. No more, no less. The syntax for calling a function is the simplest possible:</p>
+
+  <div class="concept-box">
+    <div class="label">Function Call Syntax</div>
+    <pre><span class="cmt">(* To call function f with argument 12: *)</span>
+<span class="fn">f</span> <span class="num">12</span>
+
+<span class="cmt">(* That's it! No parentheses. No commas. *)</span>
+<span class="cmt">(* Just: function_name  argument *)</span>
+
+<span class="cmt">(* You CAN add parentheses if you want — same meaning: *)</span>
+<span class="fn">f</span>(<span class="num">12</span>)     <span class="cmt">(* works, but not idiomatic OCaml *)</span>
+(<span class="fn">f</span>)(<span class="num">12</span>)   <span class="cmt">(* also works, also not idiomatic *)</span>
+(<span class="fn">f</span>) <span class="num">12</span>    <span class="cmt">(* also works *)</span></pre>
+    <p>The parenthesized versions all work because parenthesizing a subexpression doesn't change its meaning. But idiomatic OCaml skips the parentheses — just write <code>f 12</code>.</p>
+  </div>
+
+  <div class="why-box">
+    <div class="label">Why so simple?</div>
+    <p>This is a <em>functional</em> programming language. Functions are the most important thing. You call them constantly. So OCaml gives you the absolute simplest syntax possible for the thing you do most often. It's the same design philosophy as C putting <code>*</code> in front of pointers — make the most common operation as easy to write as possible.</p>
+  </div>
+
+  <h3 id="ch5-multi">Functions with Multiple Arguments</h3>
+  <p>OCaml functions take exactly one argument. So how do you write a function that needs two inputs? There are two approaches:</p>
+
+  <h4>Approach 1: Use a Tuple</h4>
+  <p>Pack both arguments into a single tuple, and the function takes that one tuple as its single argument:</p>
+
+  <div class="example-box">
+    <div class="label">Example: Multi-Argument via Tuple</div>
+    <pre><span class="cmt">(* cons takes a TUPLE of (element, list) as its one argument *)</span>
+# <span class="kw">let</span> <span class="fn">cons</span>(h, t) = h :: t;;
+<span class="kw">val</span> cons : <span class="typ">'a * 'a list -> 'a list</span> = &lt;fun&gt;
+
+<span class="cmt">(* Type: 'a * 'a list -> 'a list *)</span>
+<span class="cmt">(*   'a = some type (polymorphic — works with any type) *)</span>
+<span class="cmt">(*   'a * 'a list = a tuple of (element, list)           *)</span>
+<span class="cmt">(*   -> 'a list = returns a list                         *)</span>
+<span class="cmt">(*   Note: * has higher precedence than ->                *)</span>
+<span class="cmt">(*   So it's really: ('a * 'a list) -> 'a list            *)</span>
+
+<span class="cmt">(* Call it with a tuple: *)</span>
+# cons(<span class="num">3</span>, [<span class="num">5</span>; <span class="num">7</span>]);;
+- : <span class="typ">int list</span> = [<span class="num">3</span>; <span class="num">5</span>; <span class="num">7</span>]</pre>
+  </div>
+
+  <h3 id="ch5-match">Pattern Matching</h3>
+  <p>Before we look at the second approach to multiple arguments, we need to understand <strong>pattern matching</strong> — one of OCaml's most powerful features.</p>
+
+  <div class="concept-box">
+    <div class="label">Definition: Match Expression</div>
+    <p>A <code>match</code> expression looks at a value, checks its structure against a series of patterns, and evaluates the expression associated with the first matching pattern.</p>
+    <pre><span class="kw">match</span> expression <span class="kw">with</span>
+| pattern1 -> result1
+| pattern2 -> result2
+| pattern3 -> result3</pre>
+    <p>Semantics: evaluate the expression. Try each pattern from top to bottom. When you find the first pattern that matches, bind the pattern's variables to the corresponding parts of the value, then evaluate and return the associated result.</p>
+  </div>
+
+  <p>Here's how the <code>cons</code> function actually works under the hood — the shorthand <code>let cons(h, t) = h :: t</code> is syntactic sugar for:</p>
+
+  <div class="example-box">
+    <div class="label">Example: Pattern Matching Under the Hood</div>
+    <pre><span class="kw">let</span> cons = <span class="kw">fun</span> x ->
+    <span class="kw">match</span> x <span class="kw">with</span>
+    | (h, t) -> h :: t
+
+<span class="cmt">(* Step by step: *)</span>
+<span class="cmt">(* 1. "fun x ->" creates a function with one argument x *)</span>
+<span class="cmt">(* 2. "match x with" says "look at x's structure" *)</span>
+<span class="cmt">(* 3. "| (h, t)" is a pattern that matches a 2-tuple *)</span>
+<span class="cmt">(*    - h is bound to the first element *)</span>
+<span class="cmt">(*    - t is bound to the second element *)</span>
+<span class="cmt">(* 4. "-> h :: t" is evaluated with those bindings *)</span></pre>
+    <p>A <strong>pattern</strong> describes the "shape" of a value: <code>(h, t)</code> matches a pair, <code>[]</code> matches an empty list, <code>x :: xs</code> matches a non-empty list (head <code>x</code>, tail <code>xs</code>).</p>
+    <p>This is important because OCaml doesn't use array indexing, null checks, or long if/elif/else chains the way imperative languages do. Instead, you use <code>match</code> to decompose data structures, and the compiler can verify that you've handled all possible cases.</p>
+  </div>
+
+  <h3 id="ch5-curry">Approach 2: Currying (The OCaml Way)</h3>
+  <p>The tuple approach works, but it's not the idiomatic OCaml style. The preferred approach is <strong>currying</strong>.</p>
+
+  <div class="concept-box">
+    <div class="label">Definition: Currying</div>
+    <p><strong>Currying</strong> is a technique where a function that conceptually takes multiple arguments is written as a chain of functions, each taking one argument and returning the next function in the chain.</p>
+  </div>
+
+  <div class="example-box">
+    <div class="label">Example: Curried cons (The "OCaml Way")</div>
+    <pre><span class="cmt">(* The idiomatic OCaml version — no parentheses, no commas *)</span>
+# <span class="kw">let</span> <span class="fn">ocons</span> h t = h :: t;;
+<span class="kw">val</span> ocons : <span class="typ">'a -> 'a list -> 'a list</span> = &lt;fun&gt;
+
+<span class="cmt">(* Compare the types: *)</span>
+<span class="cmt">(*   Tuple version:   'a * 'a list -> 'a list   (one function, one tuple arg) *)</span>
+<span class="cmt">(*   Curried version: 'a -> 'a list -> 'a list  (chain of one-arg functions) *)</span>
+
+<span class="cmt">(* The -> arrow is RIGHT-ASSOCIATIVE, so this means: *)</span>
+<span class="cmt">(*   'a -> ('a list -> 'a list) *)</span>
+<span class="cmt">(* "takes an 'a, returns a FUNCTION that takes an 'a list *)</span>
+<span class="cmt">(*  and returns an 'a list" *)</span></pre>
+  </div>
+
+  <p>Let's unpack this carefully. Under the hood, the curried version expands to:</p>
+
+  <pre><span class="cmt">(* What "let ocons h t = h :: t" really means: *)</span>
+<span class="kw">let</span> ocons = <span class="kw">fun</span> h -> <span class="kw">fun</span> t -> h :: t
+
+<span class="cmt">(* Step by step: *)</span>
+<span class="cmt">(* 1. "fun h ->" creates a function that takes h         *)</span>
+<span class="cmt">(* 2. It returns ANOTHER function: "fun t -> h :: t"     *)</span>
+<span class="cmt">(* 3. That inner function takes t, and uses BOTH h and t *)</span>
+<span class="cmt">(*    to compute h :: t                                   *)</span></pre>
+
+  <p>When you call <code>ocons 3 [5; 7]</code>, here's what happens:</p>
+
+  <div class="example-box">
+    <div class="label">Example: Calling a Curried Function</div>
+    <pre># ocons <span class="num">3</span> [<span class="num">5</span>; <span class="num">7</span>];;
+
+<span class="cmt">(* Step 1: "ocons 3" *)</span>
+<span class="cmt">(*   Calls ocons with h = 3 *)</span>
+<span class="cmt">(*   Returns a NEW function: fun t -> 3 :: t *)</span>
+<span class="cmt">(*   This new function "remembers" that h is 3 *)</span>
+
+<span class="cmt">(* Step 2: Apply that returned function to [5; 7] *)</span>
+<span class="cmt">(*   t = [5; 7] *)</span>
+<span class="cmt">(*   Computes 3 :: [5; 7] *)</span>
+
+<span class="cmt">(* Result: *)</span>
+- : <span class="typ">int list</span> = [<span class="num">3</span>; <span class="num">5</span>; <span class="num">7</span>]</pre>
+  </div>
+
+  <div class="why-box">
+    <div class="label">Why currying is preferred over tuples</div>
+    <p>Currying gives you something tuples don't: <strong>partial application</strong>. With currying, you can supply just some of the arguments and get back a new, specialized function. For example, <code>ocons 0</code> gives you a function that prepends 0 to any list. This is extremely useful in functional programming, where you frequently want to create specialized versions of general functions.</p>
+    <p>With the tuple version, you must always provide all arguments at once — <code>cons(0, some_list)</code>. You can't partially apply it.</p>
+  </div>
+
+  <div class="quiz" id="q7">
+    <div class="quiz-header">Check Your Understanding</div>
+    <p>Given <code>let add x y = x + y</code>, what is the type of <code>add 5</code>?</p>
+    <div class="quiz-options">
+      <button class="quiz-opt" onclick="checkQuiz('q7', this, false)">int — it returns 5</button>
+      <button class="quiz-opt" onclick="checkQuiz('q7', this, true)">int -> int — it returns a function that adds 5 to its argument</button>
+      <button class="quiz-opt" onclick="checkQuiz('q7', this, false)">Error — you must provide both arguments</button>
+    </div>
+    <div class="quiz-explain" id="q7-right">Correct! <code>add</code> has type <code>int -> int -> int</code>, which means <code>int -> (int -> int)</code>. Applying it to 5 gives you a function of type <code>int -> int</code> — specifically, a function that takes a number and adds 5 to it. This is partial application in action!</div>
+    <div class="quiz-explain" id="q7-wrong">Not quite. Because of currying, <code>add</code> has type <code>int -> (int -> int)</code>. Giving it one argument (<code>add 5</code>) returns a <em>function</em> of type <code>int -> int</code> — one that adds 5 to whatever you give it. This is called partial application.</div>
+  </div>
+
+  <div class="quiz" id="q8">
+    <div class="quiz-header">Final Review</div>
+    <p>Which of the following best describes what "referential transparency" means?</p>
+    <div class="quiz-options">
+      <button class="quiz-opt" onclick="checkQuiz('q8', this, false)">Functions must always return the same type</button>
+      <button class="quiz-opt" onclick="checkQuiz('q8', this, true)">Every occurrence of a variable in a scope has the same value — you can tell what it is by looking at its definition</button>
+      <button class="quiz-opt" onclick="checkQuiz('q8', this, false)">All variables must be declared with explicit types</button>
+      <button class="quiz-opt" onclick="checkQuiz('q8', this, false)">Functions can see all variables in the program</button>
+    </div>
+    <div class="quiz-explain" id="q8-right">Correct! Referential transparency means a variable's value is always the same within its scope. You don't need to trace through program execution to figure out what value a variable holds — just look at where it was defined. This is possible because functional languages don't allow you to change variables after they're defined.</div>
+    <div class="quiz-explain" id="q8-wrong">Not quite. Referential transparency means that every occurrence of a variable in a scope has the same value, and you can determine that value just by looking at where the variable was defined. This is a direct consequence of variables being immutable in functional languages.</div>
+  </div>
+
+  <div class="connection-box" style="margin-top: 3rem;">
+    <div class="label">The Big Picture: How It All Connects</div>
+    <p>Everything in this lecture connects: <strong>hardware constraints</strong> (Part 2) drove language <strong>design goals</strong> (Part 1), which led to different positions in the <strong>design space</strong> (Part 3). Functional programming (Part 4) is one paradigm in that space, motivated by the goals of clarity and parallelism. OCaml (Part 5) is a specific language that makes functional programming practical — with static type checking, type inference, garbage collection, and first-class support for higher-order functions.</p>
+    <p>In the coming assignments, you'll use OCaml's functional subset — no assignment statements, no loops. Just functions, recursion, and pattern matching. It'll feel like learning to write with your non-dominant hand at first, but it will teach you a fundamentally different way of thinking about computation.</p>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+
+</body>
+</html>

@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CS 131 – Lecture 8: Parsing & Java</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,400&family=Source+Code+Pro:wght@400;600&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f5f0;
+  --bg-dark: #eee8df;
+  --text: #2c2418;
+  --text-muted: #7a6e5d;
+  --accent: #c44b25;
+  --accent-light: #f4e0d8;
+  --accent2: #1a6b5a;
+  --accent2-light: #d6ece7;
+  --accent3: #3d5a99;
+  --accent3-light: #dde4f0;
+  --code-bg: #2c2418;
+  --code-text: #f0e6d3;
+  --border: #d4c9b8;
+  --card-bg: #ffffff;
+  --success: #2d8a56;
+  --error: #c44b25;
+  --warning: #c49125;
+  --shadow: 0 2px 12px rgba(44,36,24,0.08);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.72;
+  font-size: 17px;
+}
+
+/* ── NAV ── */
+.nav {
+  position: fixed; top:0; left:0; width: 280px; height:100vh;
+  background: var(--code-bg);
+  color: var(--code-text);
+  overflow-y: auto;
+  z-index: 100;
+  padding: 28px 0;
+  border-right: 3px solid var(--accent);
+  transition: transform .3s ease;
+}
+.nav.collapsed { transform: translateX(-280px); }
+.nav-toggle {
+  position: fixed; top:16px; left:16px; z-index:200;
+  background: var(--code-bg); color: var(--code-text);
+  border: none; border-radius: 8px; padding: 8px 12px;
+  cursor: pointer; font-size: 18px;
+  display: none;
+}
+.nav h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 15px; font-weight: 700;
+  padding: 0 24px 16px;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+  margin-bottom: 12px;
+  color: var(--accent);
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+.nav-section {
+  padding: 6px 24px;
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: rgba(240,230,211,.4);
+  margin-top: 16px;
+}
+.nav a {
+  display: block;
+  padding: 7px 24px 7px 32px;
+  color: rgba(240,230,211,.75);
+  text-decoration: none;
+  font-size: 13.5px;
+  line-height: 1.5;
+  border-left: 3px solid transparent;
+  transition: all .15s;
+}
+.nav a:hover, .nav a.active {
+  color: #fff;
+  background: rgba(196,75,37,.15);
+  border-left-color: var(--accent);
+}
+
+/* ── MAIN ── */
+main {
+  margin-left: 280px;
+  max-width: 820px;
+  padding: 48px 48px 120px;
+}
+
+/* ── TYPOGRAPHY ── */
+h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 44px; font-weight: 700;
+  line-height: 1.15;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+.subtitle {
+  font-size: 18px; color: var(--text-muted);
+  margin-bottom: 48px; max-width: 560px;
+}
+h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 30px; font-weight: 700;
+  margin: 64px 0 8px;
+  padding-top: 32px;
+  border-top: 2px solid var(--border);
+  color: var(--text);
+}
+h2:first-of-type { border-top: none; margin-top: 0; }
+h3 {
+  font-family: 'Fraunces', serif;
+  font-size: 22px; font-weight: 500;
+  margin: 40px 0 8px;
+  color: var(--accent);
+}
+h4 {
+  font-family: 'Fraunces', serif;
+  font-size: 18px; font-weight: 500;
+  margin: 28px 0 6px;
+  color: var(--accent2);
+}
+p { margin-bottom: 16px; }
+
+/* ── SPECIAL BLOCKS ── */
+.def-box {
+  background: var(--card-bg);
+  border-left: 4px solid var(--accent);
+  padding: 20px 24px;
+  margin: 24px 0;
+  border-radius: 0 10px 10px 0;
+  box-shadow: var(--shadow);
+}
+.def-box .label {
+  font-family: 'Fraunces', serif;
+  font-weight: 700; font-size: 14px;
+  text-transform: uppercase; letter-spacing: 1px;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.insight-box {
+  background: var(--accent2-light);
+  border-left: 4px solid var(--accent2);
+  padding: 20px 24px;
+  margin: 24px 0;
+  border-radius: 0 10px 10px 0;
+}
+.insight-box .label {
+  font-family: 'Fraunces', serif;
+  font-weight: 700; font-size: 14px;
+  text-transform: uppercase; letter-spacing: 1px;
+  color: var(--accent2);
+  margin-bottom: 6px;
+}
+
+.bigpic-box {
+  background: var(--accent3-light);
+  border-left: 4px solid var(--accent3);
+  padding: 20px 24px;
+  margin: 24px 0;
+  border-radius: 0 10px 10px 0;
+}
+.bigpic-box .label {
+  font-family: 'Fraunces', serif;
+  font-weight: 700; font-size: 14px;
+  text-transform: uppercase; letter-spacing: 1px;
+  color: var(--accent3);
+  margin-bottom: 6px;
+}
+
+.warn-box {
+  background: #fdf6e3;
+  border-left: 4px solid var(--warning);
+  padding: 20px 24px;
+  margin: 24px 0;
+  border-radius: 0 10px 10px 0;
+}
+.warn-box .label {
+  font-family: 'Fraunces', serif;
+  font-weight: 700; font-size: 14px;
+  text-transform: uppercase; letter-spacing: 1px;
+  color: var(--warning);
+  margin-bottom: 6px;
+}
+
+/* ── CODE ── */
+pre {
+  background: var(--code-bg);
+  color: var(--code-text);
+  font-family: 'Source Code Pro', monospace;
+  font-size: 14px;
+  padding: 20px 24px;
+  border-radius: 10px;
+  overflow-x: auto;
+  margin: 20px 0;
+  line-height: 1.65;
+  box-shadow: var(--shadow);
+}
+code {
+  font-family: 'Source Code Pro', monospace;
+  background: var(--bg-dark);
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 15px;
+}
+pre code { background: none; padding: 0; font-size: 14px; }
+.comment { color: #8a9a7b; }
+.keyword { color: #e8a46c; }
+.string { color: #a3d9a5; }
+.type-hl { color: #7cb7e8; }
+
+/* ── DIAGRAM ── */
+.diagram {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  margin: 24px 0;
+  text-align: center;
+  font-family: 'Source Code Pro', monospace;
+  font-size: 14px;
+  line-height: 1.8;
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+}
+.diagram .caption {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 12px;
+  font-style: italic;
+}
+
+/* ── QUIZ ── */
+.quiz {
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  margin: 32px 0;
+  box-shadow: var(--shadow);
+}
+.quiz .q-label {
+  font-family: 'Fraunces', serif;
+  font-size: 14px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1px;
+  color: var(--accent3);
+  margin-bottom: 10px;
+}
+.quiz p.question { font-weight: 500; margin-bottom: 14px; }
+.quiz .options { list-style: none; }
+.quiz .options li {
+  padding: 10px 16px;
+  margin: 6px 0;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all .15s;
+  font-size: 15px;
+}
+.quiz .options li:hover { border-color: var(--accent3); background: var(--accent3-light); }
+.quiz .options li.selected { border-color: var(--accent3); background: var(--accent3-light); font-weight: 600; }
+.quiz .options li.correct { border-color: var(--success); background: #e6f5ec; }
+.quiz .options li.incorrect { border-color: var(--error); background: #fde8e2; }
+.quiz .feedback {
+  margin-top: 14px;
+  padding: 14px 18px;
+  border-radius: 8px;
+  font-size: 15px;
+  line-height: 1.6;
+  display: none;
+}
+.quiz .feedback.show { display: block; }
+.quiz .feedback.correct-fb { background: #e6f5ec; color: #1a5c36; }
+.quiz .feedback.incorrect-fb { background: #fde8e2; color: #8b2d14; }
+.quiz button.check-btn {
+  margin-top: 12px;
+  background: var(--accent3);
+  color: #fff;
+  border: none;
+  padding: 10px 28px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+.quiz button.check-btn:hover { background: #2d4a80; }
+.quiz button.check-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── EXPAND ── */
+.expandable { margin: 20px 0; }
+.expand-trigger {
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 18px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15px;
+  display: flex; align-items: center; gap: 8px;
+  transition: background .15s;
+  width: 100%;
+  text-align: left;
+}
+.expand-trigger:hover { background: var(--border); }
+.expand-trigger .arrow { transition: transform .2s; }
+.expand-trigger.open .arrow { transform: rotate(90deg); }
+.expand-content {
+  display: none;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  background: var(--card-bg);
+}
+.expand-content.show { display: block; }
+
+/* ── COMPARISON TABLE ── */
+.comp-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 15px;
+}
+.comp-table th {
+  background: var(--code-bg);
+  color: var(--code-text);
+  padding: 12px 16px;
+  text-align: left;
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+}
+.comp-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.comp-table tr:nth-child(even) td { background: var(--bg-dark); }
+
+/* ── PROGRESS ── */
+.progress-bar {
+  position: fixed; top:0; left: 280px; right:0;
+  height: 4px; background: var(--bg-dark); z-index: 50;
+}
+.progress-fill {
+  height:100%; background: linear-gradient(90deg, var(--accent), var(--accent2));
+  width: 0; transition: width .1s;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .nav { transform: translateX(-280px); }
+  .nav.open { transform: translateX(0); }
+  .nav-toggle { display: block; }
+  main { margin-left: 0; padding: 48px 24px 120px; }
+  .progress-bar { left: 0; }
+  h1 { font-size: 32px; }
+  h2 { font-size: 24px; }
+}
+
+.analogy {
+  background: linear-gradient(135deg, #fef9f0, #fdf2e6);
+  border: 1px solid #e8d5b8;
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 20px 0;
+  font-style: italic;
+  position: relative;
+}
+.analogy::before {
+  content: '💡';
+  position: absolute;
+  top: -12px; left: 16px;
+  font-size: 20px;
+  background: var(--bg);
+  padding: 0 6px;
+  font-style: normal;
+}
+
+.step-through {
+  background: var(--card-bg);
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 24px 0;
+}
+.step-through .step-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 16px;
+}
+.step-through .step-counter {
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  color: var(--accent);
+}
+.step-through .step-nav button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-left: 6px;
+  font-size: 14px;
+}
+.step-through .step-nav button:disabled { opacity: .4; cursor: not-allowed; }
+.step-through .step-body { min-height: 60px; }
+
+</style>
+
+<style>
+/* === Printable Override === */
+
+/* Hide non-content elements */
+.sidebar, .sidebar-toggle, .progress-bar, .quiz, .quiz-btn { display: none !important; }
+
+/* Base typography */
+html { font-size: 12px !important; }
+body { line-height: 1.3 !important; }
+
+/* Layout */
+.main {
+  margin-left: 0 !important;
+  padding: 0.5rem !important;
+  max-width: 100% !important;
+}
+
+/* Headings */
+h1 { font-size: 1.4rem !important; }
+h2 { font-size: 1.15rem !important; margin-top: 0.5rem !important; }
+h3 { font-size: 1.05rem !important; margin-top: 0.4rem !important; }
+
+/* Spacing */
+p { margin-bottom: 0.25rem !important; }
+ul, ol { margin-bottom: 0.25rem !important; }
+li { margin-bottom: 0.1rem !important; }
+
+.callout {
+  padding: 0.3rem 0.5rem !important;
+  margin: 0.3rem 0 !important;
+}
+
+.code-block {
+  margin: 0.3rem 0 !important;
+  overflow: visible !important;
+}
+.code-block pre {
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+}
+.code-body, .code-block code {
+  padding: 0.3rem 0.5rem !important;
+  font-size: 0.85rem !important;
+}
+
+section, .section { margin-bottom: 0.3rem !important; }
+.subtitle { margin-bottom: 0.3rem !important; }
+
+/* Force expandables open and remove toggle UI */
+.expandable-content {
+  display: block !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+.expandable-arrow { display: none !important; }
+.expandable-header { cursor: default !important; }
+
+/* Kill animations */
+* {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+}
+</style>
+
+</head>
+<body>
+
+<button class="nav-toggle" onclick="document.querySelector('.nav').classList.toggle('open')">☰</button>
+
+<nav class="nav" id="nav">
+  <h2>Lecture 8</h2>
+  <div class="nav-section">Part I — Parsing</div>
+  <a href="#sec-why-parsing">Why Parsing Matters</a>
+  <a href="#sec-fsm">Finite State Machines</a>
+  <a href="#sec-cfg">Context-Free Grammars</a>
+  <a href="#sec-problems">Ambiguity in Parsing</a>
+  <a href="#sec-lookahead">Lookahead</a>
+  <a href="#sec-backtracking">Backtracking Parsers</a>
+  <a href="#sec-matchers">Matchers &amp; Acceptors</a>
+  <a href="#sec-disjunction">Disjunction (OR)</a>
+  <a href="#sec-concatenation">Concatenation</a>
+  <a href="#sec-left-recursion">Left vs Right Recursion</a>
+  <a href="#sec-quiz1">Check Your Understanding</a>
+  <div class="nav-section">Part II — Computing</div>
+  <a href="#sec-elcapitan">El Capitan</a>
+  <a href="#sec-benchmarks">FLOP Benchmarks</a>
+  <a href="#sec-energy">Energy &amp; Efficiency</a>
+  <a href="#sec-tradeoffs">Specialization vs Generality</a>
+  <div class="nav-section">Part III — Java</div>
+  <a href="#sec-java-why">Why Java Was Created</a>
+  <a href="#sec-smalltalk">SmallTalk &amp; Oak</a>
+  <a href="#sec-hotjava">Hot Java → Servers</a>
+  <a href="#sec-types">Java's Type System</a>
+  <a href="#sec-primitive">Primitive Types</a>
+  <a href="#sec-reference">Reference Types</a>
+  <a href="#sec-inheritance">Single Inheritance</a>
+  <a href="#sec-interfaces">Interfaces</a>
+  <a href="#sec-implementing">Implementing Interfaces</a>
+  <a href="#sec-abstract">Abstract Classes</a>
+  <a href="#sec-quiz2">Check Your Understanding</a>
+</nav>
+
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+<main>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h1>Parsing, Supercomputers &amp; Java</h1>
+<p class="subtitle">CS 131 — Lecture 8. An interactive guide that walks you through every concept from scratch, with examples and practice questions along the way.</p>
+
+<div class="bigpic-box">
+  <div class="label">🗺 The Big Picture</div>
+  <p>This lecture covers <strong>three intertwined themes</strong>:</p>
+  <p><strong>1. Parsing</strong> — How do we take a flat string of code and figure out its structure? This is the core problem your homework is solving.</p>
+  <p><strong>2. Hardware Realities</strong> — The world's fastest computer shows us that <em>how</em> you program something matters as much as how powerful the machine is. This motivates why programming language design choices matter.</p>
+  <p><strong>3. Java</strong> — A language designed to solve real engineering problems (portability, reliability, safety). Understanding <em>why</em> Java was built the way it was explains every design decision in the language.</p>
+  <p>These three topics connect: parsing is how we turn text into structure, hardware shows us the constraints we program under, and Java is one answer to the question "how should we design a language given those constraints?"</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-why-parsing">Why Parsing Matters</h2>
+
+<p>Before a computer can run your code, it has to <em>understand</em> what your code means. But code starts as just a long string of characters — letters, symbols, spaces. <strong>Parsing</strong> is the process of taking that flat string and figuring out its structure.</p>
+
+<p>Think of it like reading a sentence in English. The words "time flies like an arrow" could mean different things depending on how you group the words. Is "flies" a verb (time moves like an arrow) or a noun (there are flies called "time flies" that enjoy an arrow)? Parsing is about resolving exactly this kind of structural ambiguity — but for programming languages.</p>
+
+<p>In your course, you're not just writing a parser — you're writing a <strong>parser generator</strong>: a function that takes a grammar (the rules of a language) and automatically produces a parser. That's a level above: you're building the tool that builds parsers.</p>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-fsm">Finite State Machines</h2>
+
+<div class="def-box">
+  <div class="label">Definition</div>
+  <p><strong>Finite State Machine (FSM)</strong>: A simple computational model that has a fixed number of <em>states</em>, and no memory other than knowing which state it's currently in. It reads input one symbol at a time and transitions between states based on what it reads.</p>
+</div>
+
+<p>Imagine you're a security guard at a door. You have a short checklist: "If someone says the first password word, move to state 2. If in state 2 and they say the second word, let them in. Otherwise, go back to the start." That's a finite state machine — you only need to remember <em>where you are in the checklist</em>, nothing else.</p>
+
+<p>Key properties of a finite state machine:</p>
+<p>— <strong>No stack</strong>: it can't remember a growing list of things<br>
+— <strong>No recursion</strong>: it can't call itself and remember where to come back to<br>
+— <strong>No counting</strong>: it can't track "how many times has X happened" beyond its fixed states</p>
+
+<div class="insight-box">
+  <div class="label">Connection</div>
+  <p><strong>Regular expressions</strong> can be parsed by finite state machines. Each part of a regex pattern can be checked by walking through the input left to right. You never need to "remember" nested structure — you just check one symbol at a time.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-cfg">Context-Free Grammars &amp; The Stack</h2>
+
+<p>Regular expressions are powerful, but they have a hard limit: they can't handle <strong>nesting</strong>. And nesting is everywhere in programming languages — think of nested parentheses <code>((()))</code>, nested if-statements, nested function calls.</p>
+
+<div class="def-box">
+  <div class="label">Definition</div>
+  <p><strong>Context-Free Grammar (CFG)</strong>: A set of rules that describe a language which <em>can</em> have nesting. To parse a CFG, you need a finite state machine <strong>plus a stack</strong> — extra memory that can grow as deeply as the nesting goes.</p>
+</div>
+
+<h4>Why do we need a stack?</h4>
+
+<p>Consider matching parentheses. When you see <code>(</code>, you need to remember "I'm inside one level of parens." When you see another <code>(</code>, you're now two levels deep. When you see <code>)</code>, you go back one level. This "remembering depth" requires memory that grows — that's what the stack does.</p>
+
+<div class="diagram">
+  <div style="text-align:left; display:inline-block;">
+    Input:&nbsp;&nbsp; <span style="color:var(--accent);">(</span> <span style="color:var(--accent);">(</span> a + b <span style="color:var(--accent2);">)</span> * c <span style="color:var(--accent2);">)</span><br><br>
+    Stack after each (<br>
+    ─────────────────<br>
+    See first <span style="color:var(--accent);">(</span> → push → stack: [<span style="color:var(--accent);">(</span>]<br>
+    See second <span style="color:var(--accent);">(</span> → push → stack: [<span style="color:var(--accent);">(</span>, <span style="color:var(--accent);">(</span>]<br>
+    See first <span style="color:var(--accent2);">)</span> → pop → stack: [<span style="color:var(--accent);">(</span>]<br>
+    See second <span style="color:var(--accent2);">)</span> → pop → stack: [] &nbsp;✓ matched!
+  </div>
+  <div class="caption">The stack tracks nesting depth. A FSM alone can't do this for arbitrary depth.</div>
+</div>
+
+<div class="def-box">
+  <div class="label">Key Formula</div>
+  <p><strong>CFG = Finite State Machine + Stack</strong></p>
+  <p>This is the fundamental equation of parsing theory. Regular expressions need only a FSM. Context-free languages (which describe most programming languages) need that stack on top.</p>
+</div>
+
+<h4>But we don't need to literally build a FSM + Stack</h4>
+
+<p>Here's the practical insight: programming languages already <em>have</em> a stack built in. Every time you call a function, the language pushes state onto the call stack. Every time you return, it pops. So instead of manually implementing a stack data structure, you can use <strong>recursive functions</strong> — and the programming language's own call stack does the work for you.</p>
+
+<p>This is exactly what you're doing in your homework: writing recursive functions that parse a grammar, where the recursion naturally tracks nesting depth through the call stack.</p>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-problems">The Ambiguity Problem in Parsing</h2>
+
+<p>When a parser reads input left to right, at any point it has seen some tokens and hasn't seen the rest. The challenge is: <strong>based on what you've seen so far, which grammar rule should you apply next?</strong></p>
+
+<p>Sometimes the answer is obvious. But often it's not — multiple rules could plausibly apply, and you won't know which is correct until you've read more input.</p>
+
+<h4>A Real Example</h4>
+
+<p>Suppose you're parsing code and you've just read everything up to an open parenthesis <code>(</code>. What comes next? There are several possibilities:</p>
+
+<pre><code><span class="comment">(* Possibility 1: start of a sub-expression *)</span>
+( x + y )
+
+<span class="comment">(* Possibility 2: a type cast *)</span>
+(<span class="type-hl">int</span>) x
+
+<span class="comment">(* Possibility 3: a tuple *)</span>
+(3, 6)</code></pre>
+
+<p>All three start with <code>(</code>. The parser has read the same tokens so far, but needs to do completely different things depending on which case it is. This is the <strong>ambiguity problem</strong>.</p>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-lookahead">Lookahead</h2>
+
+<div class="def-box">
+  <div class="label">Definition</div>
+  <p><strong>Lookahead</strong>: A technique where the parser peeks at the next token(s) <em>without consuming them</em> to decide which grammar rule to apply.</p>
+</div>
+
+<p>For the parenthesis example above: if after <code>(</code> the parser peeks ahead and sees a <em>type name</em> like <code>int</code>, it can assume it's a cast. If it sees a variable or number, it's probably an expression.</p>
+
+<p>Lookahead is covered extensively in follow-on courses (like CS 132). In this course, we use a different — lazier but simpler — approach.</p>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-backtracking">Backtracking Parsers</h2>
+
+<div class="def-box">
+  <div class="label">Definition</div>
+  <p><strong>Backtracking</strong>: Instead of trying to predict the right rule upfront, just <em>try</em> one. If it works, great. If it fails, undo everything and try the next option.</p>
+</div>
+
+<p>Think of it like navigating a maze. At each fork, you pick a path. If you hit a dead end, you walk back to the fork and try a different path. Eventually you find the exit (or exhaust all options).</p>
+
+<div class="warn-box">
+  <div class="label">Important Limitation</div>
+  <p>Backtracking only works for <strong>unambiguous</strong> grammars — grammars where each input has exactly one valid parse tree. If a grammar is ambiguous (multiple valid parse trees for the same input), a backtracking parser might find <em>one</em> valid parse but miss that there are others. It can never be sure it found the "right" one.</p>
+</div>
+
+<h4>The Three Problems a Backtracking Parser Must Solve</h4>
+
+<p>Listed from easiest to hardest:</p>
+
+<p><strong>Problem 1 — Recursive Grammar:</strong> Your grammar has rules that refer to themselves. Solution: write recursive functions. The grammar's recursion maps directly to function recursion. This is the easy one.</p>
+
+<p><strong>Problem 2 — Disjunction (OR):</strong> A non-terminal has multiple production rules, and you can't tell which to use from the current input. Solution: try the first option; if it fails, backtrack and try the second; and so on.</p>
+
+<pre><code><span class="comment">(* E can be parsed as A B C  or  as D E F *)</span>
+<span class="comment">(* We don't know which — try one, backtrack if needed *)</span>
+E -> A B C
+E -> D E F</code></pre>
+
+<p><strong>Problem 3 — Concatenation:</strong> This one <em>sounds</em> easy but is actually the trickiest. When you need to parse <code>F</code> followed by <code>A</code>, you parse <code>F</code> first, then try <code>A</code> on the remaining input. But if <code>A</code> fails, you can't just give up — you need to go back to <code>F</code> and ask "do you have a <em>different</em> way of matching?" If <code>F</code> matches differently (consuming more or fewer tokens), maybe <code>A</code> will succeed on the new remainder.</p>
+
+<pre><code><span class="comment">(* Parse F, then A on whatever's left *)</span>
+E -> F A
+
+<span class="comment">(* If F succeeds but A fails on the remainder: *)</span>
+<span class="comment">(*   → backtrack to F, ask for a different match *)</span>
+<span class="comment">(*   → retry A on the new remainder *)</span>
+<span class="comment">(*   → repeat until both succeed or F runs out of options *)</span></code></pre>
+
+<pre><code><span class="comment">(* With three parts, backtracking gets deeper *)</span>
+E -> A B C
+
+<span class="comment">(* If A,B work but C fails → backtrack to B *)</span>
+<span class="comment">(* If no B alternatives left → backtrack to A *)</span></code></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-matchers">Matchers &amp; Acceptors</h2>
+
+<p>Now we get to the actual machinery that makes backtracking work. The key insight is to split the parser into two cooperating parts: <strong>matchers</strong> and <strong>acceptors</strong>.</p>
+
+<div class="def-box">
+  <div class="label">Definition</div>
+  <p><strong>Matcher</strong>: A function that tries to match some initial prefix of the input. It takes an <em>acceptor</em> and an input <em>fragment</em> (a list of tokens), and returns either the unmatched suffix (if parsing succeeds) or <code>None</code> (if it fails).</p>
+  <p style="margin-top:8px;">Type signature: <code>matcher : acceptor → fragment → fragment option</code></p>
+</div>
+
+<div class="def-box">
+  <div class="label">Definition</div>
+  <p><strong>Acceptor</strong>: A function that receives the <em>remaining suffix</em> after a matcher has matched some prefix, and decides whether this particular parse is acceptable. It returns the suffix if it likes the parse, or <code>None</code> if it doesn't.</p>
+</div>
+
+<div class="analogy">
+  Think of a matcher as a chef who prepares a dish (matches a prefix), and the acceptor as a food critic who tastes what's left over. The chef says "I've handled the appetizer, here's the rest of the meal for you to judge." The critic either approves or says "no good, try a different appetizer."
+</div>
+
+<p>Here's how the input gets divided:</p>
+
+<div class="diagram">
+  <div style="text-align:left; display:inline-block;">
+    Input fragment: [t₁, t₂, t₃, t₄, t₅, t₆, t₇]<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── matched prefix ──┤├── unmatched suffix ──┤<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(matcher handles)&nbsp;&nbsp;&nbsp;&nbsp;(passed to acceptor)<br><br>
+    If acceptor says "None" → matcher tries a different split
+  </div>
+</div>
+
+<h4>The Simplest Matchers</h4>
+
+<pre><code><span class="comment">(* Match the empty prefix — always succeeds *)</span>
+<span class="comment">(* The suffix is the entire input, unchanged *)</span>
+<span class="keyword">let</span> match_empty accept frag = accept frag
+
+<span class="comment">(* Match the entire input — suffix must be empty *)</span>
+<span class="keyword">let</span> match_all accept _ = accept []
+
+<span class="comment">(* Never match anything — always fails *)</span>
+<span class="keyword">let</span> match_nothing _ _ = None</code></pre>
+
+<p>Notice the difference between <code>match_empty</code> and <code>match_nothing</code>:</p>
+<p>— <code>match_empty</code> matches the <em>empty prefix</em> (zero tokens) and passes everything to the acceptor. It's like a grammar rule that produces ε (the empty string). The acceptor still gets a chance to accept or reject.</p>
+<p>— <code>match_nothing</code> <em>never even tries</em>. It immediately returns <code>None</code> no matter what. It's like a grammar with no production rules at all — total failure.</p>
+
+<h4>The Simplest Acceptors</h4>
+
+<pre><code><span class="comment">(* Always reject — no matter what suffix, say "no" *)</span>
+<span class="keyword">let</span> accept_nothing _ = None
+
+<span class="comment">(* Always accept — no matter what suffix, say "yes" *)</span>
+<span class="keyword">let</span> accept_all frag = Some frag</code></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-disjunction">Building a Matcher for Disjunction (OR)</h2>
+
+<p>Now let's build something real. Suppose our grammar says:</p>
+
+<pre><code>E -> A B C
+E -> D E F</code></pre>
+
+<p>This means E can be parsed as either <code>A B C</code> or <code>D E F</code>. We need a matcher that tries the first option, and if it fails, falls back to the second.</p>
+
+<p>We'll assume we already have a function <code>make_matcher</code> that can build matchers for any rule. (This is the recursive trust: we're building the system, and we trust that the other pieces will work once we finish.)</p>
+
+<div class="step-through" id="disj-steps">
+  <div class="step-header">
+    <span class="step-counter" id="disj-counter">Step 1 of 4</span>
+    <div class="step-nav">
+      <button onclick="disjStep(-1)" id="disj-prev" disabled>← Prev</button>
+      <button onclick="disjStep(1)" id="disj-next">Next →</button>
+    </div>
+  </div>
+  <div class="step-body" id="disj-body"></div>
+</div>
+
+<pre><code><span class="comment">(* Build matchers for each alternative *)</span>
+<span class="keyword">let</span> m1 = make_matcher (A, B, C)
+<span class="keyword">and</span> m2 = make_matcher (D, E, F)
+<span class="keyword">in</span>
+
+<span class="comment">(* Return a matcher for the disjunction *)</span>
+<span class="keyword">fun</span> accept frag ->
+    <span class="keyword">match</span> m1 accept frag <span class="keyword">with</span>
+    <span class="comment">(* m1 failed → try m2 *)</span>
+    | None -> m2 accept frag
+    <span class="comment">(* m1 succeeded → use its result *)</span>
+    | x -> x</code></pre>
+
+<p>The logic is simple: give the input to m1. If m1 returns <code>None</code> (failure), try m2 with the same input and acceptor. If m1 returns something (success), use that result — we don't even bother trying m2.</p>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-concatenation">Building a Matcher for Concatenation</h2>
+
+<p>Now the hard part. Suppose our grammar says:</p>
+
+<pre><code>E -> A B</code></pre>
+
+<p>We need to parse A first, then B on whatever A didn't consume, and then pass the remaining suffix to our acceptor.</p>
+
+<div class="diagram">
+  <div style="text-align:left; display:inline-block;">
+    Input: [t₁ t₂ t₃ t₄ t₅ t₆ t₇]<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|←  A  →|← B →|← suffix →|<br><br>
+    The acceptor checks the suffix.<br>
+    But we don't know where A ends and B begins!
+  </div>
+  <div class="caption">The split point between A and B is unknown — that's the challenge.</div>
+</div>
+
+<h4>The Trick: Turn B + Acceptor into an Acceptor for A</h4>
+
+<p>Instead of trying every possible split, we use a clever functional programming trick. We bundle up "match B, then check with the acceptor" into a <em>single acceptor</em> that we hand to A.</p>
+
+<p>When A finishes matching some prefix, it calls this bundled acceptor. The bundled acceptor then tries to match B on whatever A left behind. If B succeeds, it passes the remaining suffix to the original acceptor. If B fails, A's matcher will backtrack and try a different prefix.</p>
+
+<pre><code><span class="keyword">let</span> m1 = make_matcher A
+<span class="keyword">and</span> m2 = make_matcher B
+<span class="keyword">in</span>
+
+<span class="comment">(* Return a matcher for the concatenation *)</span>
+<span class="keyword">fun</span> accept ->
+    <span class="comment">(* Call m1, giving it an acceptor that runs m2 *)</span>
+    m1 (<span class="keyword">fun</span> frag1 -> m2 accept frag1)</code></pre>
+
+<p>Let's unpack this line by line:</p>
+<p>— <code>fun accept →</code> : our concatenation matcher takes an acceptor</p>
+<p>— <code>m1 (fun frag1 → m2 accept frag1)</code> : we call m1 (matcher for A) and pass it a <em>custom acceptor</em></p>
+<p>— The custom acceptor <code>(fun frag1 → m2 accept frag1)</code> says: "when A is done and gives me the leftover <code>frag1</code>, try matching B on <code>frag1</code>, and pass B's leftover to the original <code>accept</code>."</p>
+
+<div class="insight-box">
+  <div class="label">Why This Works for Backtracking</div>
+  <p>If B fails (returns <code>None</code>), then the acceptor we gave to m1 returns <code>None</code>. From m1's perspective, the acceptor rejected that particular parse of A. So m1 automatically backtracks and tries a different way to match A — consuming more or fewer tokens. This back-and-forth continues until either both A and B succeed, or m1 exhausts all possibilities.</p>
+</div>
+
+<div class="analogy">
+  This is like a curried optimization. Notice we wrote <code>fun accept → m1 (fun frag1 → m2 accept frag1)</code> and dropped the <code>frag</code> argument. We don't need to explicitly pass the fragment because m1 already expects one — it's curried. We just build the function and m1 will apply it to whatever fragment it receives.
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-left-recursion">Left Recursion vs Right Recursion</h2>
+
+<p>There's one critical problem this approach can't handle.</p>
+
+<div class="def-box">
+  <div class="label">Definition</div>
+  <p><strong>Left Recursion</strong>: A grammar rule where the non-terminal being defined appears as the <em>leftmost</em> symbol on the right-hand side.</p>
+</div>
+
+<pre><code><span class="comment">"E keeps expanding left — infinite loop!"</span>
+E -> E C
+
+<span class="comment">Expansion:</span>
+E
+E C
+(E C) C
+((E C) C) C
+...</code></pre>
+
+<p>To parse E, we first need to parse E (since it's the leftmost symbol). To parse <em>that</em> E, we again need to parse E. The input never gets consumed, so we never reach a base case. <strong>Infinite loop.</strong></p>
+
+<div class="def-box">
+  <div class="label">Definition</div>
+  <p><strong>Right Recursion</strong>: A grammar rule where the non-terminal appears <em>after</em> at least one token on the right-hand side.</p>
+</div>
+
+<pre><code><span class="comment">"E expands right — works fine!"</span>
+E -> A E
+
+<span class="comment">Expansion:</span>
+E
+A E
+A (A E)
+A (A (A E))
+<span class="comment">(* Each A consumes input → eventually reach base case *)</span></code></pre>
+
+<p>Here, each recursive step must first parse an <code>A</code>, which consumes at least one token. The input shrinks each time, so eventually we reach the end and hit a base case (like <code>E → ε</code>). <strong>Terminates.</strong></p>
+
+<div class="warn-box">
+  <div class="label">Homework Note</div>
+  <p>The spec says you don't need to handle left-recursive grammars. But you should understand <em>why</em> they're problematic. The fix is to transform left-recursive rules into right-recursive ones (covered in CS 132), or to use a different parsing technique entirely.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-quiz1">Check Your Understanding — Parsing</h2>
+
+<div class="quiz" id="quiz-1">
+  <div class="q-label">Question 1</div>
+  <p class="question">What's the fundamental difference between what a finite state machine can parse versus what a context-free grammar parser can parse?</p>
+  <ul class="options" data-correct="2">
+    <li onclick="selectOption(this)">FSMs are faster; CFG parsers are slower but handle the same languages</li>
+    <li onclick="selectOption(this)">FSMs can handle nesting; CFG parsers cannot</li>
+    <li onclick="selectOption(this)">CFG parsers use a stack to handle arbitrary nesting depth, which FSMs cannot do</li>
+    <li onclick="selectOption(this)">There is no difference; they're equivalent in power</li>
+  </ul>
+  <button class="check-btn" onclick="checkAnswer(this)" disabled>Check Answer</button>
+  <div class="feedback correct-fb">Correct! CFGs need a stack to track nesting depth (like matching parentheses). FSMs have no extra memory, so they can't count arbitrarily deep nesting. That's why CFG = FSM + stack.</div>
+  <div class="feedback incorrect-fb">Not quite. The key difference is the <strong>stack</strong>. CFG parsers have one, FSMs don't. This stack lets CFG parsers handle arbitrarily deep nesting (like nested parentheses), which FSMs fundamentally cannot do because they have no growing memory.</div>
+</div>
+
+<div class="quiz" id="quiz-2">
+  <div class="q-label">Question 2</div>
+  <p class="question">Why does <code>E → E C</code> cause an infinite loop in a backtracking parser, but <code>E → C E</code> does not?</p>
+  <ul class="options" data-correct="1">
+    <li onclick="selectOption(this)">E → E C is left-recursive: parsing E immediately requires parsing E again, with no input consumed. E → C E first parses C (consuming input), so the recursion eventually terminates.</li>
+    <li onclick="selectOption(this)">E → E C creates ambiguity, while E → C E does not</li>
+    <li onclick="selectOption(this)">E → E C requires two stacks, but our parser only has one</li>
+    <li onclick="selectOption(this)">There is no difference; both cause infinite loops</li>
+  </ul>
+  <button class="check-btn" onclick="checkAnswer(this)" disabled>Check Answer</button>
+  <div class="feedback correct-fb">Exactly! In <code>E → E C</code>, we try to parse E by first parsing E — no input is consumed, so we loop forever. In <code>E → C E</code>, we must parse C first (consuming at least one token), so the input shrinks with each recursion and we eventually hit a base case.</div>
+  <div class="feedback incorrect-fb">The key is input consumption. <code>E → E C</code> tries to parse E as the very first thing, consuming zero tokens, leading to infinite recursion. <code>E → C E</code> parses C first, which eats at least one token, guaranteeing progress toward the base case.</div>
+</div>
+
+<div class="quiz" id="quiz-3">
+  <div class="q-label">Question 3</div>
+  <p class="question">In the concatenation matcher for <code>E → A B</code>, we pass <code>(fun frag1 → m2 accept frag1)</code> as the acceptor for m1. Why?</p>
+  <ul class="options" data-correct="0">
+    <li onclick="selectOption(this)">It bundles "match B then check with the real acceptor" into a single acceptor for A, enabling automatic backtracking if B fails on A's leftover</li>
+    <li onclick="selectOption(this)">It makes m1 run faster by giving it less work to do</li>
+    <li onclick="selectOption(this)">It prevents m1 from consuming too many tokens</li>
+    <li onclick="selectOption(this)">It converts m2 from a matcher into an acceptor permanently</li>
+  </ul>
+  <button class="check-btn" onclick="checkAnswer(this)" disabled>Check Answer</button>
+  <div class="feedback correct-fb">Right! By wrapping m2 + the real acceptor into one acceptor for m1, we create a chain: A matches → leftover goes to B → B's leftover goes to the real acceptor. If any step fails, it propagates back, and m1 tries a different match for A.</div>
+  <div class="feedback incorrect-fb">The point of this pattern is to create a <strong>chain of responsibility</strong>. We wrap "match B, then check with the real acceptor" into a single acceptor for A. If B fails on A's remainder, the wrapped acceptor returns None, causing A to backtrack and try a different match. This is the heart of how concatenation + backtracking work together.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-elcapitan">El Capitan: World's Fastest Computer</h2>
+
+<div class="bigpic-box">
+  <div class="label">Why Are We Talking About This?</div>
+  <p>A computer's performance depends heavily on <em>what problem you give it</em>, not just how powerful the hardware is. This matters for programming language design because <strong>there is no single architecture that's best for everything</strong> — and the language you choose determines how well your code maps onto the hardware.</p>
+  <p style="margin-top:8px;">Also, the supercomputers of today become the everyday devices of tomorrow. Understanding these machines gives you a glimpse of the hardware you'll be programming in your career.</p>
+</div>
+
+<p><strong>El Capitan</strong> is a supercomputer at Lawrence Livermore National Laboratory. It has 11,316 compute nodes. Each node contains one AMD CPU (24 cores) and four AMD MI300A GPUs — each GPU has 228 compute units with matrix cores (for heavy matrix/tensor math) and 64 stream processors (for processing long sequences of numbers).</p>
+
+<p>The result is massive parallelism: millions of cores working simultaneously. It has enormous memory and is designed for heavy computation like nuclear weapon simulations.</p>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-benchmarks">FLOP Benchmarks</h2>
+
+<p>El Capitan's theoretical peak is <strong>2.8 EFLOPS</strong> (exa-floating-point-operations per second). That's 2.8 × 10¹⁸ operations every second. For reference, a typical laptop CPU does roughly in the GigaFLOPS range — about a <em>billion</em> times slower.</p>
+
+<p>But "theoretical" means everything running perfectly. In practice:</p>
+
+<table class="comp-table">
+  <tr><th>Benchmark</th><th>Performance</th><th>What It Tests</th></tr>
+  <tr><td>HPL (High Performance Linpack)</td><td>~1.8 EFLOPS</td><td>Dense linear algebra — lots of matrix multiplies. GPUs love this.</td></tr>
+  <tr><td>HPCG (Conjugate Gradient)</td><td>~0.017 EFLOPS</td><td>Memory-heavy, lots of data movement. GPUs struggle with this.</td></tr>
+</table>
+
+<p>The <strong>same machine</strong> shows up to a <strong>100× performance difference</strong> depending on the workload. The bottleneck is almost always <em>data movement</em> — getting numbers to the processors that need them — not the computation itself.</p>
+
+<div class="insight-box">
+  <div class="label">The Lesson</div>
+  <p>Raw computing power means little if you can't feed data to it efficiently. This is why programming languages, compilers, and how you structure your code matter so much — they determine how well your computation maps onto the hardware.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-energy">Energy Constraints</h2>
+
+<p>El Capitan requires <strong>30–35 megawatts</strong> to run — roughly the power consumption of a small city (35,000 households). Connecting it to the power grid was a significant engineering challenge.</p>
+
+<p>This makes <strong>energy efficiency</strong> (work per unit of energy) extremely valuable. The Green500 ranking measures performance per watt:</p>
+
+<table class="comp-table">
+  <tr><th>Computer</th><th>GFLOPS/watt</th><th>Note</th></tr>
+  <tr><td>Kairos (University of Toulouse)</td><td>73</td><td>Most energy-efficient in the world</td></tr>
+  <tr><td>El Capitan (Livermore)</td><td>59</td><td>Fastest in the world, but less efficient per watt</td></tr>
+</table>
+
+<p>A slower, cheaper machine can be <em>more efficient</em> per unit of energy. Efficiency ≠ raw speed. Different architectures win under different constraints.</p>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-tradeoffs">The Tradeoff: Specialization vs Generality</h2>
+
+<p>El Capitan's specialized hardware (GPUs, tensor cores, vector units, Fortran-optimized pipelines) is extremely fast for the right kind of work — dense matrix operations, for instance. But this specialization has costs: it's hard to program, less portable, and loses performance on workloads it wasn't designed for.</p>
+
+<p><strong>General-purpose systems</strong> are flexible, portable, and easier to program, but sacrifice peak performance.</p>
+
+<div class="bigpic-box">
+  <div class="label">Why This Matters for Us</div>
+  <p>Programming languages make the same tradeoff. A language can give you fine-grained hardware control (like C/C++) or high-level abstractions (like Java or Python). The choice affects performance, safety, portability, and how easy the code is to write. <strong>There is no perfect language</strong> — just different tradeoffs.</p>
+  <p style="margin-top:8px;">This is precisely why Java was designed the way it was: it chose portability, safety, and ease of programming over maximum performance.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-java-why">Why Java Was Created</h2>
+
+<p>To understand Java, you need to understand the <em>problem it was designed to solve</em>. Let's go back to the early 1990s.</p>
+
+<h3>Sun Microsystems and the Network</h3>
+
+<p><strong>Sun Microsystems</strong> was a company that sold networked workstations and servers. Their marketing slogan was "the network is the computer" — the idea being that computation should be distributed across many machines, not trapped in a single workstation.</p>
+
+<p>Everything ran on <strong>Solaris</strong> (a Unix variant, essentially an ancestor of Linux). Programs were written in <strong>C/C++</strong>. This worked great inside data centers where every machine used the same hardware (Sun's SPARC chips).</p>
+
+<h3>The Ambition: Network Everything</h3>
+
+<p>Sun wanted to expand beyond workstations and servers to <em>everyday devices</em> — toasters, refrigerators, phones. (Yes, this sounded ridiculous in 1993. It's called the Internet of Things now.) But this ambition crashed into several hard problems:</p>
+
+<div class="def-box">
+  <div class="label">Problem 1 — Portability</div>
+  <p>Different devices use different CPU architectures (SPARC, x86, ARM). C/C++ executables are compiled for a <em>specific</em> architecture — a program built for SPARC won't run on ARM. Sun needed executables that work on <strong>any CPU</strong>.</p>
+</div>
+
+<div class="def-box">
+  <div class="label">Problem 2 — Reliability / Safety</div>
+  <p>C/C++ programs are prone to crashes: buffer overflows, dangling pointers, memory leaks, core dumps. On a workstation, you reboot. On a toaster, flames shoot up. You <strong>cannot</strong> have your toaster crash. Sun needed a language that prevents these categories of bugs.</p>
+</div>
+
+<div class="def-box">
+  <div class="label">Problem 3 — Software Updates</div>
+  <p>Networked devices need remote updates. But in the early '90s, home internet was ~15 kilobits/sec. C++ executables are huge, platform-specific blobs. Sun needed <strong>small, portable, downloadable executables</strong>.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-smalltalk">SmallTalk &amp; Oak</h2>
+
+<p>Sun's engineers drove down the freeway to Xerox PARC in Palo Alto — one of the greatest computer science research labs in history (they invented Ethernet, the mouse-driven GUI workstation, and much more).</p>
+
+<h4>SmallTalk</h4>
+<p>Xerox PARC had built a language called <strong>SmallTalk</strong> that solved many of Sun's problems:</p>
+<p>— <strong>Object-oriented</strong> design<br>
+— <strong>Garbage collection</strong>: no manual memory management → no dangling pointers or memory leaks<br>
+— <strong>Bytecode interpreter</strong>: programs compile to abstract "bytecodes" for a virtual machine, not for a specific CPU → portable and small executables</p>
+
+<p>But SmallTalk had drawbacks:</p>
+<p>— <strong>Unusual syntax</strong>: completely unlike C or anything else, making it hard to learn<br>
+— <strong>Dynamic typing</strong>: type errors only caught at runtime, not at compile time → less reliable<br>
+— <strong>Single-threaded</strong>: not designed for multi-processor systems</p>
+
+<h4>Oak (→ Java)</h4>
+
+<p>Sun's engineers took SmallTalk's good ideas and fixed the bad ones:</p>
+
+<table class="comp-table">
+  <tr><th>SmallTalk Problem</th><th>Oak/Java Solution</th></tr>
+  <tr><td>Unusual syntax</td><td>C-like syntax (familiar to millions of programmers)</td></tr>
+  <tr><td>Dynamic typing</td><td>Static typing (catch bugs at compile time)</td></tr>
+  <tr><td>Single-threaded</td><td>Built-in multithreading support</td></tr>
+</table>
+
+<p>They kept the good parts: garbage collection, bytecode + virtual machine, object-oriented programming. The result: <strong>safer than C++, more predictable and scalable than SmallTalk</strong>.</p>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-hotjava">Hot Java: From the Web to Servers</h2>
+
+<p>The toaster project was about to be cancelled — Sun couldn't see how to make money on it. In a weekend, the engineers pivoted: they combined their Java technology with the brand-new concept of the <strong>web browser</strong>.</p>
+
+<p>The dominant browser at the time was <strong>Mosaic</strong> (written in C++, famous for crashing). Sun built <strong>Hot Java</strong> — a browser written in Java that was more reliable (garbage collection, no pointer bugs) but slower (bytecode interpretation overhead).</p>
+
+<p>Hot Java introduced <strong>Java applets</strong>: small Java bytecode programs downloaded from websites and run inside the browser. This was revolutionary — portable code that ran on any machine with a Java interpreter.</p>
+
+<p>But Hot Java didn't win the browser war. Mosaic evolved into Netscape and then Internet Explorer, which used native C++ plugins instead. Hot Java faded.</p>
+
+<p>However, Java found its true home on <strong>servers</strong>. Server-side Java thrived because:</p>
+<p>— <strong>Multithreading</strong> scaled well on multi-processor servers<br>
+— <strong>Memory safety</strong> meant fewer crashes in production<br>
+— <strong>Portability</strong> meant the same code ran on any server hardware<br>
+— It was far less painful than multi-threaded C++ programming</p>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-types">Java's Type System</h2>
+
+<div class="def-box">
+  <div class="label">Definition</div>
+  <p><strong>Static Typing</strong>: The type of every variable is known at <em>compile time</em>, before the program runs. The compiler checks that you're not doing impossible things (like adding a string to an integer) before you ever run the code.</p>
+</div>
+
+<p>Java chose static typing for reliability — catch bugs early, before they reach the toaster (or the server). This was a deliberate departure from SmallTalk's dynamic typing.</p>
+
+<p>Java has <strong>two major categories</strong> of types, and understanding the distinction is essential:</p>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-primitive">Primitive Types</h2>
+
+<div class="def-box">
+  <div class="label">Definition</div>
+  <p><strong>Primitive Types</strong>: Built-in, low-level types that store raw values directly (not objects). They have <em>fixed, platform-independent sizes</em> — the same on every machine.</p>
+</div>
+
+<p>Why fixed sizes? Portability. A <code>long</code> is always 64 bits, whether you're on an x86 laptop, an ARM phone, or even an IBM mainframe. No surprises. (This is unlike C, where <code>long</code> can be 32 bits on some platforms and 64 on others.)</p>
+
+<table class="comp-table">
+  <tr><th>Type</th><th>Size</th><th>What It Stores</th></tr>
+  <tr><td><code>byte</code></td><td>8 bits</td><td>Small integers (-128 to 127)</td></tr>
+  <tr><td><code>short</code></td><td>16 bits</td><td>Medium-small integers</td></tr>
+  <tr><td><code>int</code></td><td>32 bits</td><td>Standard integers</td></tr>
+  <tr><td><code>long</code></td><td>64 bits</td><td>Large integers</td></tr>
+  <tr><td><code>char</code></td><td>16 bits</td><td>A single Unicode character</td></tr>
+  <tr><td><code>boolean</code></td><td>JVM-defined</td><td>true or false</td></tr>
+  <tr><td><code>float</code></td><td>32-bit IEEE</td><td>Floating-point number</td></tr>
+  <tr><td><code>double</code></td><td>64-bit IEEE</td><td>Double-precision floating-point</td></tr>
+</table>
+
+<p>These types are <em>not</em> objects. They're stored directly as raw bits. This is important for performance — no overhead of object headers or garbage collection for simple numbers.</p>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-reference">Reference Types</h2>
+
+<div class="def-box">
+  <div class="label">Definition</div>
+  <p><strong>Reference Types</strong>: Internally implemented as a pointer to a chunk of memory that holds the actual object data. You never see or manipulate the pointer directly — the Java Virtual Machine manages all memory automatically.</p>
+</div>
+
+<p>In C/C++, you work with raw pointers: you can do arithmetic on them, cast them to other types, and generally shoot yourself in the foot. Java calls them "references" (never "pointers") precisely because you <em>can't</em> do any of that. The JVM handles all pointer operations behind the scenes.</p>
+
+<p>When you assign a reference variable to another:</p>
+<pre><code>MyClass a = <span class="keyword">new</span> MyClass();
+MyClass b = a;  <span class="comment">// copies the reference (pointer), NOT the object</span></code></pre>
+
+<p>Both <code>a</code> and <code>b</code> now point to the <em>same</em> object in memory. No copying of the object's data occurs.</p>
+
+<h4>Arrays</h4>
+<p><strong>Arrays</strong> are reference types. When you write <code>int[] arr = new int[10];</code>, the variable <code>arr</code> holds a reference (pointer) to a block of memory containing 10 ints. The array's size is fixed once allocated — you can't grow or shrink it. But the size is <em>not</em> part of the type; <code>int[]</code> is the type regardless of how many elements it has.</p>
+
+<h4>Strings</h4>
+<p><strong>Strings</strong> are reference types that are <em>immutable</em> — once created, a String's contents cannot be changed. Any operation that appears to modify a string actually creates a new one.</p>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-inheritance">Single Inheritance</h2>
+
+<div class="def-box">
+  <div class="label">Definition</div>
+  <p><strong>Single Inheritance</strong>: Each Java class has exactly <em>one</em> parent class (superclass). Every class ultimately extends <code>Object</code>, forming a tree-shaped hierarchy.</p>
+</div>
+
+<div class="diagram">
+  <div style="text-align:left; display:inline-block;">
+    Object<br>
+    ├── String<br>
+    ├── Thread<br>
+    ├── Integer<br>
+    ├── T[] &nbsp;<span style="color:var(--text-muted);">(arrays of any type)</span><br>
+    └── MyClass<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;└── MySubclass
+  </div>
+  <div class="caption">Java's class hierarchy is always a tree — each class has exactly one parent.</div>
+</div>
+
+<h4>Why not multiple inheritance?</h4>
+
+<p><strong>Multiple inheritance</strong> means a class can have two or more parents. C++ supports this. The advantage: you inherit methods and data from both parents, making your class "richer."</p>
+
+<p>The problem: what if both parents define a method with the same name? Which one do you get? C++ has complex rules for resolving this, but they're confusing, error-prone, and tricky to implement efficiently.</p>
+
+<p>Java's designers said: "Multiple inheritance is too complicated. The confusion it causes isn't worth the power it provides. Single inheritance keeps things simple."</p>
+
+<p>But then how do you get behavior from multiple sources? That's what <strong>interfaces</strong> are for.</p>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-interfaces">Interfaces</h2>
+
+<div class="def-box">
+  <div class="label">Definition</div>
+  <p><strong>Interface</strong>: A contract that declares what methods a class <em>must have</em>, without providing any implementation. It specifies method signatures only — no code.</p>
+</div>
+
+<div class="analogy">
+  Think of inheritance as receiving an <strong>inheritance</strong> (wealth) from a parent — you get actual code, for free. An interface is more like taking on a <strong>debt</strong> — you get an obligation to implement certain methods, but no help actually writing them. You have to do the work yourself.
+</div>
+
+<pre><code><span class="comment">// An interface declares methods without implementing them</span>
+<span class="keyword">interface</span> <span class="type-hl">I</span> {
+    <span class="type-hl">int</span> m(<span class="type-hl">float</span> x);   <span class="comment">// only the signature!</span>
+    <span class="type-hl">int</span> n(<span class="type-hl">String</span> s);  <span class="comment">// no body, no code</span>
+}</code></pre>
+
+<h4>You can't instantiate an interface</h4>
+
+<p>Since an interface has no implementation, you can't create an object from it:</p>
+
+<pre><code><span class="comment">// This does NOT work — interfaces have no implementation!</span>
+I obj = <span class="keyword">new</span> I();  <span class="comment">// ✗ Compile error</span></code></pre>
+
+<p>But you <em>can</em> declare a variable of an interface type:</p>
+
+<pre><code>I v;                   <span class="comment">// Declares v as "something that implements I"</span>
+v = <span class="keyword">new</span> C();           <span class="comment">// ✓ OK if class C implements I</span>
+v = <span class="keyword">null</span>;              <span class="comment">// ✓ null is always allowed</span></code></pre>
+
+<h4>The key rule: one parent, many interfaces</h4>
+
+<p>In Java, a class can <code>extend</code> only <strong>one</strong> class, but can <code>implement</code> <strong>any number</strong> of interfaces:</p>
+
+<pre><code><span class="keyword">class</span> C <span class="keyword">extends</span> P <span class="keyword">implements</span> I, J, K {
+    <span class="comment">// Must provide all methods from I, J, and K</span>
+    <span class="comment">// Inherits code from P</span>
+}</code></pre>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-implementing">Implementing Interfaces</h2>
+
+<p>A class satisfies an interface by providing implementations of all its methods — either directly or through inheritance from a parent class.</p>
+
+<h4>Direct implementation</h4>
+
+<pre><code><span class="keyword">class</span> C <span class="keyword">implements</span> <span class="type-hl">I</span> {
+    <span class="type-hl">int</span> m(<span class="type-hl">float</span> x) {
+        <span class="keyword">return</span> 3;
+    }
+    <span class="type-hl">int</span> n(<span class="type-hl">String</span> s) {
+        <span class="keyword">return</span> s.length();
+    }
+}</code></pre>
+
+<h4>Satisfying via inherited methods</h4>
+
+<pre><code><span class="comment">// Parent class P provides method n</span>
+<span class="keyword">class</span> P {
+    <span class="type-hl">int</span> n(<span class="type-hl">String</span> s) {
+        <span class="keyword">return</span> s.length();
+    }
+}
+
+<span class="comment">// C extends P and implements I</span>
+<span class="comment">// C defines m itself, inherits n from P</span>
+<span class="keyword">class</span> C <span class="keyword">extends</span> P <span class="keyword">implements</span> <span class="type-hl">I</span> {
+    <span class="type-hl">int</span> m(<span class="type-hl">float</span> x) {
+        <span class="keyword">return</span> 3;
+    }
+    <span class="comment">// n is inherited from P — satisfies I's requirement!</span>
+}</code></pre>
+
+<h4>Extra methods and interface visibility</h4>
+
+<p>A class can have methods beyond what the interface requires. But if you access the object through an interface variable, you can only see the interface's methods:</p>
+
+<pre><code><span class="keyword">class</span> C <span class="keyword">extends</span> P <span class="keyword">implements</span> <span class="type-hl">I</span> {
+    <span class="type-hl">int</span> m(<span class="type-hl">float</span> x) { <span class="keyword">return</span> 3; }
+    <span class="comment">// inherits n from P</span>
+    <span class="type-hl">int</span> q() { <span class="keyword">return</span> 0; }  <span class="comment">// extra method, not in I</span>
+}
+
+I v = <span class="keyword">new</span> C();
+v.m(1.0f);    <span class="comment">// ✓ m is in interface I</span>
+v.n(<span class="string">"hi"</span>);     <span class="comment">// ✓ n is in interface I</span>
+v.q();         <span class="comment">// ✗ COMPILE ERROR — q is not in I</span></code></pre>
+
+<p>The variable <code>v</code> has type <code>I</code>, so the compiler only knows about methods declared in <code>I</code>. Even though the actual object is a <code>C</code> (which has <code>q</code>), the compiler plays it safe.</p>
+
+<h4>Interface obligations flow downward</h4>
+
+<p>If a superclass implements an interface, all its subclasses automatically implement it too:</p>
+
+<pre><code><span class="keyword">interface</span> <span class="type-hl">I</span> {
+    <span class="keyword">void</span> m();
+}
+
+<span class="keyword">class</span> A <span class="keyword">implements</span> <span class="type-hl">I</span> {
+    <span class="keyword">public void</span> m() {
+        System.out.println(<span class="string">"A"</span>);
+    }
+}
+
+<span class="keyword">class</span> Achild <span class="keyword">extends</span> A {
+    <span class="comment">// inherits m() from A</span>
+    <span class="comment">// therefore also implements I!</span>
+}
+
+I x = <span class="keyword">new</span> Achild();  <span class="comment">// ✓ works because Achild implements I via A</span></code></pre>
+
+<div class="warn-box">
+  <div class="label">Direction Matters</div>
+  <p>Interface obligations flow <strong>downward</strong> (parent → child), not upward. A superclass must fulfill its own interface — it can't rely on a future subclass to provide missing methods, because the superclass can be used on its own.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-abstract">Abstract Classes</h2>
+
+<div class="def-box">
+  <div class="label">Definition</div>
+  <p><strong>Abstract Class</strong>: A class that is intentionally <em>incomplete</em> — a hybrid between a regular class and an interface. It can have implemented methods (like a class) and unimplemented methods (like an interface). You cannot create objects from it directly; subclasses must fill in the blanks.</p>
+</div>
+
+<p>Why would you want this? Sometimes you have shared behavior that multiple subclasses should inherit (like a class), but also some behavior that each subclass must define differently (like an interface). Abstract classes give you both.</p>
+
+<pre><code><span class="keyword">interface</span> <span class="type-hl">I</span> {
+    <span class="keyword">void</span> speak();
+}
+
+<span class="comment">// Abstract class: has some code, but not all</span>
+<span class="keyword">abstract class</span> Animal <span class="keyword">implements</span> <span class="type-hl">I</span> {
+    <span class="keyword">void</span> sleep() {
+        System.out.println(<span class="string">"zzz"</span>);  <span class="comment">// ← implemented!</span>
+    }
+    <span class="comment">// speak() from I is NOT implemented here</span>
+    <span class="comment">// That's okay because Animal is abstract</span>
+}
+
+<span class="comment">// Cannot instantiate an abstract class!</span>
+Animal a = <span class="keyword">new</span> Animal();  <span class="comment">// ✗ Compile error</span>
+
+<span class="comment">// Subclass fills in the missing method</span>
+<span class="keyword">class</span> Dog <span class="keyword">extends</span> Animal {
+    <span class="keyword">public void</span> speak() {
+        System.out.println(<span class="string">"woof"</span>);  <span class="comment">// ← now implemented!</span>
+    }
+}
+
+<span class="comment">// This works because Dog is complete</span>
+Animal a = <span class="keyword">new</span> Dog();
+a.speak();  <span class="comment">// "woof" — from Dog</span>
+a.sleep();  <span class="comment">// "zzz"  — from Animal</span></code></pre>
+
+<div class="diagram">
+  <div style="text-align:left; display:inline-block;">
+    <strong>Comparison: Interface vs Abstract Class vs Class</strong><br><br>
+    Interface:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;All methods unimplemented&nbsp;&nbsp;| Can't instantiate | Multiple allowed<br>
+    Abstract Class:&nbsp;Some methods implemented&nbsp;&nbsp;&nbsp;| Can't instantiate | Single parent only<br>
+    Concrete Class:&nbsp;All methods implemented&nbsp;&nbsp;&nbsp;&nbsp;| Can instantiate&nbsp;&nbsp;&nbsp;| Single parent only
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<h2 id="sec-quiz2">Check Your Understanding — Java</h2>
+
+<div class="quiz" id="quiz-4">
+  <div class="q-label">Question 4</div>
+  <p class="question">Java's primitive types have fixed, platform-independent sizes (e.g., <code>int</code> is always 32 bits). Why was this design choice made?</p>
+  <ul class="options" data-correct="2">
+    <li onclick="selectOption(this)">To make Java code run faster than C++</li>
+    <li onclick="selectOption(this)">Because 32 bits is the optimal size for all CPUs</li>
+    <li onclick="selectOption(this)">To ensure programs behave identically on every machine (portability)</li>
+    <li onclick="selectOption(this)">Because Java doesn't support 64-bit values</li>
+  </ul>
+  <button class="check-btn" onclick="checkAnswer(this)" disabled>Check Answer</button>
+  <div class="feedback correct-fb">Correct! Fixed sizes ensure that a Java program produces the same results whether it runs on ARM, x86, SPARC, or any other architecture. This was essential for Sun's vision of portable code that works everywhere — from servers to toasters.</div>
+  <div class="feedback incorrect-fb">Think about Sun's original goal: code that works on <em>any</em> CPU. If <code>int</code> were 32 bits on one machine and 16 bits on another, the same program could produce different results. Fixed sizes guarantee identical behavior everywhere — that's portability.</div>
+</div>
+
+<div class="quiz" id="quiz-5">
+  <div class="q-label">Question 5</div>
+  <p class="question">Given this code, which call will cause a compile error?</p>
+  <pre style="margin: 8px 0;"><code>interface I { void m(); void n(); }
+class C implements I {
+    public void m() { }
+    public void n() { }
+    public void q() { }
+}
+I v = new C();</code></pre>
+  <ul class="options" data-correct="2">
+    <li onclick="selectOption(this)"><code>v.m();</code></li>
+    <li onclick="selectOption(this)"><code>v.n();</code></li>
+    <li onclick="selectOption(this)"><code>v.q();</code></li>
+    <li onclick="selectOption(this)">None — all three work</li>
+  </ul>
+  <button class="check-btn" onclick="checkAnswer(this)" disabled>Check Answer</button>
+  <div class="feedback correct-fb">Right! <code>v</code> has type <code>I</code>, and interface <code>I</code> only declares <code>m()</code> and <code>n()</code>. The compiler doesn't know that the actual object has <code>q()</code> — it only sees what <code>I</code> promises. To call <code>q()</code>, you'd need <code>v</code> to be of type <code>C</code>.</div>
+  <div class="feedback incorrect-fb">Since <code>v</code> is declared as type <code>I</code>, you can only call methods that interface <code>I</code> declares: <code>m()</code> and <code>n()</code>. Method <code>q()</code> exists on the actual <code>C</code> object, but the compiler only sees the interface type, not the runtime type. <code>v.q()</code> fails at compile time.</div>
+</div>
+
+<div class="quiz" id="quiz-6">
+  <div class="q-label">Question 6</div>
+  <p class="question">Why did Java choose to exclude multiple inheritance (having more than one parent class)?</p>
+  <ul class="options" data-correct="1">
+    <li onclick="selectOption(this)">It's impossible to implement in a programming language</li>
+    <li onclick="selectOption(this)">It creates ambiguity when two parents define the same method, and the complexity wasn't worth the benefit</li>
+    <li onclick="selectOption(this)">Java's garbage collector can't handle objects with two parents</li>
+    <li onclick="selectOption(this)">Single inheritance runs faster on all hardware</li>
+  </ul>
+  <button class="check-btn" onclick="checkAnswer(this)" disabled>Check Answer</button>
+  <div class="feedback correct-fb">Exactly! The "diamond problem" — two parents defining the same method — creates ambiguity about which implementation to use. C++ has complex rules for this; Java's designers decided the simpler approach (single inheritance + interfaces) was more reliable and easier to understand.</div>
+  <div class="feedback incorrect-fb">Multiple inheritance <em>is</em> possible (C++ and Python have it). The issue is the <strong>diamond problem</strong>: if two parents both define method <code>m()</code>, which does the child get? The resolution rules are complex and confusing. Java chose simplicity: one parent for code (single inheritance), multiple interfaces for behavioral contracts.</div>
+</div>
+
+<div class="bigpic-box" style="margin-top:48px;">
+  <div class="label">Wrapping Up</div>
+  <p><strong>Parsing:</strong> We learned that parsing is about figuring out the structure of flat text. Finite state machines handle regular expressions, but programming languages need the extra power of a stack (context-free grammars). Backtracking parsers try options and undo failures. The matcher/acceptor pattern elegantly handles disjunction and concatenation with backtracking — but left-recursive grammars will cause infinite loops.</p>
+  <p style="margin-top:8px;"><strong>Hardware:</strong> El Capitan showed us that a machine's effective speed depends enormously on the workload, and that there's always a tradeoff between specialization and generality.</p>
+  <p style="margin-top:8px;"><strong>Java:</strong> Was born from the practical need for portable, reliable, safe code on diverse hardware. Every design choice — static typing, garbage collection, bytecode, single inheritance, interfaces — traces back to solving specific engineering problems that C++ couldn't solve for networked toasters and servers.</p>
+</div>
+
+</main>
+
+
+</body>
+</html>

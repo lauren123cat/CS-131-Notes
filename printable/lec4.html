@@ -1,0 +1,1669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 4: Syntax & Grammar — Interactive Textbook</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf8f4;
+  --bg-warm: #f5f0e8;
+  --bg-code: #1e1e2e;
+  --text: #2c2418;
+  --text-muted: #7a6e5e;
+  --accent: #c44b2b;
+  --accent-light: #e8694a;
+  --accent-bg: #fef0ec;
+  --green: #2d7a4f;
+  --green-bg: #eef7f0;
+  --blue: #2b5fc4;
+  --blue-bg: #eef3fe;
+  --purple: #6b3fa0;
+  --purple-bg: #f3eefa;
+  --yellow: #b8860b;
+  --yellow-bg: #fdf6e3;
+  --border: #e0d8cc;
+  --shadow: 0 2px 12px rgba(44,36,24,0.08);
+  --shadow-lg: 0 8px 32px rgba(44,36,24,0.12);
+  --radius: 10px;
+  --font-body: 'Source Serif 4', Georgia, serif;
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.75;
+  font-size: 17.5px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── NAV SIDEBAR ── */
+.sidebar {
+  position: fixed;
+  left: 0; top: 0;
+  width: 280px;
+  height: 100vh;
+  background: #2c2418;
+  color: #c8bfb0;
+  overflow-y: auto;
+  z-index: 100;
+  padding: 28px 0;
+  transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+  scrollbar-width: thin;
+  scrollbar-color: #5a4e3e #2c2418;
+}
+.sidebar.collapsed { transform: translateX(-280px); }
+.sidebar-title {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent-light);
+  padding: 0 24px 18px;
+  border-bottom: 1px solid #3d3428;
+  margin-bottom: 12px;
+}
+.nav-section {
+  padding: 8px 0;
+}
+.nav-section-label {
+  font-family: var(--font-sans);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #7a6e5e;
+  padding: 12px 24px 6px;
+}
+.nav-link {
+  display: block;
+  padding: 7px 24px 7px 32px;
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  color: #b0a898;
+  text-decoration: none;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+  line-height: 1.45;
+}
+.nav-link:hover { color: #f0e8d8; background: rgba(255,255,255,0.04); }
+.nav-link.active {
+  color: #fef0ec;
+  border-left-color: var(--accent-light);
+  background: rgba(196,75,43,0.12);
+}
+
+.toggle-sidebar {
+  position: fixed;
+  left: 280px;
+  top: 16px;
+  z-index: 101;
+  background: #2c2418;
+  color: #c8bfb0;
+  border: none;
+  width: 36px; height: 36px;
+  border-radius: 0 6px 6px 0;
+  cursor: pointer;
+  font-size: 18px;
+  transition: left 0.35s cubic-bezier(.4,0,.2,1);
+  display: flex; align-items: center; justify-content: center;
+}
+.toggle-sidebar.shifted { left: 0; }
+
+/* ── MAIN CONTENT ── */
+.main {
+  margin-left: 280px;
+  transition: margin-left 0.35s cubic-bezier(.4,0,.2,1);
+  min-height: 100vh;
+}
+.main.expanded { margin-left: 0; }
+
+.content {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 48px 40px 120px;
+}
+
+/* ── HERO ── */
+.hero {
+  text-align: center;
+  padding: 60px 0 48px;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 56px;
+}
+.hero-label {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.hero h1 {
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+.hero-sub {
+  font-size: 19px;
+  color: var(--text-muted);
+  max-width: 540px;
+  margin: 0 auto;
+  font-style: italic;
+}
+
+/* ── SECTIONS ── */
+.chapter {
+  margin-bottom: 64px;
+  scroll-margin-top: 32px;
+}
+.chapter-num {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+h2 {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.25;
+  margin-bottom: 24px;
+  color: var(--text);
+}
+h3 {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 36px 0 16px;
+  color: var(--text);
+}
+h4 {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 700;
+  margin: 28px 0 12px;
+  color: var(--text);
+}
+
+p { margin-bottom: 16px; }
+p + p { margin-top: 0; }
+
+strong { font-weight: 600; }
+
+/* ── CALLOUT BOXES ── */
+.callout {
+  padding: 20px 24px;
+  border-radius: var(--radius);
+  margin: 24px 0;
+  border-left: 4px solid;
+}
+.callout-def {
+  background: var(--blue-bg);
+  border-color: var(--blue);
+}
+.callout-def .callout-label { color: var(--blue); }
+.callout-key {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+}
+.callout-key .callout-label { color: var(--accent); }
+.callout-why {
+  background: var(--green-bg);
+  border-color: var(--green);
+}
+.callout-why .callout-label { color: var(--green); }
+.callout-warn {
+  background: var(--yellow-bg);
+  border-color: var(--yellow);
+}
+.callout-warn .callout-label { color: var(--yellow); }
+.callout-purple {
+  background: var(--purple-bg);
+  border-color: var(--purple);
+}
+.callout-purple .callout-label { color: var(--purple); }
+.callout-label {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.callout p:last-child { margin-bottom: 0; }
+
+/* ── CODE BLOCKS ── */
+.code-block {
+  background: var(--bg-code);
+  color: #cdd6f4;
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin: 20px 0;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.7;
+  overflow-x: auto;
+  position: relative;
+}
+.code-block .comment { color: #6c7086; font-style: italic; }
+.code-block .keyword { color: #cba6f7; }
+.code-block .token-hl { color: #f9e2af; }
+.code-block .nonterm { color: #89b4fa; }
+.code-block .op { color: #a6e3a1; }
+.code-block .bad { color: #f38ba8; text-decoration: line-through; }
+.code-label {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #89b4fa;
+  margin-bottom: 10px;
+  display: block;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: #ede8df;
+  padding: 2px 7px;
+  border-radius: 4px;
+  color: var(--accent);
+}
+
+/* ── TREE DIAGRAMS (SVG) ── */
+.tree-container {
+  margin: 28px 0;
+  text-align: center;
+  overflow-x: auto;
+}
+.tree-container svg {
+  max-width: 100%;
+}
+
+/* ── INTERACTIVE QUIZ ── */
+.quiz {
+  background: var(--bg-warm);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  margin: 32px 0;
+}
+.quiz-label {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--purple);
+  margin-bottom: 12px;
+}
+.quiz-question {
+  font-weight: 600;
+  margin-bottom: 16px;
+  font-size: 17px;
+}
+.quiz-options { list-style: none; }
+.quiz-options li {
+  margin-bottom: 8px;
+}
+.quiz-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px 18px;
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text);
+}
+.quiz-option:hover { border-color: var(--purple); background: var(--purple-bg); }
+.quiz-option.correct {
+  border-color: var(--green) !important;
+  background: var(--green-bg) !important;
+  color: var(--green);
+  font-weight: 600;
+}
+.quiz-option.wrong {
+  border-color: var(--accent) !important;
+  background: var(--accent-bg) !important;
+  color: var(--accent);
+}
+.quiz-option:disabled { cursor: default; opacity: 0.85; }
+.quiz-explanation {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border-radius: 8px;
+  font-size: 15.5px;
+  display: none;
+  line-height: 1.65;
+}
+.quiz-explanation.show { display: block; }
+.quiz-explanation.correct-exp { background: var(--green-bg); color: #1a5a32; }
+.quiz-explanation.wrong-exp { background: var(--accent-bg); color: #8b2c15; }
+
+/* ── EXPANDABLE SECTIONS ── */
+.expandable {
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  margin: 24px 0;
+  overflow: hidden;
+}
+.expandable-header {
+  padding: 16px 20px;
+  background: var(--bg-warm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 15px;
+  user-select: none;
+  transition: background 0.2s;
+}
+.expandable-header:hover { background: #ede8de; }
+.expandable-arrow {
+  transition: transform 0.3s;
+  font-size: 14px;
+}
+.expandable.open .expandable-arrow { transform: rotate(90deg); }
+.expandable-body {
+  padding: 0 20px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+}
+.expandable.open .expandable-body {
+  padding: 20px;
+  max-height: 3000px;
+}
+
+/* ── COMPARISON TABLE ── */
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 24px 0;
+  font-size: 15px;
+}
+.compare-table th {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: var(--bg-warm);
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 2px solid var(--border);
+}
+.compare-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.compare-table tr:last-child td { border-bottom: none; }
+
+/* ── PROGRESS BAR ── */
+.progress-bar {
+  position: fixed;
+  top: 0; left: 280px; right: 0;
+  height: 3px;
+  background: var(--border);
+  z-index: 99;
+  transition: left 0.35s cubic-bezier(.4,0,.2,1);
+}
+.progress-bar.expanded { left: 0; }
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  width: 0%;
+  transition: width 0.15s;
+}
+
+/* ── STEP-THROUGH ANIMATION ── */
+.step-through {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  margin: 28px 0;
+  overflow: hidden;
+}
+.step-header {
+  padding: 16px 20px;
+  background: var(--bg-warm);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.step-title {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text);
+}
+.step-controls { display: flex; gap: 8px; align-items: center; }
+.step-btn {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text);
+}
+.step-btn:hover { border-color: var(--accent); color: var(--accent); }
+.step-btn:disabled { opacity: 0.3; cursor: default; }
+.step-counter {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.step-body { padding: 24px; min-height: 200px; }
+.step-body .step-item { display: none; }
+.step-body .step-item.active { display: block; }
+.step-explanation {
+  font-size: 15.5px;
+  margin-top: 16px;
+  padding: 14px 18px;
+  background: var(--blue-bg);
+  border-radius: 8px;
+  color: #1a3a6b;
+  line-height: 1.6;
+}
+
+/* ── ANNOTATIONS ── */
+.annotated {
+  border-bottom: 2px dashed var(--accent-light);
+  cursor: help;
+  position: relative;
+}
+.annotated:hover::after {
+  content: attr(data-note);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-code);
+  color: #cdd6f4;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: var(--font-sans);
+  white-space: nowrap;
+  max-width: 320px;
+  white-space: normal;
+  z-index: 10;
+  box-shadow: var(--shadow-lg);
+  line-height: 1.5;
+}
+
+/* ── BIG PICTURE CONNECTOR ── */
+.connector {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 18px 22px;
+  background: linear-gradient(135deg, #f5f0e8 0%, #fef0ec 100%);
+  border-radius: var(--radius);
+  margin: 28px 0;
+  border: 1px solid #e8d8cc;
+}
+.connector-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.connector-text {
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--text);
+}
+.connector-text strong { color: var(--accent); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .sidebar { transform: translateX(-280px); }
+  .sidebar.collapsed { transform: translateX(0); }
+  .main { margin-left: 0; }
+  .toggle-sidebar { left: 0; }
+  .toggle-sidebar.shifted { left: 280px; }
+  .progress-bar { left: 0; }
+  .content { padding: 36px 20px 100px; }
+  .hero h1 { font-size: 30px; }
+}
+</style>
+
+<style>
+/* === Printable Override === */
+
+/* Hide non-content elements */
+.sidebar, .sidebar-toggle, .progress-bar, .quiz, .quiz-btn { display: none !important; }
+
+/* Base typography */
+html { font-size: 12px !important; }
+body { line-height: 1.3 !important; }
+
+/* Layout */
+.main {
+  margin-left: 0 !important;
+  padding: 0.5rem !important;
+  max-width: 100% !important;
+}
+
+/* Headings */
+h1 { font-size: 1.4rem !important; }
+h2 { font-size: 1.15rem !important; margin-top: 0.5rem !important; }
+h3 { font-size: 1.05rem !important; margin-top: 0.4rem !important; }
+
+/* Spacing */
+p { margin-bottom: 0.25rem !important; }
+ul, ol { margin-bottom: 0.25rem !important; }
+li { margin-bottom: 0.1rem !important; }
+
+.callout {
+  padding: 0.3rem 0.5rem !important;
+  margin: 0.3rem 0 !important;
+}
+
+.code-block {
+  margin: 0.3rem 0 !important;
+  overflow: visible !important;
+}
+.code-block pre {
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+}
+.code-body, .code-block code {
+  padding: 0.3rem 0.5rem !important;
+  font-size: 0.85rem !important;
+}
+
+section, .section { margin-bottom: 0.3rem !important; }
+.subtitle { margin-bottom: 0.3rem !important; }
+
+/* Force expandables open and remove toggle UI */
+.expandable-content {
+  display: block !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+.expandable-arrow { display: none !important; }
+.expandable-header { cursor: default !important; }
+
+/* Kill animations */
+* {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+}
+</style>
+
+</head>
+<body>
+
+<!-- PROGRESS BAR -->
+<div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-title">Lecture 4 Textbook</div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Foundations</div>
+    <a class="nav-link" href="#ch1">1 — Why Grammars Exist</a>
+    <a class="nav-link" href="#ch2">2 — What Is a Grammar?</a>
+    <a class="nav-link" href="#ch3">3 — Context-Free Grammars</a>
+    <a class="nav-link" href="#ch3-quiz">    ✎ Check Yourself</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Parse Trees</div>
+    <a class="nav-link" href="#ch4">4 — Parse Trees & Proofs</a>
+    <a class="nav-link" href="#ch4-quiz">    ✎ Check Yourself</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Ambiguity</div>
+    <a class="nav-link" href="#ch5">5 — Ambiguous Grammars</a>
+    <a class="nav-link" href="#ch6">6 — Fixing Precedence</a>
+    <a class="nav-link" href="#ch6-walk">    ▶ Step-Through</a>
+    <a class="nav-link" href="#ch7">7 — Fixing Associativity</a>
+    <a class="nav-link" href="#ch7-quiz">    ✎ Check Yourself</a>
+    <a class="nav-link" href="#ch8">8 — The Final Grammar</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Real Languages</div>
+    <a class="nav-link" href="#ch9">9 — C Statement Grammar</a>
+    <a class="nav-link" href="#ch10">10 — Why Parentheses?</a>
+    <a class="nav-link" href="#ch11">11 — The Dangling Else</a>
+    <a class="nav-link" href="#ch11-quiz">    ✎ Check Yourself</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Trees & Notation</div>
+    <a class="nav-link" href="#ch12">12 — AST vs CST</a>
+    <a class="nav-link" href="#ch13">13 — BNF vs EBNF</a>
+    <a class="nav-link" href="#ch14">14 — RFC 5322 (Email)</a>
+    <a class="nav-link" href="#ch15">15 — XML 1.1 Grammar</a>
+    <a class="nav-link" href="#ch15-quiz">    ✎ Check Yourself</a>
+  </div>
+</nav>
+
+<button class="toggle-sidebar" id="toggleBtn" onclick="toggleSidebar()">☰</button>
+
+<!-- MAIN -->
+<div class="main" id="mainContent">
+<div class="content">
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<div class="hero">
+  <div class="hero-label">Lecture 4</div>
+  <h1>Syntax &amp; Grammar</h1>
+  <p class="hero-sub">How do we rigorously define what counts as a valid program — and why does it matter?</p>
+</div>
+
+<!-- ═══════════════ CHAPTER 1 ═══════════════ -->
+<div class="chapter" id="ch1">
+  <div class="chapter-num">Chapter 1</div>
+  <h2>Why Grammars Exist: The Big Picture</h2>
+
+  <p>Imagine you sit down and write a program in Python. You type it into your text editor, hit "Run," and Python tells you either "okay, I'll run this" or "SyntaxError: invalid syntax." How does Python <em>know</em> whether your program is valid or not?</p>
+
+  <p>Somewhere, someone had to write down <strong>the rules</strong> for what counts as a valid Python program. Those rules are what we call a <strong>grammar</strong>. And this lecture is all about how those rules work, what problems they can cause, and how the real world uses them.</p>
+
+  <div class="callout callout-why">
+    <div class="callout-label">🔗 Why This Matters</div>
+    <p>Grammars are the foundation of every programming language, every data format (HTML, JSON, XML), and every protocol (email, HTTP). If you ever design your own language, notation, or configuration file format, you'll need to write a grammar. Even if you don't, understanding grammars helps you understand why languages work the way they do — including weird rules you may have encountered in C, Python, or JavaScript.</p>
+  </div>
+
+  <h3>The Fortran Problem: No Formal Rules</h3>
+
+  <p>The very first successful programming language was <strong>Fortran</strong>, created by IBM in the 1950s. Fortran didn't have a formal grammar. Its "specification" was essentially: <em>whatever IBM's compiler accepts is Fortran, and whatever it rejects is not</em>.</p>
+
+  <p>IBM did write some manuals, but they were vague — lots of English descriptions and examples, nothing precise. This created a serious problem: if you were a competing company and you wanted to build your own Fortran compiler, you had no reliable reference. You'd have to reverse-engineer IBM's behavior, and IBM could change their compiler anytime (which they did) to break your work.</p>
+
+  <p>This was actually <em>strategic</em> for IBM — by not writing down the exact rules, they kept competitors at a disadvantage. It's one of the reasons IBM became the dominant computer company of that era.</p>
+
+  <h3>The Algol Solution: A Formal Specification</h3>
+
+  <p>The second major programming language, <strong>Algol</strong> (short for "algorithmic language"), was partly developed by IBM's competitors. One of its key goals was to have a <strong>formal specification for its syntax</strong> — precise, mathematical rules that anyone could read and independently implement a compiler from.</p>
+
+  <p>This meant that if Company A and Company B both read the Algol spec and both wrote compilers, their compilers would agree on which programs are valid. No more guessing, no more reverse-engineering.</p>
+
+  <div class="callout callout-def">
+    <div class="callout-label">Definition</div>
+    <p>A <strong>grammar</strong> is a formal specification for syntax. It acts as a contract between two groups: <strong>users</strong> of a language (people writing programs) and <strong>implementers</strong> (people writing compilers/interpreters). Users agree to follow the grammar when writing code, and implementers agree that any code following the grammar must be accepted and work correctly.</p>
+  </div>
+
+  <p>The technology Algol used for this specification was called a <strong>context-free grammar</strong> (CFG). This is the main subject of today's lecture. Before we dive into the formal definition though, let's build up the intuition piece by piece.</p>
+</div>
+
+<!-- ═══════════════ CHAPTER 2 ═══════════════ -->
+<div class="chapter" id="ch2">
+  <div class="chapter-num">Chapter 2</div>
+  <h2>What Is a Grammar, Intuitively?</h2>
+
+  <p>Think of a grammar as a <strong>set of rules</strong> that tells you how to build valid sentences in a language. Just like English has rules (a sentence needs a subject and a predicate), programming languages have rules (a <code>while</code> loop needs a condition and a body).</p>
+
+  <p>But there's a crucial difference: English grammar rules are fuzzy, full of exceptions, and impossible to capture completely in a formal system. Programming language rules are designed to be <strong>precise and unambiguous</strong> (at least, that's the goal — as we'll see, achieving this is harder than it sounds).</p>
+
+  <h3>Grammars Aren't Just for Programming Languages</h3>
+
+  <p>This idea of having a formal grammar applies far beyond programming languages. Every time your web browser loads a page, it receives a string of bytes that must conform to the <strong>HTML grammar</strong>. HTML is a <em>data language</em>, not a programming language, but it still needs a grammar so that web servers and browsers agree on what valid HTML looks like.</p>
+
+  <p>The same goes for email (there's a grammar for email messages), XML, JSON, URLs — really any structured format where different pieces of software need to agree on what's valid.</p>
+
+  <div class="connector">
+    <div class="connector-icon">🔗</div>
+    <div class="connector-text">
+      <strong>Connecting to the big picture:</strong> A grammar is like a specification or contract. This is the same idea from software engineering — specs help different teams work independently while staying compatible. Grammars are specs for languages.
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ CHAPTER 3 ═══════════════ -->
+<div class="chapter" id="ch3">
+  <div class="chapter-num">Chapter 3</div>
+  <h2>Context-Free Grammars: The Formal Definition</h2>
+
+  <p>Now let's get precise. A <strong>context-free grammar (CFG)</strong> has four components. I'm going to explain each one carefully, because these are the building blocks for everything else in this lecture.</p>
+
+  <div class="callout callout-def">
+    <div class="callout-label">Definition — Context-Free Grammar</div>
+    <p>A <strong>context-free grammar (CFG)</strong> consists of four things:</p>
+    <p>1. A finite set of <strong>terminals</strong> (also called tokens)<br>
+    2. A finite set of <strong>non-terminals</strong> (disjoint from the terminals)<br>
+    3. A <strong>start symbol</strong> (one of the non-terminals)<br>
+    4. A finite set of <strong>production rules</strong></p>
+  </div>
+
+  <p>Let's break each of these down.</p>
+
+  <h3>Terminals (Tokens)</h3>
+
+  <p><strong>Terminals</strong> are the actual symbols that appear in the final program — the things a programmer types and that appear on screen. They're called "terminals" because they're the <em>end points</em> of the grammar; you can't break them down any further.</p>
+
+  <p>In a programming language like C, the terminals include:</p>
+  <p>Reserved words like <code>if</code>, <code>else</code>, <code>while</code>, <code>return</code>, <code>break</code>. Symbols like <code>+</code>, <code>*</code>, <code>(</code>, <code>)</code>, <code>{</code>, <code>}</code>, <code>;</code>. Abstract tokens like <code>ID</code> (standing for any identifier, like <code>myVar</code> or <code>count</code>) and <code>NUM</code> (standing for any integer constant, like <code>42</code> or <code>0</code>).</p>
+
+  <p>A language like C might have around five dozen different terminals. That's the complete vocabulary — every valid C program is built from these tokens.</p>
+
+  <h3>Non-Terminals</h3>
+
+  <p><strong>Non-terminals</strong> are abstract categories that don't appear directly in your program — they exist in the grammar to describe <em>structure</em>. Think of them as labels for the different kinds of "building blocks" your language has.</p>
+
+  <p>For English, if you tried to write a grammar, your non-terminals might be things like "sentence," "subject," "predicate," "noun phrase," "adverbial phrase." For a programming language, non-terminals might include <code>Program</code>, <code>Statement</code>, <code>Expression</code>, <code>FunctionDeclaration</code>, and so on.</p>
+
+  <p>Non-terminals are "in your head" in the sense that the programmer never types them. They're the grammar designer's way of describing the different structural components of the language.</p>
+
+  <div class="callout callout-key">
+    <div class="callout-label">Key Idea</div>
+    <p>Choosing good non-terminal names matters. You want them to correspond to natural, meaningful units of your language — things like "expression" or "statement" — so that the grammar is readable and makes intuitive sense.</p>
+  </div>
+
+  <h3>Start Symbol</h3>
+
+  <p>The <strong>start symbol</strong> is a special non-terminal that represents the "whole thing" you're trying to describe. For a programming language, it's typically called <code>Program</code>, because you want to describe what a complete program looks like. For English, it might be <code>Sentence</code>.</p>
+
+  <p>You need at least one non-terminal (the start symbol), so the set of non-terminals must be non-empty.</p>
+
+  <h3>Production Rules</h3>
+
+  <p>This is where the interesting stuff happens. <strong>Production rules</strong> (or just "rules") describe how to build the structure of your language. Each rule has this form:</p>
+
+  <div class="code-block">
+    <span class="nonterm">NonTerminal</span> <span class="op">→</span> <span class="comment">sequence of terminals and non-terminals</span>
+  </div>
+
+  <p>The <strong>left-hand side</strong> is always a single non-terminal. The <strong>right-hand side</strong> is a sequence of zero or more symbols — each symbol can be either a terminal or a non-terminal. The right-hand side can even be <strong>empty</strong> (the empty string), meaning "this non-terminal can expand to nothing."</p>
+
+  <p>Here's an example of a rule: <code>S → T (</code> means "the non-terminal S can be replaced by the non-terminal T followed by the terminal <code>(</code>." Another: <code>T → ε</code> (where ε means "empty") means "the non-terminal T can expand to nothing at all."</p>
+
+  <h3>A Simple Example Grammar</h3>
+
+  <p>Let's look at a tiny grammar for arithmetic expressions. It has only one non-terminal (<code>E</code> for "expression"), which is also the start symbol:</p>
+
+  <div class="code-block">
+    <span class="code-label">Grammar: Simple Expressions</span>
+    <span class="nonterm">E</span> <span class="op">→</span> <span class="token-hl">ID</span>
+    <span class="nonterm">E</span> <span class="op">→</span> <span class="token-hl">NUM</span>
+    <span class="nonterm">E</span> <span class="op">→</span> <span class="nonterm">E</span> <span class="token-hl">+</span> <span class="nonterm">E</span>
+    <span class="nonterm">E</span> <span class="op">→</span> <span class="nonterm">E</span> <span class="token-hl">*</span> <span class="nonterm">E</span>
+    <span class="nonterm">E</span> <span class="op">→</span> <span class="token-hl">(</span> <span class="nonterm">E</span> <span class="token-hl">)</span>
+  </div>
+
+  <p>Reading these rules in English:</p>
+  <p>Rule 1: An expression can be an identifier (a variable name like <code>x</code> or <code>foo</code>).<br>
+  Rule 2: An expression can be a number (like <code>42</code>).<br>
+  Rule 3: An expression can be two expressions with a <code>+</code> between them.<br>
+  Rule 4: An expression can be two expressions with a <code>*</code> between them.<br>
+  Rule 5: An expression can be another expression wrapped in parentheses.</p>
+
+  <p>This grammar generates things like <code>x</code>, <code>42</code>, <code>x + 3</code>, <code>x + 3 * (y + 2)</code>, and infinitely many other arithmetic expressions. Pretty powerful for just five rules!</p>
+
+  <div class="callout callout-why">
+    <div class="callout-label">🔗 Why "Context-Free"?</div>
+    <p>The name "context-free" comes from the fact that each rule has <em>exactly one non-terminal</em> on the left-hand side. This means you can always apply a rule to replace a non-terminal regardless of what's around it (its "context"). There are more powerful kinds of grammars (context-sensitive grammars) where the left side can have multiple symbols, meaning you can only apply the rule in certain contexts. But context-free grammars hit the sweet spot for programming languages: powerful enough to describe their syntax, simple enough to work with efficiently.</p>
+  </div>
+
+  <p>Context-free grammars were originally developed for natural languages (like English), but they turned out to be too simple for that purpose — English is far too messy and exception-filled. However, since programming languages are deliberately designed to be simpler and more regular than English, CFGs turned out to be a perfect fit.</p>
+
+  <!-- QUIZ -->
+  <div class="quiz" id="ch3-quiz">
+    <div class="quiz-label">✎ Check Your Understanding</div>
+    <p class="quiz-question">In a context-free grammar, what can appear on the left-hand side of a production rule?</p>
+    <ul class="quiz-options">
+      <li><button class="quiz-option" onclick="checkQuiz(this, false, 'q1')">A sequence of terminals and non-terminals</button></li>
+      <li><button class="quiz-option" onclick="checkQuiz(this, true, 'q1')">Exactly one non-terminal</button></li>
+      <li><button class="quiz-option" onclick="checkQuiz(this, false, 'q1')">Exactly one terminal</button></li>
+      <li><button class="quiz-option" onclick="checkQuiz(this, false, 'q1')">Any single symbol (terminal or non-terminal)</button></li>
+    </ul>
+    <div class="quiz-explanation" id="q1-exp-correct">That's right! In a context-free grammar, the left-hand side of every rule is always exactly one non-terminal. This is what makes it "context-free" — you can replace that non-terminal no matter what surrounds it. If you allowed multiple symbols on the left side, you'd have a context-sensitive grammar instead.</div>
+    <div class="quiz-explanation" id="q1-exp-wrong">Not quite. The defining feature of a <em>context-free</em> grammar is that the left-hand side is always <strong>exactly one non-terminal</strong>. That's what makes it "context-free" — you can replace that non-terminal regardless of its surrounding context. The right-hand side can have a mix of terminals and non-terminals, but the left side is always a single non-terminal.</div>
+  </div>
+</div>
+
+<!-- ═══════════════ CHAPTER 4 ═══════════════ -->
+<div class="chapter" id="ch4">
+  <div class="chapter-num">Chapter 4</div>
+  <h2>Parse Trees: Proving a Program Is Valid</h2>
+
+  <p>So you have a grammar and you have a string of tokens (your program). How do you know if the program is valid according to the grammar? You build a <strong>parse tree</strong>.</p>
+
+  <div class="callout callout-def">
+    <div class="callout-label">Definition</div>
+    <p>A <strong>parse tree</strong> is a tree diagram that proves a sequence of tokens belongs to a language. The root is the start symbol, the leaves (read left to right) give you the original tokens, and each internal node corresponds to exactly one production rule from the grammar.</p>
+  </div>
+
+  <h3>How a Parse Tree Works</h3>
+
+  <p>A parse tree has three types of things in it:</p>
+
+  <p><strong>The root</strong> is the start symbol (e.g., <code>E</code> for expression or <code>Program</code> for a whole program).</p>
+
+  <p><strong>Internal nodes</strong> are non-terminals. Each internal node, together with its children, corresponds to one production rule. For example, if an internal node is labeled <code>E</code> and has three children <code>E</code>, <code>+</code>, <code>E</code>, that corresponds to the rule <code>E → E + E</code>.</p>
+
+  <p><strong>Leaves</strong> are terminals (tokens). When you read all the leaves from left to right, you get back the original token sequence — your program.</p>
+
+  <p>Sometimes an internal node can have <em>no children</em> at all. This corresponds to a rule where the right-hand side is empty (like <code>T → ε</code>). The node exists, but it contributes nothing to the final token sequence.</p>
+
+  <h3>Example: Parsing <code>x + 3 * (y + 2)</code></h3>
+
+  <p>Let's use our simple grammar to parse the expression <code>x + 3 * (y + 2)</code>. We need to build a tree where the root is <code>E</code> and the leaves, read left to right, give us <code>x + 3 * ( y + 2 )</code>.</p>
+
+  <div class="tree-container">
+    <svg viewBox="0 0 600 380" xmlns="http://www.w3.org/2000/svg" font-family="'Source Serif 4', serif">
+      <!-- Edges -->
+      <line x1="300" y1="35" x2="140" y2="95" stroke="#c8bfb0" stroke-width="2"/>
+      <line x1="300" y1="35" x2="300" y2="95" stroke="#c8bfb0" stroke-width="2"/>
+      <line x1="300" y1="35" x2="460" y2="95" stroke="#c8bfb0" stroke-width="2"/>
+      <!-- left E → ID -->
+      <line x1="140" y1="115" x2="140" y2="345" stroke="#c8bfb0" stroke-width="2"/>
+      <!-- right E → E * E -->
+      <line x1="460" y1="115" x2="340" y2="175" stroke="#c8bfb0" stroke-width="2"/>
+      <line x1="460" y1="115" x2="460" y2="175" stroke="#c8bfb0" stroke-width="2"/>
+      <line x1="460" y1="115" x2="530" y2="175" stroke="#c8bfb0" stroke-width="2"/>
+      <!-- E(3) → NUM -->
+      <line x1="340" y1="195" x2="340" y2="345" stroke="#c8bfb0" stroke-width="2"/>
+      <!-- E(paren) → ( E ) -->
+      <line x1="530" y1="195" x2="480" y2="255" stroke="#c8bfb0" stroke-width="2"/>
+      <line x1="530" y1="195" x2="530" y2="255" stroke="#c8bfb0" stroke-width="2"/>
+      <line x1="530" y1="195" x2="580" y2="255" stroke="#c8bfb0" stroke-width="2"/>
+      <!-- inner E → E + E -->
+      <line x1="530" y1="275" x2="505" y2="305" stroke="#c8bfb0" stroke-width="2"/>
+      <line x1="530" y1="275" x2="530" y2="305" stroke="#c8bfb0" stroke-width="2"/>
+      <line x1="530" y1="275" x2="555" y2="305" stroke="#c8bfb0" stroke-width="2"/>
+      <line x1="505" y1="325" x2="505" y2="345" stroke="#c8bfb0" stroke-width="2"/>
+      <line x1="555" y1="325" x2="555" y2="345" stroke="#c8bfb0" stroke-width="2"/>
+
+      <!-- Nodes -->
+      <circle cx="300" cy="30" r="20" fill="#eef3fe" stroke="#2b5fc4" stroke-width="2"/>
+      <text x="300" y="36" text-anchor="middle" font-weight="700" fill="#2b5fc4" font-size="16">E</text>
+
+      <circle cx="140" cy="108" r="18" fill="#eef3fe" stroke="#2b5fc4" stroke-width="2"/>
+      <text x="140" y="114" text-anchor="middle" font-weight="700" fill="#2b5fc4" font-size="15">E</text>
+
+      <circle cx="460" cy="108" r="18" fill="#eef3fe" stroke="#2b5fc4" stroke-width="2"/>
+      <text x="460" y="114" text-anchor="middle" font-weight="700" fill="#2b5fc4" font-size="15">E</text>
+
+      <circle cx="340" cy="188" r="16" fill="#eef3fe" stroke="#2b5fc4" stroke-width="2"/>
+      <text x="340" y="194" text-anchor="middle" font-weight="700" fill="#2b5fc4" font-size="14">E</text>
+
+      <circle cx="530" cy="188" r="16" fill="#eef3fe" stroke="#2b5fc4" stroke-width="2"/>
+      <text x="530" y="194" text-anchor="middle" font-weight="700" fill="#2b5fc4" font-size="14">E</text>
+
+      <circle cx="530" cy="268" r="16" fill="#eef3fe" stroke="#2b5fc4" stroke-width="2"/>
+      <text x="530" y="274" text-anchor="middle" font-weight="700" fill="#2b5fc4" font-size="14">E</text>
+
+      <circle cx="505" cy="318" r="14" fill="#eef3fe" stroke="#2b5fc4" stroke-width="2"/>
+      <text x="505" y="324" text-anchor="middle" font-weight="700" fill="#2b5fc4" font-size="13">E</text>
+
+      <circle cx="555" cy="318" r="14" fill="#eef3fe" stroke="#2b5fc4" stroke-width="2"/>
+      <text x="555" y="324" text-anchor="middle" font-weight="700" fill="#2b5fc4" font-size="13">E</text>
+
+      <!-- Leaves (tokens) -->
+      <rect x="115" y="348" width="50" height="26" rx="5" fill="#f9e2af" stroke="#b8860b" stroke-width="1.5"/>
+      <text x="140" y="366" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13" fill="#5a4200">x</text>
+
+      <rect x="280" y="88" width="40" height="24" rx="5" fill="#f9e2af" stroke="#b8860b" stroke-width="1.5"/>
+      <text x="300" y="105" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13" fill="#5a4200">+</text>
+
+      <rect x="440" y="168" width="40" height="24" rx="5" fill="#f9e2af" stroke="#b8860b" stroke-width="1.5"/>
+      <text x="460" y="185" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13" fill="#5a4200">*</text>
+
+      <rect x="320" y="348" width="40" height="26" rx="5" fill="#f9e2af" stroke="#b8860b" stroke-width="1.5"/>
+      <text x="340" y="366" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13" fill="#5a4200">3</text>
+
+      <rect x="460" y="248" width="30" height="24" rx="5" fill="#f9e2af" stroke="#b8860b" stroke-width="1.5"/>
+      <text x="475" y="265" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13" fill="#5a4200">(</text>
+
+      <rect x="565" y="248" width="30" height="24" rx="5" fill="#f9e2af" stroke="#b8860b" stroke-width="1.5"/>
+      <text x="580" y="265" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13" fill="#5a4200">)</text>
+
+      <rect x="510" y="298" width="40" height="24" rx="5" fill="#f9e2af" stroke="#b8860b" stroke-width="1.5"/>
+      <text x="530" y="315" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13" fill="#5a4200">+</text>
+
+      <rect x="485" y="348" width="40" height="26" rx="5" fill="#f9e2af" stroke="#b8860b" stroke-width="1.5"/>
+      <text x="505" y="366" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13" fill="#5a4200">y</text>
+
+      <rect x="535" y="348" width="40" height="26" rx="5" fill="#f9e2af" stroke="#b8860b" stroke-width="1.5"/>
+      <text x="555" y="366" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13" fill="#5a4200">2</text>
+
+      <!-- Legend -->
+      <circle cx="30" cy="365" r="8" fill="#eef3fe" stroke="#2b5fc4" stroke-width="1.5"/>
+      <text x="44" y="370" font-size="12" fill="#7a6e5e" font-family="DM Sans, sans-serif">= non-terminal</text>
+      <rect x="22" y="340" width="16" height="14" rx="3" fill="#f9e2af" stroke="#b8860b" stroke-width="1"/>
+      <text x="44" y="352" font-size="12" fill="#7a6e5e" font-family="DM Sans, sans-serif">= terminal (token)</text>
+    </svg>
+  </div>
+
+  <p>In this tree, every internal node (blue circle) corresponds to a grammar rule. The root <code>E</code> used the rule <code>E → E + E</code>. The right child used <code>E → E * E</code>. The bottom-right used <code>E → ( E )</code>. And so on. Reading the yellow leaves left to right gives us back: <code>x + 3 * ( y + 2 )</code>.</p>
+
+  <p>This tree is essentially a <strong>proof</strong> that the token sequence <code>x + 3 * (y + 2)</code> is a valid expression according to our grammar. It's a very easy proof to check — just verify that each node matches a rule.</p>
+
+  <div class="quiz" id="ch4-quiz">
+    <div class="quiz-label">✎ Check Your Understanding</div>
+    <p class="quiz-question">In a parse tree, what do you get when you read all the leaves from left to right?</p>
+    <ul class="quiz-options">
+      <li><button class="quiz-option" onclick="checkQuiz(this, false, 'q2')">A list of grammar rules that were used</button></li>
+      <li><button class="quiz-option" onclick="checkQuiz(this, true, 'q2')">The original token sequence (the program)</button></li>
+      <li><button class="quiz-option" onclick="checkQuiz(this, false, 'q2')">A list of all non-terminals in the grammar</button></li>
+    </ul>
+    <div class="quiz-explanation" id="q2-exp-correct">Exactly! The leaves of a parse tree are the terminals (tokens), and reading them left to right reconstructs the original program or expression. That's the whole point — the tree is a structured proof that the token sequence belongs to the language.</div>
+    <div class="quiz-explanation" id="q2-exp-wrong">Not quite. The leaves of a parse tree are <strong>terminals (tokens)</strong>. When you read them left to right, you get back the original token sequence — the program you're trying to validate. That's what makes the tree useful: it connects the flat sequence of tokens to the grammar's structure.</div>
+  </div>
+</div>
+
+<!-- ═══════════════ CHAPTER 5 ═══════════════ -->
+<div class="chapter" id="ch5">
+  <div class="chapter-num">Chapter 5</div>
+  <h2>The Danger: Ambiguous Grammars</h2>
+
+  <p>Here's where things get tricky — and this is the central problem of the entire lecture.</p>
+
+  <p>Look at our simple expression grammar again. We just built <em>one</em> parse tree for <code>x + 3 * (y + 2)</code>. But can we build a <em>different</em> parse tree for the exact same expression?</p>
+
+  <p><strong>Yes, we can.</strong> And that's a problem.</p>
+
+  <div class="callout callout-def">
+    <div class="callout-label">Definition</div>
+    <p>A grammar is <strong>ambiguous</strong> if there exists some string of tokens for which you can build two (or more) different parse trees. Each different parse tree represents a different interpretation of the program.</p>
+  </div>
+
+  <h3>Why Ambiguity Is Dangerous</h3>
+
+  <p>In mathematics, having two different proofs of the same theorem is fine — even cool. But in programming languages, two different parse trees for the same code means <strong>two different interpretations of what the program does</strong>. One compiler might execute the program one way, another compiler might execute it differently, and the programmer gets confused or gets wrong results.</p>
+
+  <h3>The Two Parse Trees for <code>x + 3 * (y + 2)</code></h3>
+
+  <p>With our simple grammar, there are two ways to parse <code>x + 3 * (y + 2)</code>:</p>
+
+  <p><strong>Parse Tree 1 (correct):</strong> The root <code>E</code> splits into <code>E + E</code>, where the right <code>E</code> splits into <code>E * E</code>. This means: first compute <code>3 * (y + 2)</code>, then add <code>x</code>. This respects the standard mathematical precedence where multiplication happens before addition.</p>
+
+  <p><strong>Parse Tree 2 (incorrect):</strong> The root <code>E</code> splits into <code>E * E</code>, where the left <code>E</code> splits into <code>E + E</code>. This means: first compute <code>x + 3</code>, then multiply by <code>(y + 2)</code>. This is wrong — it violates the precedence rule we all learned in math class.</p>
+
+  <p>The grammar allows both trees because it has no concept of "multiplication before addition." As far as the grammar is concerned, <code>E → E + E</code> and <code>E → E * E</code> are equally valid rules that can be applied at any level.</p>
+
+  <div class="callout callout-warn">
+    <div class="callout-label">Warning</div>
+    <p>Ambiguity is especially dangerous because it can <strong>sneak up on you</strong>. You might think your grammar is fine and only discover the ambiguity later. The opposite problem — a grammar that rejects valid programs — is less dangerous because users will immediately complain, and you'll fix it. Ambiguity is silent until it causes wrong behavior.</p>
+  </div>
+
+  <p>In fact, the problem of determining whether an arbitrary context-free grammar is ambiguous is <strong>undecidable</strong> — meaning there's no algorithm that can always tell you yes or no. You can sometimes prove specific grammars are unambiguous, but there's no general method. This is why we spend so much time learning to spot and fix ambiguity by hand.</p>
+
+  <div class="connector">
+    <div class="connector-icon">🔗</div>
+    <div class="connector-text">
+      <strong>Two types of ambiguity we'll fix:</strong> The ambiguity in our grammar comes from two sources that we need to handle separately. First, <strong>precedence ambiguity</strong>: should <code>+</code> or <code>*</code> be grouped first? Second, <strong>associativity ambiguity</strong>: in <code>a + b + c</code>, should we group <code>(a+b)+c</code> or <code>a+(b+c)</code>? Let's tackle them one at a time.
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ CHAPTER 6 ═══════════════ -->
+<div class="chapter" id="ch6">
+  <div class="chapter-num">Chapter 6</div>
+  <h2>Fixing Precedence Ambiguity</h2>
+
+  <h3>The Problem</h3>
+
+  <p>Consider <code>E + E * E</code>. Should this be <code>(E + E) * E</code> or <code>E + (E * E)</code>? We know from math that multiplication has <strong>higher precedence</strong> than addition, so the answer is <code>E + (E * E)</code>. But our grammar doesn't know this.</p>
+
+  <h3>The Fix: Separate Non-Terminals for Each Precedence Level</h3>
+
+  <p>The idea is beautifully simple: instead of one non-terminal <code>E</code> that handles everything, we create <strong>multiple non-terminals</strong> — one for each precedence level. Operators with higher precedence get "deeper" (more nested) non-terminals.</p>
+
+  <p>Here's the key insight: <strong>deeper non-terminals = higher precedence</strong>. Things that are deeper in the tree get grouped together first, which means they get evaluated first.</p>
+
+  <div class="code-block">
+    <span class="code-label">Grammar: Fixed Precedence</span>
+    <span class="comment">(* E handles + at the top level *)</span>
+    <span class="nonterm">E</span> <span class="op">→</span> <span class="nonterm">E</span> <span class="token-hl">+</span> <span class="nonterm">E</span>
+    <span class="nonterm">E</span> <span class="op">→</span> <span class="nonterm">F</span>
+
+    <span class="comment">(* F handles * at a deeper level — so * binds tighter *)</span>
+    <span class="nonterm">F</span> <span class="op">→</span> <span class="nonterm">F</span> <span class="token-hl">*</span> <span class="nonterm">F</span>
+    <span class="nonterm">F</span> <span class="op">→</span> <span class="token-hl">ID</span>
+    <span class="nonterm">F</span> <span class="op">→</span> <span class="token-hl">NUM</span>
+    <span class="nonterm">F</span> <span class="op">→</span> <span class="token-hl">(</span> <span class="nonterm">E</span> <span class="token-hl">)</span>
+  </div>
+
+  <p>Here's what changed: we introduced a new non-terminal <code>F</code> (for "factor"). The rule <code>E → E + E</code> only works at the <code>E</code> level. The rule <code>F → F * F</code> only works at the <code>F</code> level. And crucially, <code>+</code> takes <code>E</code>s as operands (which can be sums or factors), but <code>*</code> takes <code>F</code>s as operands (which can only be factors — not bare sums).</p>
+
+  <p>This means if you try to build the "wrong" parse tree (where <code>+</code> is deeper than <code>*</code>), you'll get stuck — there's no rule that lets you multiply two expressions that contain un-parenthesized additions.</p>
+
+  <!-- STEP-THROUGH -->
+  <div class="step-through" id="ch6-walk">
+    <div class="step-header">
+      <div class="step-title">▶ Step-Through: Why the Bad Parse Fails</div>
+      <div class="step-controls">
+        <button class="step-btn" onclick="stepPrev('prec')" id="prec-prev" disabled>← Prev</button>
+        <span class="step-counter" id="prec-counter">1 / 5</span>
+        <button class="step-btn" onclick="stepNext('prec')" id="prec-next">Next →</button>
+      </div>
+    </div>
+    <div class="step-body" id="prec-body">
+      <div class="step-item active">
+        <p><strong>Goal:</strong> Try to parse <code>x + 3 * (y + 2)</code> with the <em>wrong</em> grouping: <code>(x + 3) * (y + 2)</code>.</p>
+        <div class="step-explanation">Let's see if our new grammar allows this incorrect interpretation. We'll try to build the parse tree bottom-up and see where we get stuck.</div>
+      </div>
+      <div class="step-item">
+        <p><strong>Step 1:</strong> The tokens <code>x</code> and <code>3</code> are each an <code>F</code> (via <code>F → ID</code> and <code>F → NUM</code>).</p>
+        <div class="step-explanation">So far so good. Every identifier and number can become a factor (F). This part always works.</div>
+      </div>
+      <div class="step-item">
+        <p><strong>Step 2:</strong> Each <code>F</code> can become an <code>E</code> (via <code>E → F</code>). Now we want to combine <code>x</code> and <code>3</code> with <code>+</code> using <code>E → E + E</code>.</p>
+        <div class="step-explanation">We successfully build: <code>E(x) + E(3)</code> → <code>E(x + 3)</code>. This gives us an <code>E</code> for the sub-expression <code>x + 3</code>. No problems yet.</div>
+      </div>
+      <div class="step-item">
+        <p><strong>Step 3:</strong> Now we need to multiply <code>(x + 3)</code> by <code>(y + 2)</code>. That means we need a rule like <code>? * ?</code>. The only multiplication rule is <code>F → F * F</code>. So we need <strong>both sides to be F</strong>.</p>
+        <div class="step-explanation">Here's the problem. We have <code>E(x + 3)</code> on the left side. But <code>F → F * F</code> requires both operands to be <code>F</code>s, not <code>E</code>s. Is there a way to turn our <code>E</code> into an <code>F</code>?</div>
+      </div>
+      <div class="step-item">
+        <p><strong>Step 4: STUCK!</strong> We have an <code>E</code> but need an <code>F</code>. There's no rule <code>F → E</code>. The only way to get an <code>E</code> inside an <code>F</code> is via <code>F → ( E )</code> — but that requires actual parentheses in the token stream, which aren't there!</p>
+        <div class="step-explanation"><strong>The bad parse tree cannot be built.</strong> Our grammar successfully prevents the wrong precedence. The only way to parse this expression is the correct way: <code>x + (3 * (y + 2))</code>, where the <code>*</code> is grouped at the deeper <code>F</code> level.</div>
+      </div>
+    </div>
+  </div>
+
+  <p>The grammar went from 5 rules to 6, and from 1 non-terminal to 2. That's the cost: more complexity. But the payoff is that the wrong parse tree is now impossible.</p>
+</div>
+
+<!-- ═══════════════ CHAPTER 7 ═══════════════ -->
+<div class="chapter" id="ch7">
+  <div class="chapter-num">Chapter 7</div>
+  <h2>Fixing Associativity Ambiguity</h2>
+
+  <h3>The Problem</h3>
+
+  <p>Even with our precedence fix, the grammar is still ambiguous! Consider <code>x * y * z</code>. Since both uses of <code>*</code> are at the same precedence level, the grammar allows two trees:</p>
+
+  <p><strong>Left-associative:</strong> <code>(x * y) * z</code> — do the left multiplication first.<br>
+  <strong>Right-associative:</strong> <code>x * (y * z)</code> — do the right multiplication first.</p>
+
+  <h3>Why Associativity Matters</h3>
+
+  <p>You might think "multiplication is associative in math, so it doesn't matter." But in computers, it <em>does</em> matter:</p>
+
+  <p><strong>Integer overflow:</strong> If <code>x * y</code> overflows but <code>y * z</code> doesn't, the order changes the result. For example, with 32-bit integers, <code>(1000000 * 1000000) * 1</code> overflows, but <code>1000000 * (1000000 * 1)</code> also overflows the same way — bad example. But <code>(a + b) + c</code> vs <code>a + (b + c)</code> can differ if <code>a + b</code> overflows.</p>
+
+  <p><strong>Floating-point rounding:</strong> <code>(0.1 + 0.2) + 0.3</code> and <code>0.1 + (0.2 + 0.3)</code> can give different results due to rounding.</p>
+
+  <p><strong>Non-associative operators:</strong> For division, <code>(a / b) / c</code> is very different from <code>a / (b / c)</code>. Same for subtraction.</p>
+
+  <h3>The Fix: Left Recursion for Left Associativity</h3>
+
+  <p>The trick is elegant: if you want an operator to be <strong>left-associative</strong>, put the recursive non-terminal on the <strong>left</strong> side of the rule. If you want right-associativity, put it on the right.</p>
+
+  <div class="code-block">
+    <span class="code-label">Grammar: Fixed Precedence AND Associativity</span>
+    <span class="comment">(* Left side recurses through E → forces left associativity for + *)</span>
+    <span class="comment">(* Groups as: ((a + b) + c) + d *)</span>
+    <span class="nonterm">E</span> <span class="op">→</span> <span class="nonterm">E</span> <span class="token-hl">+</span> <span class="nonterm">T</span>
+    <span class="nonterm">E</span> <span class="op">→</span> <span class="nonterm">T</span>
+
+    <span class="comment">(* Left side recurses through T → forces left associativity for * *)</span>
+    <span class="comment">(* Groups as: ((a * b) * c) * d *)</span>
+    <span class="nonterm">T</span> <span class="op">→</span> <span class="nonterm">T</span> <span class="token-hl">*</span> <span class="nonterm">F</span>
+    <span class="nonterm">T</span> <span class="op">→</span> <span class="nonterm">F</span>
+
+    <span class="comment">(* Atoms: the base cases *)</span>
+    <span class="nonterm">F</span> <span class="op">→</span> <span class="token-hl">ID</span>
+    <span class="nonterm">F</span> <span class="op">→</span> <span class="token-hl">NUM</span>
+    <span class="nonterm">F</span> <span class="op">→</span> <span class="token-hl">(</span> <span class="nonterm">E</span> <span class="token-hl">)</span>
+  </div>
+
+  <p>Notice the asymmetry: in <code>E → E + T</code>, the left side of <code>+</code> is <code>E</code> (which can contain more additions), but the right side is <code>T</code> (which can only be a single term, not a bare addition). This forces additions to group to the left.</p>
+
+  <p>Similarly, <code>T → T * F</code> forces multiplications to group to the left.</p>
+
+  <div class="expandable" onclick="this.classList.toggle('open')">
+    <div class="expandable-header">
+      <span>🔍 Detailed Example: Why <code>x * y * z</code> can only be <code>(x * y) * z</code></span>
+      <span class="expandable-arrow">▶</span>
+    </div>
+    <div class="expandable-body">
+      <p>Let's try to build the <strong>wrong</strong> tree: <code>x * (y * z)</code>.</p>
+      <p>Starting from the leaves: <code>y</code> is an <code>F</code>, <code>z</code> is an <code>F</code>. We use <code>T → T * F</code> to get <code>T(y * z)</code>. Wait — for this rule, the left side of <code>*</code> must be a <code>T</code>, and <code>y</code> can become a <code>T</code> via <code>T → F</code>. So we get <code>T(y * z)</code>.</p>
+      <p>Now, <code>x</code> is an <code>F</code>, and we need <code>T(x) * T(y * z)</code>. But the rule is <code>T → T * F</code> — the right side of <code>*</code> must be an <code>F</code>, not a <code>T</code>. And <code>T(y * z)</code> is a <code>T</code>, not an <code>F</code>. There's no rule <code>F → T</code> either. <strong>We're stuck!</strong></p>
+      <p>The correct tree works: <code>x</code> is <code>F</code>, <code>y</code> is <code>F</code>. <code>T(x) * F(y)</code> → <code>T(x * y)</code>. Then <code>T(x * y) * F(z)</code> → <code>T((x * y) * z)</code>. Left-associative!</p>
+    </div>
+  </div>
+
+  <h3>Summary: The Evolution of Our Grammar</h3>
+
+  <table class="compare-table">
+    <tr>
+      <th>Version</th>
+      <th>Rules</th>
+      <th>Non-terminals</th>
+      <th>Problem</th>
+    </tr>
+    <tr>
+      <td>Original</td>
+      <td>5</td>
+      <td>1 (E)</td>
+      <td>Ambiguous: precedence + associativity</td>
+    </tr>
+    <tr>
+      <td>Precedence fix</td>
+      <td>6</td>
+      <td>2 (E, F)</td>
+      <td>Ambiguous: associativity</td>
+    </tr>
+    <tr>
+      <td>Full fix</td>
+      <td>7</td>
+      <td>3 (E, T, F)</td>
+      <td>Unambiguous ✓</td>
+    </tr>
+  </table>
+
+  <div class="quiz" id="ch7-quiz">
+    <div class="quiz-label">✎ Check Your Understanding</div>
+    <p class="quiz-question">To make the <code>-</code> operator left-associative (so <code>a - b - c</code> means <code>(a - b) - c</code>), which rule form should you use?</p>
+    <ul class="quiz-options">
+      <li><button class="quiz-option" onclick="checkQuiz(this, true, 'q3')"><code>E → E - T</code> (left recursion)</button></li>
+      <li><button class="quiz-option" onclick="checkQuiz(this, false, 'q3')"><code>E → T - E</code> (right recursion)</button></li>
+      <li><button class="quiz-option" onclick="checkQuiz(this, false, 'q3')"><code>E → E - E</code> (both sides recursive)</button></li>
+    </ul>
+    <div class="quiz-explanation" id="q3-exp-correct">That's right! Left recursion (<code>E → E - T</code>) forces left associativity. The left operand of <code>-</code> can grow through more subtractions, but the right operand is always a single term. This forces grouping like <code>((a - b) - c) - d</code>.</div>
+    <div class="quiz-explanation" id="q3-exp-wrong">Not quite. For <strong>left associativity</strong>, you need <strong>left recursion</strong>: <code>E → E - T</code>. The recursive non-terminal goes on the left of the operator. <code>E → T - E</code> would give right associativity, and <code>E → E - E</code> leaves associativity undefined (still ambiguous).</div>
+  </div>
+</div>
+
+<!-- ═══════════════ CHAPTER 8 ═══════════════ -->
+<div class="chapter" id="ch8">
+  <div class="chapter-num">Chapter 8</div>
+  <h2>The Complete Unambiguous Expression Grammar</h2>
+
+  <p>Let's put it all together and really understand the final grammar:</p>
+
+  <div class="code-block">
+    <span class="code-label">Final Unambiguous Grammar</span>
+    <span class="nonterm">E</span> <span class="op">→</span> <span class="nonterm">E</span> <span class="token-hl">+</span> <span class="nonterm">T</span>       <span class="comment">(* addition: left-associative, low precedence *)</span>
+    <span class="nonterm">E</span> <span class="op">→</span> <span class="nonterm">T</span>             <span class="comment">(* an expression can just be a term *)</span>
+
+    <span class="nonterm">T</span> <span class="op">→</span> <span class="nonterm">T</span> <span class="token-hl">*</span> <span class="nonterm">F</span>       <span class="comment">(* multiplication: left-associative, high precedence *)</span>
+    <span class="nonterm">T</span> <span class="op">→</span> <span class="nonterm">F</span>             <span class="comment">(* a term can just be a factor *)</span>
+
+    <span class="nonterm">F</span> <span class="op">→</span> <span class="token-hl">ID</span>           <span class="comment">(* a factor can be a variable *)</span>
+    <span class="nonterm">F</span> <span class="op">→</span> <span class="token-hl">NUM</span>          <span class="comment">(* a factor can be a number *)</span>
+    <span class="nonterm">F</span> <span class="op">→</span> <span class="token-hl">(</span> <span class="nonterm">E</span> <span class="token-hl">)</span>      <span class="comment">(* a factor can be a parenthesized expression *)</span>
+  </div>
+
+  <p>The three levels form a hierarchy: <code>E</code> (expressions with <code>+</code>) → <code>T</code> (terms with <code>*</code>) → <code>F</code> (atomic factors). Each level can "drop down" to the next (<code>E → T</code>, <code>T → F</code>), and the deepest level (<code>F</code>) can jump all the way back to the top via parentheses (<code>F → ( E )</code>). This creates a beautiful cycle where parentheses let you override precedence.</p>
+
+  <div class="callout callout-key">
+    <div class="callout-label">Key Pattern</div>
+    <p>Whenever you need to add a new precedence level, you add a new non-terminal between the existing ones. Want to add an exponentiation operator <code>^</code> with even higher precedence than <code>*</code>? Add a non-terminal between <code>F</code> and the atoms. Want to add a low-precedence comparison operator? Add one above <code>E</code>. The pattern scales naturally.</p>
+  </div>
+</div>
+
+<!-- ═══════════════ CHAPTER 9 ═══════════════ -->
+<div class="chapter" id="ch9">
+  <div class="chapter-num">Chapter 9</div>
+  <h2>Real-World Example: The C Statement Grammar</h2>
+
+  <p>Now let's leave our toy expression grammar and look at something real. Here's (part of) the grammar for statements in C. The C standard writes grammar rules in a slightly different notation: the left-hand side, followed by a colon, followed by indented alternatives.</p>
+
+  <div class="code-block">
+    <span class="code-label">C Statement Grammar (subset)</span>
+    <span class="nonterm">statement</span> :
+        <span class="token-hl">;</span>                                        <span class="comment">(* empty statement *)</span>
+        <span class="token-hl">break</span> <span class="token-hl">;</span>                                  <span class="comment">(* break *)</span>
+        <span class="token-hl">continue</span> <span class="token-hl">;</span>                               <span class="comment">(* continue *)</span>
+        <span class="nonterm">expr</span> <span class="token-hl">;</span>                                   <span class="comment">(* expression statement *)</span>
+        <span class="token-hl">return</span> <span class="nonterm">expr</span> <span class="token-hl">;</span>                           <span class="comment">(* return with value *)</span>
+        <span class="token-hl">return</span> <span class="token-hl">;</span>                                 <span class="comment">(* return without value *)</span>
+        <span class="token-hl">goto</span> <span class="token-hl">ID</span> <span class="token-hl">;</span>                                <span class="comment">(* goto *)</span>
+        <span class="token-hl">{</span> <span class="nonterm">statements</span> <span class="token-hl">}</span>                          <span class="comment">(* compound/block *)</span>
+        <span class="token-hl">while</span> <span class="token-hl">(</span> <span class="nonterm">expr</span> <span class="token-hl">)</span> <span class="nonterm">statement</span>               <span class="comment">(* while loop *)</span>
+        <span class="token-hl">for</span> <span class="token-hl">(</span> <span class="nonterm">expropt</span> <span class="token-hl">;</span> <span class="nonterm">expropt</span> <span class="token-hl">;</span> <span class="nonterm">expropt</span> <span class="token-hl">)</span> <span class="nonterm">statement</span>   <span class="comment">(* for loop *)</span>
+        <span class="token-hl">switch</span> <span class="token-hl">(</span> <span class="nonterm">expr</span> <span class="token-hl">)</span> <span class="nonterm">statement</span>              <span class="comment">(* switch *)</span>
+        <span class="token-hl">if</span> <span class="token-hl">(</span> <span class="nonterm">expr</span> <span class="token-hl">)</span> <span class="nonterm">statement</span>                  <span class="comment">(* if without else *)</span>
+        <span class="token-hl">if</span> <span class="token-hl">(</span> <span class="nonterm">expr</span> <span class="token-hl">)</span> <span class="nonterm">statement</span> <span class="token-hl">else</span> <span class="nonterm">statement</span>  <span class="comment">(* if with else *)</span>
+        <span class="token-hl">do</span> <span class="nonterm">statement</span> <span class="token-hl">while</span> <span class="token-hl">(</span> <span class="nonterm">expr</span> <span class="token-hl">)</span> <span class="token-hl">;</span>        <span class="comment">(* do-while loop *)</span>
+  </div>
+
+  <p>A few important things to notice:</p>
+
+  <p><strong>The simplest statement is just a semicolon</strong> — the empty statement. It does nothing, but it's syntactically valid.</p>
+
+  <p><strong>Assignment is not a special statement in C.</strong> In C, <code>x = 5</code> is an <em>expression</em>, not a statement. The "assignment statement" <code>x = 5;</code> is actually an expression followed by a semicolon — it's just the general <code>expr ;</code> rule. This is different from many other languages (like Python) where assignment is a statement.</p>
+
+  <p><strong>No semicolons after compound statements.</strong> Look at the <code>while</code>, <code>for</code>, <code>if</code>, etc. — none of them end with a semicolon. Why? Because the sub-statement inside them already provides its own semicolon. If you write <code>while (x > 0) x--;</code>, the semicolon belongs to the <code>x--;</code> expression statement, not to the while loop itself.</p>
+
+  <p><strong>Parentheses in <code>return</code> are optional.</strong> The rule says <code>return expr ;</code> — the expression can be anything, including a parenthesized expression. So <code>return (x+1);</code> is valid, but those parentheses belong to the expression, not to the return statement. Some C programmers always put parentheses around return values as a style choice, but it's not required by the grammar.</p>
+</div>
+
+<!-- ═══════════════ CHAPTER 10 ═══════════════ -->
+<div class="chapter" id="ch10">
+  <div class="chapter-num">Chapter 10</div>
+  <h2>Why Do <code>while</code> and <code>if</code> Need Parentheses?</h2>
+
+  <p>Look at the <code>while</code> rule: <code>while ( expr ) statement</code>. Those parentheses around the expression aren't optional — they're required by the grammar. But why? Wouldn't <code>while expr statement</code> be cleaner and simpler?</p>
+
+  <p>Let's imagine a simplified C (call it "EZ-C") where we drop those parentheses. The while rule becomes: <code>while expr statement</code>.</p>
+
+  <h3>The Ambiguity Proof</h3>
+
+  <p>To prove this is ambiguous, we need to find <strong>one program</strong> that can be parsed in two different ways. Consider this code in our parenthesis-free language:</p>
+
+  <div class="code-block">
+    <span class="token-hl">while</span> i<span class="op">(</span>5<span class="op">)</span> <span class="token-hl">;</span>
+  </div>
+
+  <p>This can be parsed in two ways:</p>
+
+  <p><strong>Interpretation 1:</strong> The expression is <code>i(5)</code> (calling function <code>i</code> with argument <code>5</code>), and the body is <code>;</code> (the empty statement). This means: keep calling <code>i(5)</code> as long as it returns a truthy value, doing nothing in the loop body.</p>
+
+  <p><strong>Interpretation 2:</strong> The expression is just <code>i</code> (checking whether <code>i</code> is truthy), and the body is <code>(5);</code> (evaluating <code>5</code> and throwing it away). This means: as long as <code>i</code> is truthy, evaluate <code>5</code> and discard it.</p>
+
+  <p>Without the required parentheses, the parser can't tell where the expression ends and the statement begins. The parentheses <code>while (expr)</code> create an unambiguous boundary.</p>
+
+  <div class="callout callout-key">
+    <div class="callout-label">Key Lesson</div>
+    <p>When designing syntax, parentheses (or other delimiters) often serve as <strong>disambiguation markers</strong>. They tell the parser exactly where one part ends and another begins. Removing them can introduce ambiguity even if the resulting code "looks obvious" to a human reader.</p>
+  </div>
+
+  <h3>But <code>do-while</code> Doesn't Need Them?</h3>
+
+  <p>Interestingly, the parentheses in <code>do statement while ( expr ) ;</code> are technically <em>not</em> needed for disambiguation. Even without them (<code>do statement while expr ;</code>), the grammar would still be unambiguous. Why? Because the semicolon at the end forces the parser to consume the entire expression — there's no way to "split" the expression early.</p>
+
+  <p>So why are the parentheses there? <strong>Consistency.</strong> The designers of C figured that if <code>while</code> requires parentheses around its expression, then <code>do-while</code> should too, even though it's not strictly necessary. Otherwise, programmers would get confused and start omitting parentheses where they're actually needed.</p>
+</div>
+
+<!-- ═══════════════ CHAPTER 11 ═══════════════ -->
+<div class="chapter" id="ch11">
+  <div class="chapter-num">Chapter 11</div>
+  <h2>The Dangling Else Problem</h2>
+
+  <p>This is one of the most famous ambiguities in programming language design, and it affects C, C++, Java, and many other languages.</p>
+
+  <h3>The Problem</h3>
+
+  <p>Look at the two <code>if</code> rules in our grammar:</p>
+
+  <div class="code-block">
+    <span class="nonterm">statement</span> <span class="op">→</span> <span class="token-hl">if</span> <span class="token-hl">(</span> <span class="nonterm">expr</span> <span class="token-hl">)</span> <span class="nonterm">statement</span>
+    <span class="nonterm">statement</span> <span class="op">→</span> <span class="token-hl">if</span> <span class="token-hl">(</span> <span class="nonterm">expr</span> <span class="token-hl">)</span> <span class="nonterm">statement</span> <span class="token-hl">else</span> <span class="nonterm">statement</span>
+  </div>
+
+  <p>Now consider this code:</p>
+
+  <div class="code-block">
+    <span class="token-hl">if</span> (a < 0)
+        <span class="token-hl">if</span> (b < 1)
+            x = y;
+    <span class="token-hl">else</span>
+        z = w;
+  </div>
+
+  <p>Which <code>if</code> does the <code>else</code> belong to? There are two valid interpretations:</p>
+
+  <div class="code-block">
+    <span class="code-label">Interpretation 1: else matches inner if (CORRECT)</span>
+    <span class="token-hl">if</span> (a < 0)
+        <span class="token-hl">if</span> (b < 1)
+            x = y;
+        <span class="token-hl">else</span>            <span class="comment">← attached to inner if</span>
+            z = w;
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">Interpretation 2: else matches outer if (WRONG)</span>
+    <span class="token-hl">if</span> (a < 0)
+        <span class="token-hl">if</span> (b < 1)
+            x = y;
+    <span class="token-hl">else</span>                <span class="comment">← attached to outer if</span>
+        z = w;
+  </div>
+
+  <p>Both are valid parse trees according to the grammar. The grammar is ambiguous!</p>
+
+  <p>The universally agreed convention is: <strong>an <code>else</code> always matches the closest unmatched <code>if</code></strong>. So Interpretation 1 is correct. But the grammar itself doesn't enforce this.</p>
+
+  <h3>The Fix: Introducing "Matched Statements"</h3>
+
+  <p>The fix follows the same pattern we've used before: introduce a new non-terminal that restricts what's allowed in certain positions.</p>
+
+  <p>The problem is specifically: in an <code>if-else</code> statement, the "then" part (between the <code>if</code> condition and the <code>else</code>) must not be an <code>if</code>-without-<code>else</code>. If it were, the <code>else</code> could ambiguously attach to either the inner or outer <code>if</code>.</p>
+
+  <p>So we create a new non-terminal <code>stmu</code> (short for "matched statement" or "statement-unambiguous") that includes every kind of statement <em>except</em> a bare <code>if</code>-without-<code>else</code>:</p>
+
+  <div class="code-block">
+    <span class="code-label">Fixed Grammar (dangling else resolved)</span>
+    <span class="nonterm">statement</span> <span class="op">→</span> <span class="nonterm">stmu</span>                                     <span class="comment">(* any matched statement *)</span>
+    <span class="nonterm">statement</span> <span class="op">→</span> <span class="token-hl">if</span> <span class="token-hl">(</span> <span class="nonterm">expr</span> <span class="token-hl">)</span> <span class="nonterm">statement</span>                  <span class="comment">(* if without else *)</span>
+    <span class="nonterm">statement</span> <span class="op">→</span> <span class="token-hl">if</span> <span class="token-hl">(</span> <span class="nonterm">expr</span> <span class="token-hl">)</span> <span class="nonterm">stmu</span> <span class="token-hl">else</span> <span class="nonterm">statement</span>    <span class="comment">(* if-else: then-part must be matched! *)</span>
+
+    <span class="nonterm">stmu</span> <span class="op">→</span> <span class="comment">(* every other kind of statement: ; | break; | expr; | { ... } | while ... | etc. *)</span>
+    <span class="nonterm">stmu</span> <span class="op">→</span> <span class="token-hl">if</span> <span class="token-hl">(</span> <span class="nonterm">expr</span> <span class="token-hl">)</span> <span class="nonterm">stmu</span> <span class="token-hl">else</span> <span class="nonterm">stmu</span>           <span class="comment">(* a fully matched if-else is also matched *)</span>
+  </div>
+
+  <p>The key change: in the <code>if-else</code> rule, the then-part uses <code>stmu</code> instead of <code>statement</code>. This means the then-part <strong>cannot</strong> be a bare <code>if</code>-without-<code>else</code>. If there's a nested <code>if</code> before the <code>else</code>, it <em>must</em> have its own <code>else</code> — ensuring the outer <code>else</code> is unambiguously attached to the outer <code>if</code>.</p>
+
+  <div class="callout callout-purple">
+    <div class="callout-label">Real-World Note</div>
+    <p>Interestingly, the actual C standard doesn't use this fix. Instead, they write the ambiguous grammar and add a footnote that says essentially: "Yes, we know this is ambiguous. Resolve it by matching each <code>else</code> with the closest unmatched <code>if</code>." So they cheat — they use an informal rule instead of fixing the grammar formally. For precedence and associativity, they <em>do</em> write the unambiguous grammar, but for the dangling else, they take the shortcut.</p>
+  </div>
+
+  <div class="quiz" id="ch11-quiz">
+    <div class="quiz-label">✎ Check Your Understanding</div>
+    <p class="quiz-question">The dangling else problem is caused by which grammar rules being combined?</p>
+    <ul class="quiz-options">
+      <li><button class="quiz-option" onclick="checkQuiz(this, true, 'q4')"><code>if (expr) statement</code> and <code>if (expr) statement else statement</code></button></li>
+      <li><button class="quiz-option" onclick="checkQuiz(this, false, 'q4')"><code>while (expr) statement</code> and <code>do statement while (expr);</code></button></li>
+      <li><button class="quiz-option" onclick="checkQuiz(this, false, 'q4')"><code>E → E + E</code> and <code>E → E * E</code></button></li>
+    </ul>
+    <div class="quiz-explanation" id="q4-exp-correct">Correct! The ambiguity arises because having both <code>if</code>-without-<code>else</code> and <code>if-else</code> as options means that when an <code>else</code> appears after nested <code>if</code>s, it's unclear which <code>if</code> it belongs to. The fix is to restrict the "then" part of an <code>if-else</code> to only allow fully-matched statements.</div>
+    <div class="quiz-explanation" id="q4-exp-wrong">Not quite. The dangling else specifically comes from having both <code>if (expr) statement</code> (no else) and <code>if (expr) statement else statement</code> (with else) in the grammar. When you nest them, the <code>else</code> could attach to either <code>if</code>.</div>
+  </div>
+</div>
+
+<!-- ═══════════════ CHAPTER 12 ═══════════════ -->
+<div class="chapter" id="ch12">
+  <div class="chapter-num">Chapter 12</div>
+  <h2>Abstract Syntax Trees vs. Concrete Syntax Trees</h2>
+
+  <p>Now here's a twist. After spending all this effort making grammars unambiguous, the real world often does something surprising: it uses <strong>ambiguous grammars on purpose</strong>.</p>
+
+  <p>Wait, what? Let me explain.</p>
+
+  <div class="callout callout-def">
+    <div class="callout-label">Definition</div>
+    <p>A <strong>concrete syntax tree (CST)</strong>, also called a parse tree, mirrors the grammar exactly. Every rule application, every intermediate non-terminal, every parenthesis and keyword appears in the tree. It's the full, faithful representation of the grammar.</p>
+  </div>
+
+  <div class="callout callout-def">
+    <div class="callout-label">Definition</div>
+    <p>An <strong>abstract syntax tree (AST)</strong> strips away unnecessary syntactic detail and keeps only the semantic structure — what the program <em>means</em>. Parentheses, intermediate non-terminals, and other "scaffolding" are removed.</p>
+  </div>
+
+  <h3>Example: <code>x + y</code></h3>
+
+  <p>With our unambiguous grammar, the concrete syntax tree for <code>x + y</code> looks like:</p>
+
+  <div class="tree-container">
+    <svg viewBox="0 0 540 300" xmlns="http://www.w3.org/2000/svg" font-family="'Source Serif 4', serif">
+      <!-- CST side -->
+      <text x="135" y="20" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="13" font-weight="700" fill="#7a6e5e" letter-spacing="1">CONCRETE (CST)</text>
+
+      <line x1="135" y1="50" x2="70" y2="100" stroke="#c8bfb0" stroke-width="2"/>
+      <line x1="135" y1="50" x2="135" y2="100" stroke="#c8bfb0" stroke-width="2"/>
+      <line x1="135" y1="50" x2="200" y2="100" stroke="#c8bfb0" stroke-width="2"/>
+      <line x1="70" y1="120" x2="70" y2="160" stroke="#c8bfb0" stroke-width="2"/>
+      <line x1="70" y1="180" x2="70" y2="220" stroke="#c8bfb0" stroke-width="2"/>
+      <line x1="200" y1="120" x2="200" y2="160" stroke="#c8bfb0" stroke-width="2"/>
+      <line x1="200" y1="180" x2="200" y2="220" stroke="#c8bfb0" stroke-width="2"/>
+      <line x1="70" y1="240" x2="70" y2="270" stroke="#c8bfb0" stroke-width="2"/>
+      <line x1="200" y1="240" x2="200" y2="270" stroke="#c8bfb0" stroke-width="2"/>
+
+      <circle cx="135" cy="45" r="18" fill="#eef3fe" stroke="#2b5fc4" stroke-width="2"/>
+      <text x="135" y="51" text-anchor="middle" font-weight="700" fill="#2b5fc4" font-size="15">E</text>
+
+      <circle cx="70" cy="112" r="16" fill="#eef3fe" stroke="#2b5fc4" stroke-width="2"/>
+      <text x="70" y="118" text-anchor="middle" font-weight="700" fill="#2b5fc4" font-size="14">E</text>
+
+      <circle cx="200" cy="112" r="16" fill="#eef3fe" stroke="#2b5fc4" stroke-width="2"/>
+      <text x="200" y="118" text-anchor="middle" font-weight="700" fill="#2b5fc4" font-size="14">T</text>
+
+      <circle cx="70" cy="172" r="16" fill="#eef3fe" stroke="#2b5fc4" stroke-width="2"/>
+      <text x="70" y="178" text-anchor="middle" font-weight="700" fill="#2b5fc4" font-size="14">T</text>
+
+      <circle cx="200" cy="172" r="16" fill="#eef3fe" stroke="#2b5fc4" stroke-width="2"/>
+      <text x="200" y="178" text-anchor="middle" font-weight="700" fill="#2b5fc4" font-size="14">F</text>
+
+      <circle cx="70" cy="232" r="16" fill="#eef3fe" stroke="#2b5fc4" stroke-width="2"/>
+      <text x="70" y="238" text-anchor="middle" font-weight="700" fill="#2b5fc4" font-size="14">F</text>
+
+      <rect x="50" y="270" width="40" height="22" rx="4" fill="#f9e2af" stroke="#b8860b" stroke-width="1.5"/>
+      <text x="70" y="285" text-anchor="middle" font-family="'JetBrains Mono'" font-size="12" fill="#5a4200">x</text>
+
+      <rect x="115" y="95" width="40" height="22" rx="4" fill="#f9e2af" stroke="#b8860b" stroke-width="1.5"/>
+      <text x="135" y="110" text-anchor="middle" font-family="'JetBrains Mono'" font-size="12" fill="#5a4200">+</text>
+
+      <rect x="180" y="270" width="40" height="22" rx="4" fill="#f9e2af" stroke="#b8860b" stroke-width="1.5"/>
+      <text x="200" y="285" text-anchor="middle" font-family="'JetBrains Mono'" font-size="12" fill="#5a4200">y</text>
+
+      <!-- AST side -->
+      <text x="400" y="20" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="13" font-weight="700" fill="#7a6e5e" letter-spacing="1">ABSTRACT (AST)</text>
+
+      <line x1="400" y1="110" x2="340" y2="200" stroke="#c8bfb0" stroke-width="2"/>
+      <line x1="400" y1="110" x2="460" y2="200" stroke="#c8bfb0" stroke-width="2"/>
+
+      <rect x="370" y="90" width="60" height="34" rx="8" fill="#eef7f0" stroke="#2d7a4f" stroke-width="2"/>
+      <text x="400" y="112" text-anchor="middle" font-family="'JetBrains Mono'" font-weight="600" fill="#2d7a4f" font-size="16">+</text>
+
+      <rect x="315" y="200" width="50" height="30" rx="6" fill="#f9e2af" stroke="#b8860b" stroke-width="1.5"/>
+      <text x="340" y="220" text-anchor="middle" font-family="'JetBrains Mono'" font-size="14" fill="#5a4200">x</text>
+
+      <rect x="435" y="200" width="50" height="30" rx="6" fill="#f9e2af" stroke="#b8860b" stroke-width="1.5"/>
+      <text x="460" y="220" text-anchor="middle" font-family="'JetBrains Mono'" font-size="14" fill="#5a4200">y</text>
+    </svg>
+  </div>
+
+  <p>The CST has 6 internal nodes (E, E, T, T, F, F) plus 3 leaves. The AST has just 1 internal node (<code>+</code>) and 2 leaves. The AST captures everything we need to <em>understand</em> the expression, while the CST captures every detail of the <em>grammar derivation</em>.</p>
+
+  <h3>Why This Matters in Practice</h3>
+
+  <p>In real compilers, people often work with ASTs rather than CSTs for several reasons: they're smaller (less memory), simpler (easier to work with), and they correspond to how programmers think about their code.</p>
+
+  <p>Because of this, many language specifications are written with <strong>intentionally ambiguous grammars</strong> (which produce nice, clean ASTs) plus <strong>side rules</strong> that say how to resolve the ambiguity ("use these precedence and associativity rules"). This is extremely common in practice.</p>
+</div>
+
+<!-- ═══════════════ CHAPTER 13 ═══════════════ -->
+<div class="chapter" id="ch13">
+  <div class="chapter-num">Chapter 13</div>
+  <h2>BNF vs. EBNF: Grammar Notations</h2>
+
+  <p>One annoying thing about grammars is that everyone uses a slightly different notation. But they all describe the same underlying concept. Let's learn the two most important ones.</p>
+
+  <div class="callout callout-def">
+    <div class="callout-label">Definition</div>
+    <p><strong>BNF (Backus-Naur Form)</strong> is the original, minimal notation for context-free grammars. It supports only three things: concatenation (symbols in a row), alternatives (multiple rules for the same non-terminal), and recursion. Nothing else — no shortcuts, no repetition operators.</p>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">BNF Example: Defining "digits"</span>
+    <span class="comment">(* A single digit *)</span>
+    &lt;<span class="nonterm">digit</span>&gt; ::= <span class="token-hl">0</span> | <span class="token-hl">1</span> | <span class="token-hl">2</span> | ... | <span class="token-hl">9</span>
+
+    <span class="comment">(* One or more digits — must use recursion *)</span>
+    &lt;<span class="nonterm">digits</span>&gt; ::= &lt;<span class="nonterm">digit</span>&gt;
+    &lt;<span class="nonterm">digits</span>&gt; ::= &lt;<span class="nonterm">digit</span>&gt; &lt;<span class="nonterm">digits</span>&gt;
+  </div>
+
+  <p>In BNF, non-terminals are enclosed in angle brackets <code>&lt; &gt;</code>, the symbol <code>::=</code> means "is defined as," and <code>|</code> means "or" (alternative). To express "one or more," you have to use recursion — there's no <code>+</code> operator.</p>
+
+  <div class="callout callout-def">
+    <div class="callout-label">Definition</div>
+    <p><strong>EBNF (Extended BNF)</strong> adds convenience operators borrowed from regular expressions. It can express everything BNF can, but more concisely. Any EBNF grammar can be mechanically translated to plain BNF.</p>
+  </div>
+
+  <p>Here are the EBNF extensions:</p>
+
+  <table class="compare-table">
+    <tr>
+      <th>EBNF Syntax</th>
+      <th>Meaning</th>
+      <th>BNF Equivalent</th>
+    </tr>
+    <tr>
+      <td><code>x*</code> or <code>{x}</code></td>
+      <td>Zero or more x's</td>
+      <td>Recursive rules (A → ε | x A)</td>
+    </tr>
+    <tr>
+      <td><code>x+</code></td>
+      <td>One or more x's</td>
+      <td>Recursive rules (A → x | x A)</td>
+    </tr>
+    <tr>
+      <td><code>x?</code> or <code>[x]</code></td>
+      <td>Optional: x or nothing</td>
+      <td>Two rules (A → x | ε)</td>
+    </tr>
+    <tr>
+      <td><code>( ... )</code></td>
+      <td>Grouping (for nesting)</td>
+      <td>Introduce a new non-terminal</td>
+    </tr>
+    <tr>
+      <td><code>x | y</code></td>
+      <td>x or y (alternative)</td>
+      <td>Same — BNF has this too</td>
+    </tr>
+  </table>
+
+  <p>EBNF is what most real-world grammar specifications use because it's less verbose. But it's important to understand that EBNF doesn't add any <em>power</em> — anything you can write in EBNF can be converted to plain BNF. EBNF is just syntactic sugar.</p>
+
+  <div class="callout callout-key">
+    <div class="callout-label">Key Principle</div>
+    <p>If you see an "EBNF" notation and you can't figure out how to translate it to plain BNF, something's wrong — either with the notation or your understanding. Legitimate EBNF should always have a straightforward BNF translation. This is the litmus test.</p>
+  </div>
+</div>
+
+<!-- ═══════════════ CHAPTER 14 ═══════════════ -->
+<div class="chapter" id="ch14">
+  <div class="chapter-num">Chapter 14</div>
+  <h2>Real-World Grammar: RFC 5322 (Email)</h2>
+
+  <p>Let's look at a real grammar specification that you interact with every day: the grammar for email messages, defined in Internet RFC 5322.</p>
+
+  <p>Every email you send or receive is a string of bytes that must conform to this specification. If the bytes don't match the grammar, the recipient's email server might reject your message as spam.</p>
+
+  <h3>The Message-ID Grammar</h3>
+
+  <p>Every email has a unique <code>Message-ID</code> header. Here's what one looks like:</p>
+
+  <div class="code-block">
+    Message-ID: &lt;eggert.$9321.fsf@cs.ucla.edu&gt;
+  </div>
+
+  <p>And here's the grammar that defines what's valid inside that field:</p>
+
+  <div class="code-block">
+    <span class="code-label">RFC 5322 EBNF (email Message-ID)</span>
+    <span class="nonterm">msg-id</span> = <span class="token-hl">"&lt;"</span> <span class="nonterm">dot-atom-text</span> <span class="token-hl">"@"</span> <span class="nonterm">id-right</span> <span class="token-hl">"&gt;"</span>
+
+    <span class="nonterm">id-right</span> = <span class="nonterm">dot-atom-text</span> <span class="op">/</span> <span class="nonterm">no-fold-literal</span>    <span class="comment">(* / means OR *)</span>
+
+    <span class="nonterm">no-fold-literal</span> = <span class="token-hl">"["</span> <span class="op">*</span><span class="nonterm">dtext</span> <span class="token-hl">"]"</span>            <span class="comment">(* * = zero or more *)</span>
+
+    <span class="nonterm">dtext</span> = %d33-90 <span class="op">/</span> %d94-126                    <span class="comment">(* ASCII ranges *)</span>
+
+    <span class="nonterm">dot-atom-text</span> = 1<span class="op">*</span><span class="nonterm">atext</span> <span class="op">*</span>(<span class="token-hl">"."</span> 1<span class="op">*</span><span class="nonterm">atext</span>)      <span class="comment">(* 1* = one or more *)</span>
+
+    <span class="nonterm">atext</span> = ALPHA <span class="op">/</span> DIGIT <span class="op">/</span> <span class="token-hl">"!"</span> <span class="op">/</span> <span class="token-hl">"#"</span> <span class="op">/</span> <span class="token-hl">"$"</span> <span class="op">/</span> ... <span class="op">/</span> <span class="token-hl">"~"</span>
+  </div>
+
+  <p>This notation has a few quirks worth understanding:</p>
+
+  <p><strong><code>/</code> means "or"</strong> — not a division sign, not a token. It's a meta-symbol. The reason they use <code>/</code> instead of <code>|</code> is historical: when John Postel designed this notation at UCLA in the 1970s, the terminals they had didn't have vertical bar characters on their keyboards! So <code>/</code> became the convention.</p>
+
+  <p><strong><code>*</code> before something means "zero or more"</strong> — similar to regex, but the <code>*</code> goes in front. <code>1*</code> means "one or more."</p>
+
+  <p><strong>Parentheses <code>( )</code> are for grouping</strong> — they're not tokens in the email syntax; they're meta-syntax for the grammar notation itself.</p>
+
+  <p><strong><code>%d33-90</code> means decimal ASCII characters 33 through 90</strong> — a range of characters. For example, ASCII 33 is <code>!</code> and ASCII 126 is <code>~</code>.</p>
+
+  <p><strong>Tokens are in double quotes:</strong> <code>"&lt;"</code>, <code>"@"</code>, <code>"&gt;"</code>, <code>"."</code>, etc.</p>
+
+  <h3>Security Implications</h3>
+
+  <p>The lecture made an interesting point about grammars and security: a grammar tells you what's <em>valid</em>, but it doesn't tell you what's <em>safe</em>. A malicious actor could craft a message-ID that perfectly conforms to this grammar but encodes a bash script or sensitive information. Since spaces aren't in the allowed character set, you can't embed every bash program — but you can still encode plenty of data.</p>
+
+  <p>For example, a compromised email client could leak secrets by encoding them into message-IDs. The messages would pass every grammar check perfectly, but they'd be carrying hidden information. This is a reminder that grammars are specifications for <em>form</em>, not <em>intent</em>.</p>
+</div>
+
+<!-- ═══════════════ CHAPTER 15 ═══════════════ -->
+<div class="chapter" id="ch15">
+  <div class="chapter-num">Chapter 15</div>
+  <h2>Real-World Grammar: XML 1.1</h2>
+
+  <p>The last real-world grammar we'll look at is for XML 1.1, the data interchange format that competes with JSON (and is the basis for HTML). This uses yet another EBNF notation — the one used by W3C web standards.</p>
+
+  <div class="code-block">
+    <span class="code-label">Simplified XML 1.1 Grammar</span>
+    <span class="nonterm">element</span>     ::= <span class="nonterm">EmptyElemTag</span> | <span class="nonterm">STag</span> <span class="nonterm">content</span> <span class="nonterm">ETag</span>
+    <span class="nonterm">content</span>     ::= <span class="nonterm">CharData</span>? ((<span class="nonterm">element</span> | <span class="nonterm">Reference</span>) <span class="nonterm">CharData</span>?)*
+    <span class="nonterm">EmptyElemTag</span> ::= <span class="token-hl">'&lt;'</span> <span class="nonterm">Name</span> (<span class="nonterm">S</span> <span class="nonterm">Attribute</span>)* <span class="nonterm">S</span>? <span class="token-hl">'/&gt;'</span>
+    <span class="nonterm">STag</span>        ::= <span class="token-hl">'&lt;'</span> <span class="nonterm">Name</span> (<span class="nonterm">S</span> <span class="nonterm">Attribute</span>)* <span class="nonterm">S</span>? <span class="token-hl">'&gt;'</span>
+    <span class="nonterm">ETag</span>        ::= <span class="token-hl">'&lt;/'</span> <span class="nonterm">Name</span> <span class="nonterm">S</span>? <span class="token-hl">'&gt;'</span>
+    <span class="nonterm">Attribute</span>   ::= <span class="nonterm">Name</span> <span class="nonterm">Eq</span> <span class="nonterm">AttValue</span>
+    <span class="nonterm">Name</span>        ::= <span class="nonterm">NameStartChar</span> (<span class="nonterm">NameChar</span>)*
+  </div>
+
+  <p>This notation uses <code>::=</code> for the definition arrow, <code>|</code> for alternatives, <code>?</code> for optional, <code>*</code> for zero or more, <code>+</code> for one or more, parentheses for grouping, and single quotes for tokens.</p>
+
+  <p>Reading the first rule: an <code>element</code> is either an <code>EmptyElemTag</code> (a self-closing tag like <code>&lt;br/&gt;</code>) or a <code>STag</code> (start tag) followed by <code>content</code> followed by an <code>ETag</code> (end tag) — the familiar <code>&lt;div&gt;...&lt;/div&gt;</code> pattern.</p>
+
+  <div class="callout callout-key">
+    <div class="callout-label">Transferable Skill</div>
+    <p>The point of looking at these different notations (C standard, RFC 5322, XML W3C) isn't to memorize each one. It's to develop the ability to <strong>read any grammar notation you encounter</strong>. Every notation is slightly different, but they all express the same underlying concepts: terminals, non-terminals, alternatives, repetition, and optionality. Once you understand these concepts, you can read any grammar.</p>
+  </div>
+
+  <div class="quiz" id="ch15-quiz">
+    <div class="quiz-label">✎ Final Check</div>
+    <p class="quiz-question">In the XML grammar above, what does <code>(S Attribute)* S?</code> mean?</p>
+    <ul class="quiz-options">
+      <li><button class="quiz-option" onclick="checkQuiz(this, true, 'q5')">Zero or more groups of (whitespace followed by an attribute), then optional whitespace</button></li>
+      <li><button class="quiz-option" onclick="checkQuiz(this, false, 'q5')">Exactly one whitespace and attribute, optionally followed by more whitespace</button></li>
+      <li><button class="quiz-option" onclick="checkQuiz(this, false, 'q5')">One or more attributes separated by whitespace</button></li>
+    </ul>
+    <div class="quiz-explanation" id="q5-exp-correct">That's right! The <code>*</code> after the parenthesized group means "zero or more" repetitions of the whole group (S followed by Attribute). Then <code>S?</code> means the final whitespace is optional. So a tag can have no attributes, one, or many — each preceded by whitespace — with optional trailing whitespace before the closing <code>&gt;</code>.</div>
+    <div class="quiz-explanation" id="q5-exp-wrong">Not quite. Let's break it down: <code>(S Attribute)*</code> means zero or more occurrences of the group (whitespace + attribute). The <code>*</code> applies to the whole parenthesized group. Then <code>S?</code> means an optional trailing whitespace. So you can have zero attributes, one, or many.</div>
+  </div>
+</div>
+
+<!-- ═══════════════ WRAP-UP ═══════════════ -->
+<div class="chapter" id="wrapup">
+  <div class="chapter-num">Summary</div>
+  <h2>The Big Picture</h2>
+
+  <p>Here's how everything in this lecture connects:</p>
+
+  <div class="callout callout-why" style="border-left-width: 5px;">
+    <div class="callout-label">The Full Story</div>
+    <p><strong>Grammars</strong> are formal specifications that define what's valid in a language — whether it's a programming language, a data format, or a protocol.</p>
+    <p><strong>Context-free grammars (CFGs)</strong> are the specific kind of grammar used for programming languages, consisting of terminals, non-terminals, a start symbol, and production rules.</p>
+    <p><strong>Parse trees</strong> are proofs that a token sequence is valid — each internal node corresponds to one grammar rule.</p>
+    <p><strong>Ambiguity</strong> is the central danger: when the same token sequence has multiple parse trees, it has multiple interpretations. Ambiguity comes from <strong>precedence</strong> (which operator binds tighter), <strong>associativity</strong> (which direction to group), and structural issues like the <strong>dangling else</strong>.</p>
+    <p>We fix ambiguity by <strong>adding non-terminals</strong> that restrict what can appear where. Deeper non-terminals = higher precedence. Left recursion = left associativity.</p>
+    <p>In practice, people often use <strong>abstract syntax trees (ASTs)</strong> with intentionally ambiguous grammars plus side rules, because the resulting trees are simpler.</p>
+    <p>Grammars are written in various <strong>notations</strong> (BNF, EBNF, and countless variants), but they all express the same underlying concepts.</p>
+  </div>
+</div>
+
+</div><!-- .content -->
+</div><!-- .main -->
+
+
+</body>
+</html>

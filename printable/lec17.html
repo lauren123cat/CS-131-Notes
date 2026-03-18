@@ -1,0 +1,1893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 17 — Memory Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf8f5;
+  --text: #1a1a1a;
+  --text-secondary: #555;
+  --accent: #b44a2d;
+  --accent-light: #f3e8e3;
+  --accent-dark: #8a3520;
+  --code-bg: #2b2b2b;
+  --code-text: #e0e0e0;
+  --card-bg: #fff;
+  --border: #e0dbd5;
+  --green: #2d7a4f;
+  --green-light: #e3f3eb;
+  --blue: #2d5fb4;
+  --blue-light: #e3ecf8;
+  --yellow: #b49a2d;
+  --yellow-light: #f8f3e3;
+  --red: #b44a2d;
+  --red-light: #f8e8e3;
+  --purple: #6b4fb4;
+  --purple-light: #ece3f8;
+  --nav-width: 280px;
+  --sidebar-bg: #f0ece6;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Source Serif 4', Georgia, serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.75;
+  font-size: 17px;
+}
+
+/* NAV SIDEBAR */
+.sidebar {
+  position: fixed;
+  left: 0; top: 0; bottom: 0;
+  width: var(--nav-width);
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  z-index: 100;
+  padding: 28px 0;
+  transition: transform 0.3s;
+}
+
+.sidebar-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--accent);
+  padding: 0 24px 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.nav-section {
+  padding: 6px 0 4px;
+}
+
+.nav-section-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-secondary);
+  padding: 12px 24px 6px;
+}
+
+.nav-item {
+  display: block;
+  padding: 7px 24px 7px 28px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-left: 3px solid transparent;
+  line-height: 1.4;
+}
+
+.nav-item:hover {
+  color: var(--text);
+  background: rgba(0,0,0,0.03);
+}
+
+.nav-item.active {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  background: var(--accent-light);
+  font-weight: 600;
+}
+
+/* MAIN CONTENT */
+.main {
+  margin-left: var(--nav-width);
+  max-width: 780px;
+  padding: 48px 56px 120px;
+}
+
+/* MOBILE */
+.menu-toggle {
+  display: none;
+  position: fixed;
+  top: 16px; left: 16px;
+  z-index: 200;
+  width: 42px; height: 42px;
+  border-radius: 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+@media (max-width: 900px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); box-shadow: 4px 0 20px rgba(0,0,0,0.15); }
+  .main { margin-left: 0; padding: 48px 24px 120px; }
+  .menu-toggle { display: flex; }
+}
+
+/* SECTIONS */
+.section {
+  display: none;
+  animation: fadeIn 0.35s ease;
+}
+
+.section.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* TYPOGRAPHY */
+h1 {
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1.15;
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-bottom: 36px;
+}
+
+h2 {
+  font-size: 26px;
+  font-weight: 600;
+  margin: 48px 0 16px;
+  line-height: 1.3;
+  color: var(--accent-dark);
+}
+
+h2:first-child { margin-top: 0; }
+
+h3 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  margin: 32px 0 12px;
+  color: var(--text);
+}
+
+p { margin-bottom: 16px; }
+
+/* SPECIAL BLOCKS */
+.callout {
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin: 24px 0;
+  font-size: 15.5px;
+  line-height: 1.7;
+}
+
+.callout-title {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-bottom: 8px;
+}
+
+.callout.insight { background: var(--blue-light); border-left: 4px solid var(--blue); }
+.callout.insight .callout-title { color: var(--blue); }
+
+.callout.warning { background: var(--yellow-light); border-left: 4px solid var(--yellow); }
+.callout.warning .callout-title { color: var(--yellow); }
+
+.callout.key { background: var(--green-light); border-left: 4px solid var(--green); }
+.callout.key .callout-title { color: var(--green); }
+
+.callout.danger { background: var(--red-light); border-left: 4px solid var(--red); }
+.callout.danger .callout-title { color: var(--red); }
+
+.callout.def { background: var(--purple-light); border-left: 4px solid var(--purple); }
+.callout.def .callout-title { color: var(--purple); }
+
+/* CODE */
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.88em;
+  background: #eee8e1;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+pre {
+  background: var(--code-bg);
+  color: var(--code-text);
+  border-radius: 10px;
+  padding: 22px 26px;
+  margin: 20px 0;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+.code-comment { color: #7a8a7a; }
+.code-keyword { color: #e8a0cf; }
+.code-string { color: #a8d8a0; }
+.code-type { color: #8ac8e8; }
+.code-fn { color: #e8c870; }
+
+/* DIAGRAMS (ASCII-art style in pre) */
+.diagram {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  margin: 24px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-x: auto;
+  color: var(--text);
+}
+
+/* QUIZ */
+.quiz-box {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  margin: 32px 0;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+
+.quiz-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+.quiz-question {
+  font-size: 16px;
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+
+.quiz-options { list-style: none; }
+
+.quiz-options li {
+  margin-bottom: 8px;
+}
+
+.quiz-options label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14.5px;
+  transition: background 0.15s;
+  border: 1px solid transparent;
+}
+
+.quiz-options label:hover { background: #f5f2ed; }
+
+.quiz-options input[type="radio"] {
+  margin-top: 3px;
+  accent-color: var(--accent);
+}
+
+.quiz-feedback {
+  margin-top: 14px;
+  padding: 14px 18px;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  display: none;
+}
+
+.quiz-feedback.correct { background: var(--green-light); color: #1a5a35; display: block; }
+.quiz-feedback.incorrect { background: var(--red-light); color: #8a3520; display: block; }
+
+.quiz-btn {
+  margin-top: 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 22px;
+  border-radius: 7px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.quiz-btn:hover { background: var(--accent-dark); }
+
+/* COMPARISON TABLE */
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 24px 0;
+  font-size: 14.5px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.compare-table th {
+  background: var(--accent);
+  color: #fff;
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.compare-table th:first-child { border-radius: 8px 0 0 0; }
+.compare-table th:last-child { border-radius: 0 8px 0 0; }
+
+.compare-table td {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.5;
+}
+
+.compare-table tr:nth-child(even) td { background: #faf8f5; }
+.compare-table tr:last-child td:first-child { border-radius: 0 0 0 8px; }
+.compare-table tr:last-child td:last-child { border-radius: 0 0 8px 0; }
+
+/* NAV BUTTONS */
+.section-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+
+.section-nav button {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 24px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.section-nav button:hover { border-color: var(--accent); color: var(--accent); }
+.section-nav button:disabled { opacity: 0.3; cursor: default; }
+.section-nav button:disabled:hover { border-color: var(--border); color: var(--text); }
+
+/* PROGRESS BAR */
+.progress-bar {
+  position: fixed;
+  top: 0; left: var(--nav-width); right: 0;
+  height: 3px;
+  background: var(--border);
+  z-index: 50;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+@media (max-width: 900px) {
+  .progress-bar { left: 0; }
+}
+
+/* ANALOGY BOX */
+.analogy {
+  background: #fff;
+  border: 1px dashed var(--accent);
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin: 24px 0;
+  font-size: 15px;
+}
+
+.analogy-label {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+/* STEP THROUGH */
+.step-through {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 28px 0;
+}
+
+.step-indicator {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.step-content {
+  min-height: 80px;
+  margin-bottom: 16px;
+}
+
+.step-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.step-controls button {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.step-controls button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+strong { font-weight: 600; }
+em { font-style: italic; }
+
+ul, ol { margin: 12px 0 16px 24px; }
+li { margin-bottom: 6px; }
+</style>
+
+<style>
+/* === Printable Override === */
+
+/* Hide non-content elements */
+.sidebar, .sidebar-toggle, .progress-bar, .quiz, .quiz-btn { display: none !important; }
+
+/* Base typography */
+html { font-size: 12px !important; }
+body { line-height: 1.3 !important; }
+
+/* Layout */
+.main {
+  margin-left: 0 !important;
+  padding: 0.5rem !important;
+  max-width: 100% !important;
+}
+
+/* Headings */
+h1 { font-size: 1.4rem !important; }
+h2 { font-size: 1.15rem !important; margin-top: 0.5rem !important; }
+h3 { font-size: 1.05rem !important; margin-top: 0.4rem !important; }
+
+/* Spacing */
+p { margin-bottom: 0.25rem !important; }
+ul, ol { margin-bottom: 0.25rem !important; }
+li { margin-bottom: 0.1rem !important; }
+
+.callout {
+  padding: 0.3rem 0.5rem !important;
+  margin: 0.3rem 0 !important;
+}
+
+.code-block {
+  margin: 0.3rem 0 !important;
+  overflow: visible !important;
+}
+.code-block pre {
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+}
+.code-body, .code-block code {
+  padding: 0.3rem 0.5rem !important;
+  font-size: 0.85rem !important;
+}
+
+section, .section { margin-bottom: 0.3rem !important; }
+.subtitle { margin-bottom: 0.3rem !important; }
+
+/* Force expandables open and remove toggle UI */
+.expandable-content {
+  display: block !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+.expandable-arrow { display: none !important; }
+.expandable-header { cursor: default !important; }
+
+/* Kill animations */
+* {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+}
+</style>
+
+</head>
+<body>
+
+<button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-title">Lecture 17 · Memory Mgmt</div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Part I — GC Revisited</div>
+    <a class="nav-item active" data-section="intro" onclick="goTo('intro')">The Big Picture</a>
+    <a class="nav-item" data-section="gen-idea" onclick="goTo('gen-idea')">Generations: The Idea</a>
+    <a class="nav-item" data-section="gen-assumptions" onclick="goTo('gen-assumptions')">Three Key Assumptions</a>
+    <a class="nav-item" data-section="nursery" onclick="goTo('nursery')">The Nursery & Fast <code>new</code></a>
+    <a class="nav-item" data-section="copying" onclick="goTo('copying')">Copy Collection in Action</a>
+    <a class="nav-item" data-section="gen-perf" onclick="goTo('gen-perf')">Why This Beats Mark & Sweep</a>
+    <a class="nav-item" data-section="gen-edge" onclick="goTo('gen-edge')">Edge Cases & Complications</a>
+    <a class="nav-item" data-section="gen-threads" onclick="goTo('gen-threads')">Multi-threading & GC</a>
+    <a class="nav-item" data-section="realtime" onclick="goTo('realtime')">Real-Time GC</a>
+    <a class="nav-item" data-section="quiz1" onclick="goTo('quiz1')">✓ Check: GC Concepts</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Part II — Rust</div>
+    <a class="nav-item" data-section="rust-why" onclick="goTo('rust-why')">Why Rust?</a>
+    <a class="nav-item" data-section="rust-immutable" onclick="goTo('rust-immutable')">Immutability by Default</a>
+    <a class="nav-item" data-section="rust-ownership" onclick="goTo('rust-ownership')">Ownership: The Core Idea</a>
+    <a class="nav-item" data-section="rust-move" onclick="goTo('rust-move')">Move Semantics</a>
+    <a class="nav-item" data-section="rust-copy" onclick="goTo('rust-copy')">Copyable Types</a>
+    <a class="nav-item" data-section="rust-borrow" onclick="goTo('rust-borrow')">Borrowing & References</a>
+    <a class="nav-item" data-section="rust-mut" onclick="goTo('rust-mut')">Mutable References</a>
+    <a class="nav-item" data-section="rust-lifetimes" onclick="goTo('rust-lifetimes')">Lifetimes</a>
+    <a class="nav-item" data-section="rust-gcc" onclick="goTo('rust-gcc')">C/C++ Comparison</a>
+    <a class="nav-item" data-section="quiz2" onclick="goTo('quiz2')">✓ Check: Rust Ownership</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Part III — OOP Concepts</div>
+    <a class="nav-item" data-section="oop-lang-vs-prog" onclick="goTo('oop-lang-vs-prog')">OO Language ≠ OO Code</a>
+    <a class="nav-item" data-section="oop-hidden-args" onclick="goTo('oop-hidden-args')">The Hidden Argument Pattern</a>
+    <a class="nav-item" data-section="oop-disputes" onclick="goTo('oop-disputes')">OOP Disputes</a>
+    <a class="nav-item" data-section="oop-prototypes" onclick="goTo('oop-prototypes')">Prototypes vs Classes</a>
+    <a class="nav-item" data-section="quiz3" onclick="goTo('quiz3')">✓ Check: OOP</a>
+  </div>
+</nav>
+
+<main class="main">
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- INTRO -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section active" id="sec-intro">
+<h1>Lecture 17</h1>
+<p class="subtitle">Memory Management — Generation-Based Copying, Rust Ownership, and OOP Concepts</p>
+
+<h2>Where We Are in the Big Picture</h2>
+<p>In previous lectures, you learned two ways a language runtime can automatically reclaim memory that your program no longer needs:</p>
+
+<p><strong>Mark and Sweep</strong> — the garbage collector walks all reachable objects ("marks" them), then scans <em>every</em> object in memory and frees the unmarked ones ("sweeps"). Simple, but it pauses your whole program and does work proportional to <em>all</em> objects — both live and dead.</p>
+
+<p><strong>Conservative GC</strong> — a variant that works even when the compiler doesn't tell the runtime exactly where every pointer is. It assumes anything that <em>looks</em> like a pointer might be one. Safe, but can leak memory (keeps objects alive that shouldn't be).</p>
+
+<p>Today, we're going to learn three big topics that extend this story:</p>
+
+<ol>
+  <li><strong>Generation-Based Copying Collection</strong> — a smarter, faster GC used by Java and .NET that exploits the fact that most objects die young.</li>
+  <li><strong>Rust's Ownership Model</strong> — a radically different approach that eliminates GC entirely by making the compiler enforce memory safety rules at compile time.</li>
+  <li><strong>OOP Concepts</strong> — how object-oriented programming really works under the hood, and why "OO language" and "OO programming" are not the same thing.</li>
+</ol>
+
+<div class="callout insight">
+  <div class="callout-title">Why This Matters</div>
+  Every program you write allocates memory. How that memory gets reclaimed — and how fast — affects whether your app runs smoothly or freezes, whether your robot crashes into a wall, and whether your code has subtle bugs that corrupt data. These aren't theoretical concerns; they're the reason Java chose generation-based GC, the reason Rust was created, and the reason the Linux kernel is written in a particular style of C.
+</div>
+
+<div class="section-nav">
+  <button disabled>← Previous</button>
+  <button onclick="goTo('gen-idea')">Next: Generations →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- GENERATIONS: THE IDEA -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-gen-idea">
+<h2>Generations: The Core Idea</h2>
+
+<p>Imagine you have a huge warehouse full of boxes. Some boxes have been sitting there for years — they contain important things. Other boxes arrived this morning — they might just be temporary packaging.</p>
+
+<p>If you need to clean up the warehouse, which boxes should you check first? Probably the new ones — the stuff that just arrived is most likely to be throwaway packaging.</p>
+
+<p>That's exactly how <strong>generation-based garbage collection</strong> works. Instead of treating all objects equally, we split memory into two regions:</p>
+
+<div class="diagram">
+┌──────────────────────────┐  ┌──────────────────────────┐
+│       OLD (Tenured)      │  │          NEW             │
+│                          │  │                          │
+│  Objects that have been  │  │  Objects recently        │
+│  around for a while.     │  │  allocated with "new".   │
+│  Probably still needed.  │  │  Often temporary.        │
+│                          │  │                          │
+│  (Think: the furniture   │  │  (Think: the packaging   │
+│   in your apartment)     │  │   from today's delivery) │
+└──────────────────────────┘  └──────────────────────────┘
+</div>
+
+<div class="callout def">
+  <div class="callout-title">Definition</div>
+  <strong>Generations</strong> divide the heap into regions based on object age. In the simplest form, there are just two: <strong>old</strong> (also called "tenured") and <strong>new</strong>. More sophisticated implementations can have many generations (e.g., 10), but the principle is the same.
+</div>
+
+<p>The "new" region is called the <strong>nursery</strong> (or sometimes "Eden" — as in the Garden of Eden, because everything here is freshly created). When you call <code>new</code> in Java, your object gets placed here.</p>
+
+<p>Objects that survive enough garbage collections get "promoted" — they move from the nursery into the old generation. The idea is: if an object has been alive this long, it's probably going to keep being alive.</p>
+
+<div class="callout key">
+  <div class="callout-title">Real-World Usage</div>
+  Java and .NET both use generation-based copying collectors as their default GC strategy. This isn't a textbook curiosity — it's the GC running on billions of devices right now.
+</div>
+
+<div class="section-nav">
+  <button onclick="goTo('intro')">← Big Picture</button>
+  <button onclick="goTo('gen-assumptions')">Next: Three Assumptions →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- THREE ASSUMPTIONS -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-gen-assumptions">
+<h2>Three Key Assumptions</h2>
+
+<p>Generation-based collection is built on three assumptions about how real programs behave. If these assumptions are wrong, the whole scheme falls apart. Fortunately, they're true for the vast majority of real-world programs.</p>
+
+<h3>Assumption 1: New Objects Are More Likely to Be Garbage</h3>
+
+<p>This sounds counterintuitive — you just created this object, why would you throw it away? But think about what code actually does:</p>
+
+<pre><code><span class="code-comment">// This creates a temporary StringBuilder object</span>
+<span class="code-type">String</span> result = <span class="code-keyword">new</span> <span class="code-type">StringBuilder</span>()
+    .append(firstName)
+    .append(<span class="code-string">" "</span>)
+    .append(lastName)
+    .toString();
+<span class="code-comment">// The StringBuilder is now garbage — we only needed the String</span></code></pre>
+
+<p>Programs constantly create objects for temporary purposes: packaging up data to pass to a function, building intermediate results, creating iterators. These objects live for a few microseconds and then nobody refers to them anymore. This pattern is so common it has a name: the <strong>"generational hypothesis"</strong> — most objects die young.</p>
+
+<h3>Assumption 2: New Objects Point to Old Ones (Not the Reverse)</h3>
+
+<div class="diagram">
+    OLD Generation              NEW Generation
+  ┌──────────────┐          ┌──────────────────┐
+  │  obj_A ──────│──┐       │                  │
+  │              │  │       │  obj_X ───────────│──→ obj_A (OLD)
+  │  obj_B ──────│──│──┐    │                  │
+  │              │  │  │    │  obj_Y ───────────│──→ obj_B (OLD)
+  │              │  │  │    │                  │
+  └──────────────┘  │  │    │  obj_Z ───────────│──→ obj_A (OLD)
+                    │  │    └──────────────────┘
+                    │  │
+    Common: ────────┘  └── arrows from NEW → OLD
+    Rare:   arrows from OLD → NEW
+</div>
+
+<p>Why? When you create a new object, you initialize its fields to point to things that already exist — and those things are, by definition, older. It's possible for an old object to later be modified to point to a new one, but it's less common.</p>
+
+<p>This assumption is important because it means: when we garbage-collect the nursery, we mostly only need to look at roots (stack variables, registers) that point into the nursery. We can <em>ignore</em> most of the old generation.</p>
+
+<h3>Assumption 3: There's One Contiguous Free Region in the Nursery</h3>
+
+<p>This is a design choice, not an observation about programs. Instead of maintaining a complex "free list" (a linked list of available memory chunks, like mark-and-sweep does), the nursery is organized so that all free space is in one contiguous block at the end:</p>
+
+<div class="diagram">
+   Nursery
+  ┌────────────────────────────────────────────┐
+  │ obj_1 │ obj_2 │ obj_3 │    FREE SPACE      │
+  │       │       │       │                     │
+  └────────────────────────────────────────────┘
+                          ↑                    ↑
+                          HP                   LP
+                    (heap pointer)       (limit pointer)
+</div>
+
+<p>We track this free region with just two pointers:</p>
+<ul>
+  <li><strong>HP (heap pointer)</strong> — points to the start of free space (where the next object will go)</li>
+  <li><strong>LP (limit pointer)</strong> — points to the end of the nursery</li>
+</ul>
+
+<div class="callout key">
+  <div class="callout-title">Why This Makes <code>new</code> Blazingly Fast</div>
+  When someone calls <code>new MyObject()</code>, the runtime just checks: is <code>HP + size ≤ LP</code>? If yes, place the object at HP and bump HP forward. That's it — roughly <strong>~10 machine instructions</strong>. Compare this to mark-and-sweep's free list, where <code>new</code> might need to walk through dozens of free blocks looking for one that's big enough — potentially hundreds of instructions.
+</div>
+
+<div class="analogy">
+  <div class="analogy-label">Analogy</div>
+  Think of the nursery like a roll of paper towels. Allocating an object is like tearing off a sheet — you just rip from the current position, no searching needed. With a free list, it's more like finding an empty page in a used notebook — you have to flip through and check each page.
+</div>
+
+<div class="section-nav">
+  <button onclick="goTo('gen-idea')">← Generations</button>
+  <button onclick="goTo('nursery')">Next: The Nursery →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- NURSERY & FAST NEW -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-nursery">
+<h2>The Nursery & Making <code>new</code> Fast</h2>
+
+<p>Let's really understand why this design makes allocation so fast, because it's one of the main reasons real systems use generation-based collection.</p>
+
+<h3>How <code>new</code> Works Under Mark and Sweep</h3>
+<p>With traditional mark-and-sweep, free memory is scattered in a <strong>free list</strong> — a linked list of available chunks of different sizes:</p>
+
+<div class="diagram">
+  Free List:
+  ┌──────┐    ┌────┐    ┌──────────┐    ┌───┐
+  │ 24B  │───→│ 8B │───→│   128B   │───→│16B│───→ NULL
+  └──────┘    └────┘    └──────────┘    └───┘
+</div>
+
+<p>When you call <code>new MyObject()</code> and it needs 32 bytes, the allocator has to walk this list: "24 bytes? Too small. 8 bytes? Too small. 128 bytes? That works!" Then it carves off 32 bytes from that 128-byte block. This is slow — potentially dozens or hundreds of instructions, and the free list can be long.</p>
+
+<h3>How <code>new</code> Works in a Generation-Based System</h3>
+
+<p>In the nursery, it's dramatically simpler. Both HP and LP can be kept in CPU registers (the fastest storage your processor has):</p>
+
+<pre><code><span class="code-comment">// Pseudocode for "new" with a nursery</span>
+<span class="code-keyword">if</span> (HP + requested_size <= LP) {
+    object_address = HP;    <span class="code-comment">// object goes here</span>
+    HP += requested_size;   <span class="code-comment">// bump the pointer</span>
+    <span class="code-keyword">return</span> object_address;   <span class="code-comment">// done!</span>
+} <span class="code-keyword">else</span> {
+    <span class="code-comment">// Out of space — trigger garbage collection</span>
+    garbage_collect();
+}</code></pre>
+
+<p>The fast path (no collection needed) is about <strong>10 instructions</strong>: a load, an add, a compare, a branch, a store. This is roughly as fast as pushing something onto a stack.</p>
+
+<h3>What Happens When Space Runs Out?</h3>
+
+<p>When <code>HP + size > LP</code>, the nursery is full. Now we trigger garbage collection — but only of the nursery, not the entire heap. This is called a <strong>minor collection</strong>. We'll see exactly how it works in the next section.</p>
+
+<div class="section-nav">
+  <button onclick="goTo('gen-assumptions')">← Three Assumptions</button>
+  <button onclick="goTo('copying')">Next: Copy Collection →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- COPY COLLECTION IN ACTION -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-copying">
+<h2>Copy Collection in Action</h2>
+
+<p>Here's the key insight that makes generation-based collection different from mark-and-sweep: instead of marking live objects and then sweeping dead ones, we <strong>copy live objects to a new location</strong> and throw away everything else.</p>
+
+<h3>Step-by-Step Walkthrough</h3>
+
+<div class="step-through" id="copySteps">
+  <div class="step-indicator">Step <span id="copyStepNum">1</span> of 5</div>
+  <div class="step-content" id="copyStepContent"></div>
+  <div class="step-controls">
+    <button id="copyPrev" onclick="copyStep(-1)">← Back</button>
+    <button id="copyNext" class="primary" onclick="copyStep(1)">Next →</button>
+  </div>
+</div>
+
+<h3>What We Never Do</h3>
+
+<p>Notice what's <em>missing</em> from this algorithm: there is no <strong>sweep phase</strong>. We never look at the dead objects. We never walk through the old nursery finding unmarked objects and freeing them one by one. We just abandon the entire old nursery — all the garbage is thrown away in one shot by discarding the whole region.</p>
+
+<div class="callout key">
+  <div class="callout-title">No Reference Counts Needed Either</div>
+  This algorithm doesn't need reference counts. We don't track how many pointers point to each object. We simply follow pointers from the roots, and anything we can reach gets copied. Anything we can't reach is garbage — we never even look at it.
+</div>
+
+<h3>When Does an Object Get "Tenured"?</h3>
+
+<p>If an object survives several minor collections (it keeps getting copied to new nurseries because it's still alive), eventually the runtime decides it's probably going to stick around. At that point, instead of copying it to a new nursery, the runtime promotes it to the <strong>old generation</strong>.</p>
+
+<p>If the old generation eventually fills up with garbage too (rare, but it happens), the runtime has to do a <strong>major collection</strong> — a full garbage collection of everything, old and new. This is expensive, but with luck, it doesn't happen often.</p>
+
+<div class="section-nav">
+  <button onclick="goTo('nursery')">← The Nursery</button>
+  <button onclick="goTo('gen-perf')">Next: Performance →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- WHY THIS BEATS MARK & SWEEP -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-gen-perf">
+<h2>Why This Beats Mark & Sweep</h2>
+
+<p>At first glance, copying sounds <em>more</em> expensive than mark-and-sweep — you're physically moving objects in memory! But there are two powerful reasons it's actually faster:</p>
+
+<h3>Reason 1: Work Is Proportional to Live Objects Only</h3>
+
+<table class="compare-table">
+  <tr>
+    <th>Property</th>
+    <th>Mark & Sweep</th>
+    <th>Generation-Based Copying</th>
+  </tr>
+  <tr>
+    <td>Work during collection</td>
+    <td>Proportional to <strong>all objects</strong> (live + dead)</td>
+    <td>Proportional to <strong>live objects only</strong></td>
+  </tr>
+  <tr>
+    <td>Dead objects</td>
+    <td>Must sweep each one individually</td>
+    <td>Never even looked at</td>
+  </tr>
+  <tr>
+    <td>If 90% of nursery is garbage</td>
+    <td>Still scans all 100%</td>
+    <td>Only copies the 10% that's live</td>
+  </tr>
+  <tr>
+    <td>Collection scope</td>
+    <td>Entire heap</td>
+    <td>Usually just the nursery</td>
+  </tr>
+</table>
+
+<p>Since most new objects are garbage (Assumption 1), the number of live objects in the nursery at collection time is typically small. So the copying collector does very little work during each minor collection.</p>
+
+<h3>Reason 2: Cache Friendliness</h3>
+
+<p>This is the less obvious but equally important advantage, and it connects back to computer architecture (CSE 33).</p>
+
+<p>Modern CPUs have <strong>caches</strong> — small, ultra-fast memory that sits between the CPU and main RAM. Accessing data in cache is roughly <strong>100× faster</strong> than accessing data in RAM. Programs run fast when the data they need is already in cache.</p>
+
+<div class="diagram">
+  BEFORE collection (nursery is scattered):
+  ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
+  │live │dead │dead │live │dead │dead │dead │live │  ← many cache lines
+  └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
+
+  AFTER copying to new nursery (compacted):
+  ┌─────┬─────┬─────┬─────────────────────────────┐
+  │live │live │live │          FREE                │  ← fewer cache lines
+  └─────┴─────┴─────┴─────────────────────────────┘
+</div>
+
+<p>After copying, all live objects are packed together tightly. They fit in fewer cache lines. When your program accesses these objects, they're more likely to already be in cache. Mark-and-sweep leaves objects scattered with dead space between them, wasting precious cache capacity.</p>
+
+<div class="callout insight">
+  <div class="callout-title">The Trade-Off</div>
+  Copying does add overhead — you're physically moving bytes around in memory. But the smaller working set (only live objects, no dead ones) and better cache behavior more than compensate in most workloads. And remember: the minor collection only covers the nursery, not the entire heap.
+</div>
+
+<div class="section-nav">
+  <button onclick="goTo('copying')">← Copy Collection</button>
+  <button onclick="goTo('gen-edge')">Next: Edge Cases →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- EDGE CASES -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-gen-edge">
+<h2>Edge Cases & Complications</h2>
+
+<h3>Problem 1: Old-to-New Pointers</h3>
+
+<p>Remember Assumption 2: new objects point to old ones, not the reverse. But this isn't always true! Sometimes you modify an old object to point to a new one:</p>
+
+<pre><code><span class="code-comment">// oldList has been around for a while (in the old generation)</span>
+<span class="code-comment">// newItem was just created (in the nursery)</span>
+oldList.add(newItem);  <span class="code-comment">// Now old → new pointer exists!</span></code></pre>
+
+<p>If we only look at stack/register roots when collecting the nursery, we'll miss <code>newItem</code> — we'll think it's garbage and throw it away, even though <code>oldList</code> still refers to it!</p>
+
+<p><strong>Solution 1: Treat the old generation as additional roots.</strong> During a minor collection, scan the old generation for any pointers into the nursery. Those are roots too. This requires a linear scan of the old generation, which isn't free, but it works.</p>
+
+<p><strong>Solution 2: Use virtual memory tricks.</strong> Mark old-generation pages as <strong>read-only</strong>. When the program tries to modify an old object (creating an old→new pointer), the hardware triggers a <strong>page fault</strong>. A signal handler catches this, notes which page was modified ("this page is dirty"), and makes it writable again. During the next GC, we only need to scan "dirty" pages — not the entire old generation.</p>
+
+<div class="callout insight">
+  <div class="callout-title">Hardware Support</div>
+  Modern CPUs have "dirty bits" in their page tables that track which pages have been written to. The GC can read these bits directly without needing signal handlers, making this even more efficient.
+</div>
+
+<h3>Problem 2: The <code>finalize()</code> Problem</h3>
+
+<p>Java's <code>Object</code> class has a method called <code>finalize()</code>:</p>
+
+<pre><code><span class="code-keyword">public class</span> <span class="code-type">Object</span> {
+    <span class="code-comment">// Called by GC when object becomes garbage</span>
+    <span class="code-keyword">void</span> <span class="code-fn">finalize</span>() { ... }
+}</code></pre>
+
+<p>You can override this in your class to do cleanup — close a database connection, release a file handle, etc. But here's the problem: <strong>the copying collector never looks at dead objects!</strong> If we never see the dead objects, we can never call their <code>finalize()</code> methods.</p>
+
+<p>Java's solution: objects with custom <code>finalize()</code> methods are placed in a <strong>separate arena</strong> that uses traditional mark-and-sweep. It's slower, but since very few classes override <code>finalize()</code>, it barely matters. In modern Java, <code>finalize()</code> is officially <strong>deprecated</strong> — you should use other cleanup mechanisms instead.</p>
+
+<h3>Problem 3: Incompatible with Conservative GC</h3>
+
+<p>Conservative GC works when you're <em>not sure</em> exactly where all the pointers are — you treat anything that <em>looks</em> like a pointer as one. That works for mark-and-sweep because objects don't move.</p>
+
+<p>But copying <em>moves</em> objects, so you must <strong>update every pointer</strong> that references the moved object. If you updated a value that <em>looks</em> like a pointer but is actually, say, someone's bank account balance, you'd corrupt that data.</p>
+
+<div class="callout danger">
+  <div class="callout-title">Critical Requirement</div>
+  Generation-based copying collection requires that the runtime knows <strong>exactly</strong> where all pointers are. This is why it works for Java (the compiler tells the runtime where every pointer is) but <strong>not for C or C++</strong> (compilers don't provide this information).
+</div>
+
+<div class="section-nav">
+  <button onclick="goTo('gen-perf')">← Performance</button>
+  <button onclick="goTo('gen-threads')">Next: Multi-threading →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- MULTI-THREADING -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-gen-threads">
+<h2>Multi-threading & GC</h2>
+
+<p>Java is multi-threaded. Multiple threads can call <code>new</code> at the same time. This creates a problem with our fast heap pointer scheme.</p>
+
+<h3>The Race Condition</h3>
+
+<pre><code><span class="code-comment">// Thread A and Thread B both call new simultaneously</span>
+<span class="code-comment">// Both read HP = 1000</span>
+<span class="code-comment">// Thread A: HP = 1000 + 32 = 1032</span>
+<span class="code-comment">// Thread B: HP = 1000 + 64 = 1064</span>
+<span class="code-comment">// Both think they own memory starting at 1000!</span>
+<span class="code-comment">// → DISASTER: two objects in the same memory</span></code></pre>
+
+<p>The naive fix is to put a <strong>lock</strong> (e.g., a spin lock) around the heap pointer. Grab the lock, bump HP, release the lock. But this defeats the purpose — our 10-instruction <code>new</code> becomes slower, and with 100 threads, there's heavy lock contention (threads waiting for each other).</p>
+
+<h3>The Solution: Per-Thread Nurseries</h3>
+
+<p>Give each thread its own private nursery (called a <strong>Thread-Local Allocation Buffer</strong> or TLAB). Each thread has its own HP and LP — no sharing, no locking, no contention.</p>
+
+<div class="diagram">
+  Thread 1's Nursery:    Thread 2's Nursery:    Thread 3's Nursery:
+  ┌──────┬───────┐      ┌────┬─────────┐      ┌──────────────┐
+  │objs  │ FREE  │      │obj │  FREE   │      │     FREE     │
+  └──────┴───────┘      └────┴─────────┘      └──────────────┘
+       ↑      ↑            ↑       ↑                ↑       ↑
+      HP₁    LP₁          HP₂     LP₂              HP₃     LP₃
+</div>
+
+<p>Each thread can keep its HP and LP in CPU registers. Allocation is fast again — no locks needed because no other thread touches your nursery.</p>
+
+<div class="callout warning">
+  <div class="callout-title">Complication</div>
+  Threads <em>can</em> share objects between themselves. When Thread 1 sends an object reference to Thread 2, we now have cross-nursery pointers. This is rare but makes GC algorithms more complex — you need to handle the case where one thread's nursery contains pointers into another thread's nursery.
+</div>
+
+<div class="section-nav">
+  <button onclick="goTo('gen-edge')">← Edge Cases</button>
+  <button onclick="goTo('realtime')">Next: Real-Time GC →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- REAL-TIME GC -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-realtime">
+<h2>Real-Time Garbage Collection</h2>
+
+<p>Imagine you're programming a robot arm in a factory. The arm needs to move precisely, following a planned trajectory. If the program freezes for 500 milliseconds to do garbage collection, the arm might overshoot, collide with something, or drop what it's carrying.</p>
+
+<h3>Predictability Over Speed</h3>
+
+<p>Real-time systems care about <strong>predictability</strong> more than raw speed. They'd rather have an algorithm that's 20× slower but <em>always</em> finishes within a known time limit, versus one that's 20× faster <em>on average</em> but occasionally pauses for a long GC.</p>
+
+<div class="callout key">
+  <div class="callout-title">The Real-Time Guarantee</div>
+  A real-time system needs an <strong>upper bound</strong> on how long any operation takes. If <code>new</code> always completes within 10,000 instructions, you can plan a time budget and guarantee your robot responds in time.
+</div>
+
+<h3>How Real-Time GC Works</h3>
+
+<p>Instead of collecting all garbage at once, every call to <code>new</code> does two things:</p>
+
+<ol>
+  <li><strong>Allocate</strong> the requested storage</li>
+  <li><strong>Do a little bit</strong> of garbage collection (say, 5000 instructions worth)</li>
+</ol>
+
+<p>The GC is <strong>incremental</strong> — it does work in small chunks, interleaved with normal program execution. The program never freezes for a long time.</p>
+
+<h3>The Tricky Part: Mutation During Collection</h3>
+
+<p>The hard part is that between GC increments, the program keeps running and modifying objects. The partially-completed GC state might become invalid. For example:</p>
+
+<ul>
+  <li>GC marks object A as "live" and hasn't looked at object B yet</li>
+  <li>The program runs and makes A point to B, then removes all other references to B</li>
+  <li>GC resumes — it already processed A and won't revisit it, so it never discovers B through A</li>
+  <li>B gets incorrectly collected even though it's still alive!</li>
+</ul>
+
+<p>Handling this correctly requires subtle algorithms that track what the program has changed since the last GC increment. It's complex, error-prone, and makes the overall GC slower — but that's acceptable because we get predictability.</p>
+
+<h3>An Extreme Trick: Disabling Cache</h3>
+
+<p>Some real-time developers flip a hardware bit that <strong>disables the CPU cache entirely</strong>. Everything goes straight to RAM, which is ~100× slower. Why would anyone do this? Because RAM access time is <em>predictable</em>. Cache hits are fast, but cache misses are slow and unpredictable. By always going to RAM, you get a reliable upper bound on timing. Once you've tested your robot with cache disabled and confirmed it meets timing requirements, you know it will always work.</p>
+
+<h3>Could Reference Counting Help?</h3>
+
+<p>Reference counting frees objects immediately when the count hits zero — no GC pauses at all! That sounds perfect for real-time. The downside: reference counting can't handle <strong>cycles</strong> (A → B → A, where both counts stay at 1 forever). If you can prove your system has no cycles, reference counting could be an excellent real-time solution.</p>
+
+<div class="section-nav">
+  <button onclick="goTo('gen-threads')">← Multi-threading</button>
+  <button onclick="goTo('quiz1')">Next: Quiz →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- QUIZ 1 -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-quiz1">
+<h2>Check Your Understanding: GC Concepts</h2>
+
+<div class="quiz-box" id="q1">
+  <div class="quiz-label">Question 1</div>
+  <div class="quiz-question">In a generation-based copying collector, the amount of work during a minor collection is proportional to:</div>
+  <ul class="quiz-options">
+    <li><label><input type="radio" name="q1" value="a"> The total number of objects in the nursery (live + dead)</label></li>
+    <li><label><input type="radio" name="q1" value="b"> The number of live objects in the nursery</label></li>
+    <li><label><input type="radio" name="q1" value="c"> The number of dead objects in the nursery</label></li>
+    <li><label><input type="radio" name="q1" value="d"> The total size of the heap (old + new)</label></li>
+  </ul>
+  <button class="quiz-btn" onclick="checkQuiz('q1','b','Correct! We only copy live objects. Dead objects are never examined — the entire old nursery is simply discarded.','Not quite. The copying collector only touches live objects — it copies them to the new nursery and ignores everything else. Dead objects are never even looked at. This is in contrast to mark-and-sweep, which must sweep all dead objects.')">Check Answer</button>
+  <div class="quiz-feedback" id="q1-feedback"></div>
+</div>
+
+<div class="quiz-box" id="q2">
+  <div class="quiz-label">Question 2</div>
+  <div class="quiz-question">Why is generation-based copying collection <strong>incompatible</strong> with conservative garbage collection?</div>
+  <ul class="quiz-options">
+    <li><label><input type="radio" name="q2" value="a"> Conservative GC is too slow for generational collection</label></li>
+    <li><label><input type="radio" name="q2" value="b"> Copying moves objects, so you must update all pointers — but conservative GC doesn't know exactly where all pointers are</label></li>
+    <li><label><input type="radio" name="q2" value="c"> Conservative GC doesn't support the nursery concept</label></li>
+    <li><label><input type="radio" name="q2" value="d"> Conservative GC can't handle multi-threaded programs</label></li>
+  </ul>
+  <button class="quiz-btn" onclick="checkQuiz('q2','b','Exactly! When you move an object, you must update every pointer to it. Conservative GC doesn\'t know exactly which values are pointers — if you update a value that looks like a pointer but is actually a bank account balance, you\'d corrupt data.','Not quite. The key issue is that copying moves objects, which means updating every pointer to the moved object. Conservative GC only knows a superset of where pointers are — it can\'t distinguish real pointers from integers that happen to look like addresses. Updating a non-pointer value would corrupt data.')">Check Answer</button>
+  <div class="quiz-feedback" id="q2-feedback"></div>
+</div>
+
+<div class="quiz-box" id="q3">
+  <div class="quiz-label">Question 3</div>
+  <div class="quiz-question">Why is Java's <code>finalize()</code> method now deprecated?</div>
+  <ul class="quiz-options">
+    <li><label><input type="radio" name="q3" value="a"> It was never useful for any purpose</label></li>
+    <li><label><input type="radio" name="q3" value="b"> It causes memory leaks</label></li>
+    <li><label><input type="radio" name="q3" value="c"> The copying collector never sees dead objects, so there's no natural point to call finalize()</label></li>
+    <li><label><input type="radio" name="q3" value="d"> It only works with reference counting</label></li>
+  </ul>
+  <button class="quiz-btn" onclick="checkQuiz('q3','c','Right! The copying collector copies live objects and throws away the rest without examining them. Since finalize() needs to be called on objects that are becoming garbage, there\'s no sweep phase where this would happen. Objects with finalize() need special handling (a separate mark-and-sweep arena), which undermines the performance benefits.','The reason is that the generation-based copying collector has no sweep phase — it never examines dead objects. finalize() needs to run when an object becomes garbage, but the collector never sees those objects. This clashes fundamentally with the copying approach.')">Check Answer</button>
+  <div class="quiz-feedback" id="q3-feedback"></div>
+</div>
+
+<div class="quiz-box" id="q4">
+  <div class="quiz-label">Question 4</div>
+  <div class="quiz-question">In a real-time system, what matters more than raw performance?</div>
+  <ul class="quiz-options">
+    <li><label><input type="radio" name="q4" value="a"> Memory efficiency</label></li>
+    <li><label><input type="radio" name="q4" value="b"> Predictability (bounded worst-case time)</label></li>
+    <li><label><input type="radio" name="q4" value="c"> Simplicity of implementation</label></li>
+    <li><label><input type="radio" name="q4" value="d"> Minimizing the number of GC pauses</label></li>
+  </ul>
+  <button class="quiz-btn" onclick="checkQuiz('q4','b','Correct! Real-time systems need to guarantee that operations complete within a known time bound. They\'ll accept a 20× slower algorithm if it always finishes on time, rather than one that\'s 20× faster on average but occasionally freezes.','Real-time systems prioritize predictability. They need a guaranteed upper bound on how long any operation takes, so they can plan timing budgets for safety-critical tasks like controlling a robot arm.')">Check Answer</button>
+  <div class="quiz-feedback" id="q4-feedback"></div>
+</div>
+
+<div class="section-nav">
+  <button onclick="goTo('realtime')">← Real-Time GC</button>
+  <button onclick="goTo('rust-why')">Next: Rust →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- RUST: WHY -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-rust-why">
+<h2>Why Rust? A Different Approach to Memory</h2>
+
+<p>So far, every garbage collection strategy has a cost:</p>
+<ul>
+  <li><strong>Mark & sweep</strong> — pauses the program, does work proportional to all objects</li>
+  <li><strong>Generation-based copying</strong> — faster, but still pauses; requires knowing all pointer locations; incompatible with C/C++</li>
+  <li><strong>Reference counting</strong> — slows down every pointer assignment; can't handle cycles</li>
+  <li><strong>Real-time GC</strong> — predictable but slower; complex to implement correctly</li>
+</ul>
+
+<p>Rust asks a radical question: <strong>what if we could manage memory without any runtime cost at all?</strong></p>
+
+<p>The answer: move the memory management work from <em>runtime</em> (when the program runs) to <em>compile time</em> (when the compiler checks your code). The Rust compiler enforces rules that guarantee memory safety — no garbage collector, no reference counting, no runtime overhead.</p>
+
+<div class="callout key">
+  <div class="callout-title">Rust's Promise</div>
+  <ul>
+    <li><strong>No garbage collector</strong> — no GC pauses, no runtime overhead</li>
+    <li><strong>No dangling pointers</strong> — compiler prevents use-after-free</li>
+    <li><strong>No data races</strong> — compiler prevents concurrent mutation bugs</li>
+    <li><strong>No memory leaks</strong> (in the common case) — objects are freed deterministically</li>
+  </ul>
+  The trade-off: you have to write code that satisfies the compiler's rules, which can feel restrictive at first.
+</div>
+
+<p>The foundation of Rust's approach is built on three concepts: <strong>immutability</strong>, <strong>ownership</strong>, and <strong>borrowing</strong>. Let's learn each one from scratch.</p>
+
+<div class="section-nav">
+  <button onclick="goTo('quiz1')">← Quiz</button>
+  <button onclick="goTo('rust-immutable')">Next: Immutability →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- RUST: IMMUTABLE -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-rust-immutable">
+<h2>Immutability by Default</h2>
+
+<p>In most languages you've used, variables are mutable by default — you can change their value whenever you want:</p>
+
+<pre><code><span class="code-comment">// Java — mutable by default</span>
+<span class="code-type">int</span> x = 5;
+x = 10;  <span class="code-comment">// perfectly fine</span>
+
+<span class="code-comment"># Python — mutable by default</span>
+x = 5
+x = 10  <span class="code-comment"># perfectly fine</span></code></pre>
+
+<p>Rust flips this default. Variables are <strong>immutable by default</strong>:</p>
+
+<pre><code><span class="code-keyword">let</span> x = 5;
+x = 10;  <span class="code-comment">// ERROR! x is immutable</span>
+
+<span class="code-keyword">let mut</span> y = 5;
+y = 10;  <span class="code-comment">// OK — we explicitly said "mut"</span></code></pre>
+
+<h3>Why Does This Help Memory Management?</h3>
+
+<p>If objects are immutable, there's a powerful guarantee: <strong>an object can never be modified to point to something newer than itself</strong>. Think about it — when you create an immutable object, you fill in its fields at creation time. Those fields can only reference things that already exist, which are by definition older. No one can come along later and stuff a pointer to a newer object inside it.</p>
+
+<p>This immediately solves the "old points to new" problem that generation-based collectors have to work around! With immutable objects, Assumption 2 (new → old only) is <em>guaranteed</em>, not just hoped for.</p>
+
+<div class="callout insight">
+  <div class="callout-title">Connection to Functional Programming</div>
+  This is the same principle behind functional languages like OCaml and Haskell — immutability simplifies reasoning about your program. Rust brings this benefit to a systems programming language.
+</div>
+
+<div class="section-nav">
+  <button onclick="goTo('rust-why')">← Why Rust</button>
+  <button onclick="goTo('rust-ownership')">Next: Ownership →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- RUST: OWNERSHIP -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-rust-ownership">
+<h2>Ownership: The Core Idea</h2>
+
+<p>This is the big one — the concept that makes Rust fundamentally different from every other language you've used.</p>
+
+<div class="callout def">
+  <div class="callout-title">Ownership Rule</div>
+  Every value in Rust has exactly <strong>one owner</strong> at any time. When the owner goes out of scope, the value is <strong>dropped</strong> (freed).
+</div>
+
+<p>Let's unpack what this means by contrasting it with what you know:</p>
+
+<h3>In Java / Python (No Ownership)</h3>
+<pre><code><span class="code-comment">// Java — multiple "owners" (references), no single owner</span>
+<span class="code-type">String</span> a = <span class="code-keyword">new</span> <span class="code-type">String</span>(<span class="code-string">"hello"</span>);
+<span class="code-type">String</span> b = a;     <span class="code-comment">// Both a and b refer to "hello"</span>
+<span class="code-type">String</span> c = a;     <span class="code-comment">// Now three references to "hello"</span>
+<span class="code-comment">// When are we done? GC has to figure that out.</span></code></pre>
+
+<p>In Java, any number of variables can point to the same object. None of them is special. The garbage collector has to scan all references to figure out when the object is no longer needed.</p>
+
+<h3>In Rust (Single Ownership)</h3>
+<pre><code><span class="code-keyword">let</span> a = <span class="code-type">String</span>::from(<span class="code-string">"hello"</span>);  <span class="code-comment">// a owns "hello"</span>
+<span class="code-keyword">let</span> b = a;    <span class="code-comment">// ownership MOVES to b</span>
+                <span class="code-comment">// a is now INVALID — using it is a compile error!</span>
+println!(<span class="code-string">"{}"</span>, a);  <span class="code-comment">// ERROR: a has been moved</span>
+println!(<span class="code-string">"{}"</span>, b);  <span class="code-comment">// OK: b is the owner</span></code></pre>
+
+<p>In Rust, when you assign one variable to another, ownership <em>transfers</em>. The old variable becomes invalid. There's always exactly one owner, so the runtime always knows exactly when to free the memory: when that one owner goes out of scope.</p>
+
+<div class="analogy">
+  <div class="analogy-label">Analogy</div>
+  Think of ownership like holding a physical book. You can hand the book to someone else (transfer ownership), but then you don't have it anymore. You can let someone look at it while you hold it (borrowing — we'll get to this), but there's always exactly one person "holding" the book. When that person leaves the room (goes out of scope), the book gets put back on the shelf (memory freed).
+</div>
+
+<h3>The <code>drop</code> Function</h3>
+
+<p>When an owner goes out of scope, Rust automatically calls <code>drop</code> on the value. This is similar to Java's deprecated <code>finalize()</code>, but better:</p>
+<ul>
+  <li>It's <strong>deterministic</strong> — you know exactly when it runs (at end of scope)</li>
+  <li>It's <strong>guaranteed</strong> — it always runs, no "maybe the GC will get to it eventually"</li>
+  <li>You can customize it by implementing the <code>Drop</code> trait for your type</li>
+</ul>
+
+<pre><code><span class="code-keyword">fn</span> <span class="code-fn">example</span>() {
+    <span class="code-keyword">let</span> s = <span class="code-type">String</span>::from(<span class="code-string">"hello"</span>);
+    <span class="code-comment">// use s...</span>
+} <span class="code-comment">// ← s goes out of scope here, drop is called, memory freed</span></code></pre>
+
+<p>No garbage collector. No reference counting. The compiler inserts the deallocation call at exactly the right place.</p>
+
+<div class="section-nav">
+  <button onclick="goTo('rust-immutable')">← Immutability</button>
+  <button onclick="goTo('rust-move')">Next: Move Semantics →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- RUST: MOVE SEMANTICS -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-rust-move">
+<h2>Move Semantics</h2>
+
+<p>Let's be very precise about what happens with assignment in Rust, because it's different from any other language you've used.</p>
+
+<h3>Case 1: <code>let x = y;</code> — Declaring a New Variable</h3>
+
+<pre><code><span class="code-keyword">let</span> y = <span class="code-type">String</span>::from(<span class="code-string">"hello"</span>);
+<span class="code-keyword">let</span> x = y;  <span class="code-comment">// ownership transfers from y to x</span>
+            <span class="code-comment">// y is now INVALID</span></code></pre>
+
+<p>After this assignment:</p>
+<ul>
+  <li><code>x</code> is the new owner of the string "hello"</li>
+  <li><code>y</code> is <strong>no longer valid</strong> — the compiler will reject any code that tries to use <code>y</code></li>
+  <li>No data was copied — the pointer simply moved from <code>y</code> to <code>x</code></li>
+</ul>
+
+<h3>Case 2: <code>x = y;</code> — Reassigning an Existing Variable</h3>
+
+<pre><code><span class="code-keyword">let mut</span> x = <span class="code-type">String</span>::from(<span class="code-string">"world"</span>);
+<span class="code-keyword">let</span> y = <span class="code-type">String</span>::from(<span class="code-string">"hello"</span>);
+x = y;  <span class="code-comment">// TWO things happen:</span>
+        <span class="code-comment">// 1. x's old value ("world") is DROPPED (freed)</span>
+        <span class="code-comment">// 2. ownership of "hello" transfers from y to x</span>
+        <span class="code-comment">// y is now INVALID</span></code></pre>
+
+<p>This is important: the old value of <code>x</code> is freed <em>before</em> the new value takes its place. There's no garbage collector that will "eventually" clean up "world" — it's freed immediately.</p>
+
+<div class="callout warning">
+  <div class="callout-title">Move ≠ Copy</div>
+  In Java, <code>x = y</code> creates a second reference to the same object. Both <code>x</code> and <code>y</code> remain valid. In Rust, <code>x = y</code> is a <em>move</em> — the value transfers, and <code>y</code> becomes invalid. This is the fundamental difference.
+</div>
+
+<div class="section-nav">
+  <button onclick="goTo('rust-ownership')">← Ownership</button>
+  <button onclick="goTo('rust-copy')">Next: Copyable Types →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- RUST: COPY TRAIT -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-rust-copy">
+<h2>Copyable Types (The <code>Copy</code> Trait)</h2>
+
+<p>Not everything in Rust uses move semantics. Some types are so small and simple that it makes no sense to track ownership — just copy the bits.</p>
+
+<div class="callout def">
+  <div class="callout-title">The Copy Trait</div>
+  Types that implement the <code>Copy</code> trait are duplicated on assignment rather than moved. After <code>let x = y;</code>, both <code>x</code> and <code>y</code> remain valid — each has their own independent copy of the data.
+</div>
+
+<pre><code><span class="code-keyword">let</span> y: <span class="code-type">i32</span> = 42;
+<span class="code-keyword">let</span> x = y;      <span class="code-comment">// COPIES the value (i32 is Copy)</span>
+println!(<span class="code-string">"{}"</span>, y);  <span class="code-comment">// OK! y is still valid — it's 42</span>
+println!(<span class="code-string">"{}"</span>, x);  <span class="code-comment">// OK! x is also 42</span></code></pre>
+
+<p>Which types are <code>Copy</code>?</p>
+<ul>
+  <li>All integer types (<code>i32</code>, <code>u64</code>, etc.)</li>
+  <li>Floating-point types (<code>f32</code>, <code>f64</code>)</li>
+  <li>Booleans (<code>bool</code>)</li>
+  <li>Characters (<code>char</code>)</li>
+  <li>Tuples of <code>Copy</code> types</li>
+  <li>Immutable references (<code>&T</code>)</li>
+</ul>
+
+<p>Which types are <em>not</em> <code>Copy</code>?</p>
+<ul>
+  <li><code>String</code> — it owns heap-allocated memory</li>
+  <li><code>Vec&lt;T&gt;</code> — it owns heap-allocated memory</li>
+  <li>Any type that manages a resource (file handle, network connection)</li>
+  <li>Mutable references (<code>&mut T</code>)</li>
+</ul>
+
+<p>The intuition: if a type lives entirely in a register or a few words on the stack and doesn't own any heap memory, it can be <code>Copy</code>. If it manages heap memory or external resources, it can't — because you'd have two owners of the same resource, and that's exactly what the ownership model prevents.</p>
+
+<div class="section-nav">
+  <button onclick="goTo('rust-move')">← Move Semantics</button>
+  <button onclick="goTo('rust-borrow')">Next: Borrowing →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- RUST: BORROWING -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-rust-borrow">
+<h2>Borrowing & References</h2>
+
+<p>If every assignment moves ownership, how do you pass an object to a function without losing it? You'd hand over ownership, and the function would drop it when it's done — you'd never get it back!</p>
+
+<pre><code><span class="code-keyword">fn</span> <span class="code-fn">print_length</span>(s: <span class="code-type">String</span>) {
+    println!(<span class="code-string">"Length: {}"</span>, s.len());
+}  <span class="code-comment">// s is dropped here!</span>
+
+<span class="code-keyword">let</span> my_string = <span class="code-type">String</span>::from(<span class="code-string">"hello"</span>);
+print_length(my_string);  <span class="code-comment">// ownership moves INTO the function</span>
+println!(<span class="code-string">"{}"</span>, my_string);  <span class="code-comment">// ERROR: my_string was moved!</span></code></pre>
+
+<p>The solution is <strong>borrowing</strong>. The <code>&</code> operator creates a <strong>reference</strong> — a pointer to the value that doesn't take ownership:</p>
+
+<pre><code><span class="code-keyword">fn</span> <span class="code-fn">print_length</span>(s: <span class="code-type">&String</span>) {  <span class="code-comment">// takes a reference, not ownership</span>
+    println!(<span class="code-string">"Length: {}"</span>, s.len());
+}  <span class="code-comment">// s (the reference) goes out of scope, but the original is unaffected</span>
+
+<span class="code-keyword">let</span> my_string = <span class="code-type">String</span>::from(<span class="code-string">"hello"</span>);
+print_length(<span class="code-keyword">&</span>my_string);  <span class="code-comment">// BORROWS — doesn't move ownership</span>
+println!(<span class="code-string">"{}"</span>, my_string);  <span class="code-comment">// OK! we still own it</span></code></pre>
+
+<div class="callout def">
+  <div class="callout-title">Borrowing</div>
+  <code>&x</code> creates a <strong>reference</strong> to <code>x</code> — a pointer that lets you read the value without owning it. The reference is <em>borrowing</em> the value. Key rules:
+  <ul style="margin-top:8px">
+    <li>The original owner still owns the value</li>
+    <li>When the reference goes out of scope, the value is <strong>not dropped</strong> (the owner still has it)</li>
+    <li>The reference is read-only by default — you can look but not touch</li>
+  </ul>
+</div>
+
+<div class="analogy">
+  <div class="analogy-label">Analogy</div>
+  Borrowing is like lending a library book. The library (owner) lets you borrow it. You can read it, but you can't rip pages out or write in the margins. When you're done, the library still has the book. If you try to keep it past the due date (reference outliving the owner), the compiler catches that error.
+</div>
+
+<h3>The Dangling Pointer Problem — Solved</h3>
+
+<p>In C/C++, the <code>&</code> (address-of) operator is dangerous because nothing stops you from using a pointer after the value has been freed:</p>
+
+<pre><code><span class="code-comment">// C — dangling pointer disaster</span>
+<span class="code-type">int</span>* <span class="code-fn">bad_function</span>() {
+    <span class="code-type">int</span> x = 42;
+    <span class="code-keyword">return</span> &x;  <span class="code-comment">// returns pointer to stack variable!</span>
+}  <span class="code-comment">// x is gone, pointer is now dangling</span></code></pre>
+
+<p>Rust prevents this at compile time. The rule is: <strong>a reference cannot outlive the value it refers to</strong>. The compiler tracks lifetimes and rejects code that would create dangling references.</p>
+
+<div class="section-nav">
+  <button onclick="goTo('rust-copy')">← Copyable Types</button>
+  <button onclick="goTo('rust-mut')">Next: Mutable References →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- RUST: MUTABLE REFERENCES -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-rust-mut">
+<h2>Mutable References</h2>
+
+<p>Regular references (<code>&x</code>) are read-only. But sometimes you need to modify the value through a reference. For that, Rust has <strong>mutable references</strong>:</p>
+
+<pre><code><span class="code-keyword">let mut</span> x = 5;
+<span class="code-keyword">let</span> r = <span class="code-keyword">&mut</span> x;  <span class="code-comment">// mutable reference to x</span>
+*r = 10;          <span class="code-comment">// modify x through the reference</span>
+println!(<span class="code-string">"{}"</span>, x);  <span class="code-comment">// prints 10</span></code></pre>
+
+<p>But there's a strict rule:</p>
+
+<div class="callout danger">
+  <div class="callout-title">The Mutable Reference Rule</div>
+  At any given time, you can have <strong>either</strong>:
+  <ul style="margin-top:8px">
+    <li>One mutable reference (<code>&mut x</code>), OR</li>
+    <li>Any number of immutable references (<code>&x</code>)</li>
+  </ul>
+  But <strong>never both at the same time</strong>.
+</div>
+
+<h3>Why This Rule Exists: Preventing Data Races</h3>
+
+<p>This rule isn't just about memory management — it's about <strong>thread safety</strong>. A data race occurs when:</p>
+<ol>
+  <li>Two threads access the same data</li>
+  <li>At least one of them is writing</li>
+  <li>There's no synchronization</li>
+</ol>
+
+<p>Rust's mutable reference rule prevents this <em>at compile time</em>:</p>
+
+<ul>
+  <li>If someone has <code>&mut x</code>, nobody else can read <em>or</em> write to <code>x</code> — so no race is possible</li>
+  <li>If multiple threads have <code>&x</code>, they can all read — but nobody can write — so again, no race</li>
+</ul>
+
+<pre><code><span class="code-keyword">let mut</span> s = <span class="code-type">String</span>::from(<span class="code-string">"hello"</span>);
+
+<span class="code-keyword">let</span> r1 = <span class="code-keyword">&</span>s;      <span class="code-comment">// OK: first immutable borrow</span>
+<span class="code-keyword">let</span> r2 = <span class="code-keyword">&</span>s;      <span class="code-comment">// OK: second immutable borrow</span>
+<span class="code-keyword">let</span> r3 = <span class="code-keyword">&mut</span> s;  <span class="code-comment">// ERROR: can't borrow as mutable</span>
+                    <span class="code-comment">// while immutable borrows exist</span></code></pre>
+
+<div class="section-nav">
+  <button onclick="goTo('rust-borrow')">← Borrowing</button>
+  <button onclick="goTo('rust-lifetimes')">Next: Lifetimes →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- RUST: LIFETIMES -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-rust-lifetimes">
+<h2>Lifetimes</h2>
+
+<p>References in Rust have <strong>lifetimes</strong> — the span of code during which the reference is valid. Most of the time, the compiler figures these out automatically (similar to how OCaml infers types). But sometimes you need to annotate them explicitly.</p>
+
+<h3>How Lifetime Inference Works</h3>
+
+<p>Originally, Rust inferred lifetimes from lexical scope — the reference was valid until the closing <code>}</code>. Modern Rust is smarter: it figures out the <em>last point</em> where the reference is actually used.</p>
+
+<pre><code><span class="code-keyword">let mut</span> x = 5;
+<span class="code-keyword">let</span> r = <span class="code-keyword">&</span>x;         <span class="code-comment">// r borrows x</span>
+println!(<span class="code-string">"{}"</span>, r);   <span class="code-comment">// last use of r</span>
+<span class="code-comment">// r's lifetime ENDS here (not at the closing brace)</span>
+x = 10;              <span class="code-comment">// OK! r is no longer active</span></code></pre>
+
+<p>The compiler does <strong>flow analysis</strong> — it traces which paths through the code could use the reference and finds the last possible use. This is more precise than simple scope-based analysis and lets you write more natural code.</p>
+
+<h3>When You Need Explicit Lifetimes</h3>
+
+<p>Sometimes the compiler can't figure out the lifetime on its own. The classic example: a function that returns one of two references it received:</p>
+
+<pre><code><span class="code-comment">// This WON'T compile — Rust doesn't know the return lifetime</span>
+<span class="code-keyword">fn</span> <span class="code-fn">longer</span>(x: <span class="code-keyword">&</span><span class="code-type">str</span>, y: <span class="code-keyword">&</span><span class="code-type">str</span>) -> <span class="code-keyword">&</span><span class="code-type">str</span> {
+    <span class="code-keyword">if</span> x.len() > y.len() { x } <span class="code-keyword">else</span> { y }
+}</code></pre>
+
+<p>The problem: <code>x</code> and <code>y</code> might have different lifetimes. The return value could be either <code>x</code> or <code>y</code> — the compiler doesn't know which until runtime. So what lifetime should the return type have?</p>
+
+<p>You solve this with a <strong>lifetime parameter</strong>, written as <code>'a</code>:</p>
+
+<pre><code><span class="code-keyword">fn</span> <span class="code-fn">longer</span>&lt;<span class="code-type">'a</span>&gt;(x: <span class="code-keyword">&</span><span class="code-type">'a str</span>, y: <span class="code-keyword">&</span><span class="code-type">'a str</span>) -> <span class="code-keyword">&</span><span class="code-type">'a str</span> {
+    <span class="code-keyword">if</span> x.len() > y.len() { x } <span class="code-keyword">else</span> { y }
+}</code></pre>
+
+<p>This tells the compiler: "both inputs and the output share the same lifetime <code>'a</code>." In practice, Rust computes <code>'a</code> as the <strong>intersection (shorter)</strong> of the two input lifetimes. The result is guaranteed to be valid as long as both inputs are valid.</p>
+
+<h3>Lifetime Subtyping</h3>
+
+<p>A longer lifetime is a <strong>subtype</strong> of a shorter lifetime. This might seem backwards, but it makes sense: if a function expects a reference that lives for 10 seconds, it's safe to pass one that lives for 60 seconds — it will certainly be valid for the needed 10 seconds.</p>
+
+<h3>The <code>'static</code> Lifetime</h3>
+
+<pre><code><span class="code-keyword">let</span> s: <span class="code-keyword">&</span><span class="code-type">'static str</span> = <span class="code-string">"I live forever"</span>;</code></pre>
+
+<p><code>'static</code> means the reference is valid for the entire program duration. String literals have this lifetime because they're baked into the compiled binary. It's the longest possible lifetime — and therefore a subtype of every other lifetime.</p>
+
+<div class="section-nav">
+  <button onclick="goTo('rust-mut')">← Mutable References</button>
+  <button onclick="goTo('rust-gcc')">Next: C/C++ Comparison →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- RUST vs C/C++ -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-rust-gcc">
+<h2>How C/C++ Tries (and Fails) to Do What Rust Does</h2>
+
+<p>GCC has an extension that hints at Rust-style analysis. You can annotate a custom allocator function:</p>
+
+<pre><code><span class="code-type">void</span> *<span class="code-fn">myalloc</span>(<span class="code-type">size_t</span> u)
+    __attribute__((malloc(free, 1)));
+<span class="code-comment">// Tells GCC: this returns memory that should be freed with free()</span>
+<span class="code-comment">// and the first argument is the size</span></code></pre>
+
+<p>With this annotation, GCC can detect some memory leaks:</p>
+
+<pre><code>{
+    <span class="code-type">char</span>* p = myalloc(27);
+    <span class="code-comment">// ... use p but never free it ...</span>
+}  <span class="code-comment">// GCC warns: "memory leak"</span></code></pre>
+
+<p>But this is a <strong>warning</strong>, not an error. Your code still compiles. And it's easy to fool — store the pointer in a global variable and GCC loses track.</p>
+
+<div class="callout insight">
+  <div class="callout-title">The Key Difference</div>
+  <strong>Rust</strong>: Ownership rules are <em>enforced</em>. Violations are compile errors. Your program won't build if it has memory bugs.<br>
+  <strong>C/C++</strong>: Annotations are <em>optional hints</em>. The compiler warns but still compiles. You can have memory bugs in production code.
+</div>
+
+<h3>The Cost of Rust's Strictness</h3>
+
+<p>Rust's approach isn't free of frustration. Sometimes you write perfectly safe code, but the compiler isn't smart enough to prove it's safe:</p>
+
+<pre><code><span class="code-comment">// Perfectly safe code that Rust might reject:</span>
+<span class="code-keyword">let mut</span> v = vec![1, 2, 3, 4, 5];
+<span class="code-keyword">let</span> first = <span class="code-keyword">&</span>v[0];    <span class="code-comment">// borrow the first element</span>
+v.push(6);              <span class="code-comment">// ERROR: can't modify v while it's borrowed</span>
+println!(<span class="code-string">"{}"</span>, first);
+<span class="code-comment">// The push MIGHT reallocate the vector, invalidating first</span>
+<span class="code-comment">// So Rust rejects it even though it might be fine this time</span></code></pre>
+
+<p>When the compiler is wrong and you know what you're doing, Rust provides an escape hatch: <code>unsafe</code> blocks. Inside <code>unsafe</code>, the compiler stops checking some rules. Your boss might not like it, but sometimes it's necessary.</p>
+
+<div class="callout key">
+  <div class="callout-title">The Rust Philosophy</div>
+  <strong>No GC, no reference counts, no runtime overhead.</strong> Pointer assignments are as fast as they can be — no bumping counters, no updating reference lists. All the safety checking happens at compile time. You pay the cost in thinking harder about ownership, but your program runs as fast as C.
+</div>
+
+<div class="section-nav">
+  <button onclick="goTo('rust-lifetimes')">← Lifetimes</button>
+  <button onclick="goTo('quiz2')">Next: Quiz →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- QUIZ 2 -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-quiz2">
+<h2>Check Your Understanding: Rust Ownership</h2>
+
+<div class="quiz-box" id="q5">
+  <div class="quiz-label">Question 1</div>
+  <div class="quiz-question">After <code>let x = y;</code> where <code>y</code> is a <code>String</code>, what is true?</div>
+  <ul class="quiz-options">
+    <li><label><input type="radio" name="q5" value="a"> Both x and y refer to the same string (like Java)</label></li>
+    <li><label><input type="radio" name="q5" value="b"> x owns the string; y is now invalid and can't be used</label></li>
+    <li><label><input type="radio" name="q5" value="c"> x is a copy of y; both are independent and valid</label></li>
+    <li><label><input type="radio" name="q5" value="d"> y still owns the string; x is a read-only reference</label></li>
+  </ul>
+  <button class="quiz-btn" onclick="checkQuiz('q5','b','Correct! String is not Copy, so assignment moves ownership. y becomes invalid after the move.','String doesn\'t implement the Copy trait, so assignment is a move. Ownership transfers from y to x, and y can no longer be used. This is the core of Rust\'s ownership model.')">Check Answer</button>
+  <div class="quiz-feedback" id="q5-feedback"></div>
+</div>
+
+<div class="quiz-box" id="q6">
+  <div class="quiz-label">Question 2</div>
+  <div class="quiz-question">After <code>let x = y;</code> where <code>y</code> is an <code>i32</code>, what is true?</div>
+  <ul class="quiz-options">
+    <li><label><input type="radio" name="q6" value="a"> y is now invalid (ownership moved to x)</label></li>
+    <li><label><input type="radio" name="q6" value="b"> Both x and y are valid with independent copies of the value</label></li>
+    <li><label><input type="radio" name="q6" value="c"> x borrows y's value</label></li>
+    <li><label><input type="radio" name="q6" value="d"> This is a compile error</label></li>
+  </ul>
+  <button class="quiz-btn" onclick="checkQuiz('q6','b','Right! i32 implements the Copy trait, so assignment copies the value instead of moving it. Both variables remain valid.','i32 is a Copy type — it\'s small, lives on the stack, and has no heap allocation. Assigning it copies the bits rather than moving ownership, so both variables remain valid.')">Check Answer</button>
+  <div class="quiz-feedback" id="q6-feedback"></div>
+</div>
+
+<div class="quiz-box" id="q7">
+  <div class="quiz-label">Question 3</div>
+  <div class="quiz-question">Which of the following is allowed by Rust's borrowing rules?</div>
+  <ul class="quiz-options">
+    <li><label><input type="radio" name="q7" value="a"> One &mut x and two &x at the same time</label></li>
+    <li><label><input type="radio" name="q7" value="b"> Two &mut x at the same time</label></li>
+    <li><label><input type="radio" name="q7" value="c"> Five &x and no &mut x at the same time</label></li>
+    <li><label><input type="radio" name="q7" value="d"> One &mut x and one &x at the same time</label></li>
+  </ul>
+  <button class="quiz-btn" onclick="checkQuiz('q7','c','Correct! You can have any number of immutable references OR exactly one mutable reference, but never both. Five immutable references with no mutable reference is perfectly fine.','The rule is: either many &x (immutable) OR one &mut x (mutable), never both. Five immutable borrows and zero mutable borrows satisfies this rule perfectly.')">Check Answer</button>
+  <div class="quiz-feedback" id="q7-feedback"></div>
+</div>
+
+<div class="quiz-box" id="q8">
+  <div class="quiz-label">Question 4</div>
+  <div class="quiz-question">Why does a longer lifetime act as a <strong>subtype</strong> of a shorter lifetime?</div>
+  <ul class="quiz-options">
+    <li><label><input type="radio" name="q8" value="a"> Because shorter lifetimes are more permissive</label></li>
+    <li><label><input type="radio" name="q8" value="b"> Because a reference that lives longer can safely be used anywhere a shorter-lived one is expected</label></li>
+    <li><label><input type="radio" name="q8" value="c"> Because Rust always prefers longer lifetimes</label></li>
+    <li><label><input type="radio" name="q8" value="d"> It doesn't — shorter is a subtype of longer</label></li>
+  </ul>
+  <button class="quiz-btn" onclick="checkQuiz('q8','b','Exactly! If a function needs a reference that\'s valid for 10 seconds, passing one valid for 60 seconds is safe — it\'ll certainly still be around. So a longer lifetime satisfies the constraint of a shorter one, making it a subtype.','A longer-lived reference can be used wherever a shorter-lived one is needed — it\'s guaranteed to still be valid. This is the same subtype logic as elsewhere: a subtype can always be used where its supertype is expected.')">Check Answer</button>
+  <div class="quiz-feedback" id="q8-feedback"></div>
+</div>
+
+<div class="section-nav">
+  <button onclick="goTo('rust-gcc')">← C/C++ Comparison</button>
+  <button onclick="goTo('oop-lang-vs-prog')">Next: OOP →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- OOP: LANGUAGE VS PROGRAMMING -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-oop-lang-vs-prog">
+<h2>OO Language ≠ OO Programming</h2>
+
+<p>Here's a fact that seems obvious once stated but is worth being explicit about: <strong>using an object-oriented language does not mean your code is object-oriented</strong>, and vice versa.</p>
+
+<h3>OO Language, Non-OO Code</h3>
+
+<p>You can write perfectly procedural code in Java:</p>
+
+<pre><code><span class="code-keyword">public class</span> <span class="code-type">Main</span> {
+    <span class="code-keyword">static int</span> <span class="code-fn">add</span>(<span class="code-type">int</span> a, <span class="code-type">int</span> b) { <span class="code-keyword">return</span> a + b; }
+    <span class="code-keyword">static void</span> <span class="code-fn">main</span>(<span class="code-type">String</span>[] args) {
+        <span class="code-type">int</span> result = add(3, 4);
+        <span class="code-type">System</span>.out.println(result);
+    }
+}
+<span class="code-comment">// No objects, no inheritance, no polymorphism</span>
+<span class="code-comment">// This is C code wearing a Java costume</span></code></pre>
+
+<h3>Non-OO Language, OO Code</h3>
+
+<p>You can write OO code in C! And this isn't theoretical — <strong>the Linux kernel does this</strong>.</p>
+
+<pre><code><span class="code-comment">// OO programming in C</span>
+<span class="code-keyword">struct</span> <span class="code-type">ClassC</span> {
+    <span class="code-type">int</span> v;
+    <span class="code-type">int</span> (*other_method)(<span class="code-keyword">struct</span> <span class="code-type">ClassC</span>* self, <span class="code-type">int</span> arg);
+};
+
+<span class="code-type">int</span> <span class="code-fn">m</span>(<span class="code-keyword">struct</span> <span class="code-type">ClassC</span>* self, <span class="code-type">int</span> j) {
+    <span class="code-comment">// Access instance variable via self pointer</span>
+    <span class="code-keyword">return</span> self->v + j;
+}
+
+<span class="code-comment">// Calling a method:</span>
+self->other_method(self, 42);</code></pre>
+
+<p>The trick is simple: every "method" is just a function with an extra first argument — <code>self</code> — that points to the object. In C++, this <code>self</code> pointer exists too (called <code>this</code>), but the compiler inserts it for you automatically.</p>
+
+<div class="section-nav">
+  <button onclick="goTo('quiz2')">← Quiz</button>
+  <button onclick="goTo('oop-hidden-args')">Next: Hidden Arguments →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- OOP: HIDDEN ARGUMENT PATTERN -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-oop-hidden-args">
+<h2>The Hidden Argument Pattern</h2>
+
+<p>OOP's <code>self</code>/<code>this</code> pointer is actually an instance of a much bigger pattern in programming languages: <strong>many "fancy" features are implemented as ordinary functions with an extra hidden argument</strong>.</p>
+
+<table class="compare-table">
+  <tr>
+    <th>Feature</th>
+    <th>What You Write</th>
+    <th>What Really Happens</th>
+  </tr>
+  <tr>
+    <td>OOP Methods</td>
+    <td><code>obj.method(arg)</code></td>
+    <td><code>method(obj, arg)</code> — extra <code>self</code> argument</td>
+  </tr>
+  <tr>
+    <td>Continuations (Scheme)</td>
+    <td><code>(call/cc ...)</code></td>
+    <td>Every function gets an extra continuation argument (the return address)</td>
+  </tr>
+  <tr>
+    <td>Nested Functions</td>
+    <td><code>inner_func(arg)</code></td>
+    <td><code>inner_func(env_ptr, arg)</code> — extra environment pointer</td>
+  </tr>
+</table>
+
+<p>Python makes this explicit — you write <code>self</code> as the first parameter of every method:</p>
+
+<pre><code><span class="code-keyword">class</span> <span class="code-type">MyClass</span>:
+    <span class="code-keyword">def</span> <span class="code-fn">greet</span>(self, name):
+        <span class="code-keyword">return</span> <span class="code-string">f"Hello, {name}. I am {self.id}"</span>
+
+<span class="code-comment"># C++ hides the same thing:</span>
+<span class="code-comment"># void greet(MyClass* this, string name) { ... }</span></code></pre>
+
+<div class="callout insight">
+  <div class="callout-title">A General Pattern</div>
+  The hidden argument pattern is one of the most powerful ideas in PL design. Whenever you see a feature that seems "magical" — methods, closures, continuations — ask yourself: could this just be a function with an extra argument? Usually, the answer is yes.
+</div>
+
+<div class="section-nav">
+  <button onclick="goTo('oop-lang-vs-prog')">← OO Language vs Code</button>
+  <button onclick="goTo('oop-disputes')">Next: OOP Disputes →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- OOP: DISPUTES -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-oop-disputes">
+<h2>OOP Disputes: What Even Is Object-Oriented?</h2>
+
+<p>People have had heated debates about what "object-oriented" really means. Here are two of the main disputes:</p>
+
+<h3>Dispute 1: Must Every Value Be an Object?</h3>
+
+<table class="compare-table">
+  <tr><th>Language</th><th>Answer</th><th>Explanation</th></tr>
+  <tr><td>Python</td><td>Yes</td><td>Even <code>42</code> is an object (it has methods like <code>42 .bit_length()</code>)</td></tr>
+  <tr><td>Scheme</td><td>Yes</td><td>Everything is a value/object, even though Scheme isn't class-based</td></tr>
+  <tr><td>C++</td><td>No</td><td><code>int</code> values are just raw integers in registers, not objects</td></tr>
+  <tr><td>Java</td><td>No</td><td>Primitive types (<code>int</code>, <code>boolean</code>, etc.) are not objects; only reference types are</td></tr>
+</table>
+
+<p>The pattern: lower-level, performance-focused languages tend to say "no" (keeping primitives as raw values is faster). Higher-level, more abstract languages tend to say "yes" (uniformity is simpler to reason about).</p>
+
+<h3>Dispute 2: Do Classes Need to Exist?</h3>
+
+<p>Classes bundle together a lot of responsibilities: they group methods and data, they're the unit of inheritance, and they're the unit of instantiation (<code>new</code>). Some people think this is too many responsibilities in one construct.</p>
+
+<div class="section-nav">
+  <button onclick="goTo('oop-hidden-args')">← Hidden Arguments</button>
+  <button onclick="goTo('oop-prototypes')">Next: Prototypes →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- OOP: PROTOTYPES -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-oop-prototypes">
+<h2>Prototypes vs Classes</h2>
+
+<p>In class-based languages (Java, C++, Python), there are two ways to create an object:</p>
+<ol>
+  <li><strong>Instantiation</strong>: <code>new MyClass()</code> — create from a class blueprint</li>
+  <li><strong>Cloning</strong>: <code>obj.clone()</code> — copy an existing object</li>
+</ol>
+
+<p>Prototype-based languages (like JavaScript) simplify this: there are <strong>no classes</strong>. Every object is created by cloning an existing object (a "prototype").</p>
+
+<div class="diagram">
+  Class-Based (Java):                 Prototype-Based (JavaScript):
+  ┌─────────────────────┐            ┌──────────────────────┐
+  │  class Dog {        │            │  dogProto = {        │
+  │    name: String     │            │    name: "Fido",     │
+  │    bark(): void     │            │    bark: function()  │
+  │  }                  │            │  }                   │
+  └─────────┬───────────┘            └──────────┬───────────┘
+            │ new Dog()                         │ clone
+            ↓                                   ↓
+  ┌─────────────────────┐            ┌──────────────────────┐
+  │  fido: Dog          │            │  myDog = {           │
+  │  name = "Fido"      │            │    ...dogProto,      │
+  └─────────────────────┘            │    name: "Rex"       │
+                                     └──────────────────────┘
+</div>
+
+<p>The research language <strong>Self</strong> pioneered this approach. JavaScript brought it to mainstream use. Instead of defining a class as a template, you just create a "prototypical" object with all the right properties and methods, then clone it whenever you need a new instance.</p>
+
+<div class="callout insight">
+  <div class="callout-title">Why Prototypes?</div>
+  The argument for prototypes is simplicity: one mechanism (cloning) instead of two (instantiation + cloning). Classes bundle too many concepts together — data layout, method dispatch, inheritance, and instantiation. Prototypes separate these concerns. JavaScript eventually added <code>class</code> syntax, but under the hood it's still prototype-based.
+</div>
+
+<div class="section-nav">
+  <button onclick="goTo('oop-disputes')">← OOP Disputes</button>
+  <button onclick="goTo('quiz3')">Next: Quiz →</button>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- QUIZ 3 -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="section" id="sec-quiz3">
+<h2>Check Your Understanding: OOP</h2>
+
+<div class="quiz-box" id="q9">
+  <div class="quiz-label">Question 1</div>
+  <div class="quiz-question">When C++ compiles <code>obj.method(arg1, arg2)</code>, what does the generated code actually look like at the machine level?</div>
+  <ul class="quiz-options">
+    <li><label><input type="radio" name="q9" value="a"> A special OOP instruction that the CPU understands</label></li>
+    <li><label><input type="radio" name="q9" value="b"> A function call like <code>method(&obj, arg1, arg2)</code> — with an extra <code>this</code> argument</label></li>
+    <li><label><input type="radio" name="q9" value="c"> A message-passing system between objects</label></li>
+    <li><label><input type="radio" name="q9" value="d"> An indirect call through a hash table lookup</label></li>
+  </ul>
+  <button class="quiz-btn" onclick="checkQuiz('q9','b','Correct! At the machine level, a method call is just a function call with an implicit first argument (this/self) pointing to the object. CPUs don\'t know about objects — they just call functions.','Method calls are compiled into ordinary function calls with an extra first argument — the this pointer (or self in Python). This is the \"hidden argument\" pattern.')">Check Answer</button>
+  <div class="quiz-feedback" id="q9-feedback"></div>
+</div>
+
+<div class="quiz-box" id="q10">
+  <div class="quiz-label">Question 2</div>
+  <div class="quiz-question">Which of these is a real-world example of OO programming in a non-OO language?</div>
+  <ul class="quiz-options">
+    <li><label><input type="radio" name="q10" value="a"> The Linux kernel (written in C with explicit self pointers and vtables)</label></li>
+    <li><label><input type="radio" name="q10" value="b"> Microsoft Word (written in Visual Basic)</label></li>
+    <li><label><input type="radio" name="q10" value="c"> Python's standard library</label></li>
+    <li><label><input type="radio" name="q10" value="d"> React components in JavaScript</label></li>
+  </ul>
+  <button class="quiz-btn" onclick="checkQuiz('q10','a','Right! The Linux kernel is written in C but uses OO patterns: structs with function pointers for method dispatch, explicit self pointers, and manually implemented vtables. It\'s the textbook example of OO programming in a non-OO language.','The Linux kernel is the canonical example. It\'s written in C (not an OO language) but uses OO patterns extensively — structs with function pointers act as virtual method tables, and functions take explicit self pointers.')">Check Answer</button>
+  <div class="quiz-feedback" id="q10-feedback"></div>
+</div>
+
+<div class="quiz-box" id="q11">
+  <div class="quiz-label">Question 3</div>
+  <div class="quiz-question">In a prototype-based language like JavaScript, how do you create new objects?</div>
+  <ul class="quiz-options">
+    <li><label><input type="radio" name="q11" value="a"> By defining a class and calling new</label></li>
+    <li><label><input type="radio" name="q11" value="b"> By cloning an existing prototype object</label></li>
+    <li><label><input type="radio" name="q11" value="c"> By declaring variables with types</label></li>
+    <li><label><input type="radio" name="q11" value="d"> Objects cannot be created dynamically</label></li>
+  </ul>
+  <button class="quiz-btn" onclick="checkQuiz('q11','b','Correct! Prototype-based languages create objects by cloning existing objects rather than instantiating from class definitions. You have a prototypical object with the right structure, and clone it to make new instances.','In prototype-based languages, there are no classes as blueprints. Instead, you create a prototype object and clone it whenever you need a new instance. JavaScript popularized this approach (though it later added class syntax as syntactic sugar).')">Check Answer</button>
+  <div class="quiz-feedback" id="q11-feedback"></div>
+</div>
+
+<div style="margin-top:48px; padding:28px; background:var(--green-light); border-radius:12px; text-align:center;">
+  <h3 style="color:var(--green); margin:0 0 8px;">Lecture 17 Complete!</h3>
+  <p style="font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text-secondary); margin:0;">
+    You've covered generation-based copying GC, Rust's ownership model, and OOP fundamentals. Use the sidebar to revisit any section.
+  </p>
+</div>
+
+<div class="section-nav">
+  <button onclick="goTo('oop-prototypes')">← Prototypes</button>
+  <button disabled>End of Lecture</button>
+</div>
+</div>
+
+</main>
+
+
+</body>
+</html>
