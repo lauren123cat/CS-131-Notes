@@ -427,32 +427,58 @@ pre code { background: none; padding: 0; font-size: 14px; }
 /* Hide non-content elements */
 .sidebar, .sidebar-toggle, .progress-bar, .quiz, .quiz-btn { display: none !important; }
 
-/* Base typography */
-html { font-size: 12px !important; }
+/* Base typography — font decreased by 2 from 9.5 */
+html { font-size: 7.5px !important; }
 body { line-height: 1.3 !important; }
 
-/* Layout */
+/* Layout — lec8 uses bare main element */
+main {
+  margin-left: 0 !important;
+  padding: 0.5rem !important;
+  max-width: 100% !important;
+}
 .main {
   margin-left: 0 !important;
   padding: 0.5rem !important;
   max-width: 100% !important;
 }
 
-/* Headings */
-h1 { font-size: 1.4rem !important; }
-h2 { font-size: 1.15rem !important; margin-top: 0.5rem !important; }
-h3 { font-size: 1.05rem !important; margin-top: 0.4rem !important; }
+/* Hide nav (lec8 uses .nav not .sidebar) */
+.nav, .nav-toggle { display: none !important; }
 
-/* Spacing */
-p { margin-bottom: 0.25rem !important; }
-ul, ol { margin-bottom: 0.25rem !important; }
+/* Headings */
+h1 { font-size: 1.3rem !important; margin-bottom: 0.3rem !important; }
+h2 { font-size: 1.1rem !important; margin: 0.5rem 0 0.2rem !important; padding-top: 0.2rem !important; }
+h3 { font-size: 1rem !important; margin: 0.4rem 0 0.15rem !important; }
+h4 { font-size: 0.9rem !important; margin: 0.3rem 0 0.1rem !important; }
+
+/* Spacing — more breathing room */
+p { margin-bottom: 0.3rem !important; }
+ul, ol { margin-bottom: 0.3rem !important; }
 li { margin-bottom: 0.1rem !important; }
 
-.callout {
-  padding: 0.3rem 0.5rem !important;
-  margin: 0.3rem 0 !important;
+/* All box types — generous padding */
+.callout, .def-box, .insight-box, .bigpic-box, .warn-box, .analogy {
+  padding: 0.4rem 0.6rem !important;
+  margin: 0.4rem 0 !important;
 }
+.def-box .label, .insight-box .label, .bigpic-box .label, .warn-box .label {
+  font-size: 0.7rem !important;
+  margin-bottom: 0.15rem !important;
+}
+.analogy::before { display: none !important; }
 
+/* Diagrams */
+.diagram {
+  padding: 0.5rem !important;
+  margin: 0.4rem 0 !important;
+}
+.diagram .caption { font-size: 0.7rem !important; margin-top: 0.15rem !important; }
+
+/* Step-through interactive — hide nav buttons */
+.step-through .step-nav { display: none !important; }
+
+/* Code blocks */
 .code-block {
   margin: 0.3rem 0 !important;
   overflow: visible !important;
@@ -461,13 +487,24 @@ li { margin-bottom: 0.1rem !important; }
   white-space: pre-wrap !important;
   word-wrap: break-word !important;
 }
+pre {
+  padding: 0.3rem 0.5rem !important;
+  margin: 0.3rem 0 !important;
+  font-size: 0.75rem !important;
+  line-height: 1.25 !important;
+  box-shadow: none !important;
+}
 .code-body, .code-block code {
   padding: 0.3rem 0.5rem !important;
-  font-size: 0.85rem !important;
+  font-size: 0.75rem !important;
 }
 
-section, .section { margin-bottom: 0.3rem !important; }
-.subtitle { margin-bottom: 0.3rem !important; }
+/* Tables */
+.comp-table { font-size: 0.75rem !important; margin: 0.3rem 0 !important; }
+.comp-table th, .comp-table td { padding: 0.2rem 0.4rem !important; }
+
+section, .section { margin-bottom: 0.4rem !important; }
+.subtitle { margin-bottom: 0.4rem !important; font-size: 0.85rem !important; }
 
 /* Force expandables open and remove toggle UI */
 .expandable-content {
